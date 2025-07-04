@@ -14,7 +14,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         sendClientMessage("Debug: SkinStealerModule initialized, enabled: $isEnabled")
     }
 
-    // Обработка командыы /skin
+    // Обработка команды /skin
     fun handleChatCommand(message: String) {
         sendClientMessage("Debug: Received message: $message")
         if (!isEnabled) {
@@ -61,13 +61,11 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         // Заполнение SkinCache из PlayerListPacket
         if (packet is PlayerListPacket) {
             packet.entries.forEach { entry ->
-                SkinCache.putSkin(entry.gamertag, entry.skin) // Пробуем gamertag
-                sendClientMessage("Debug: Added skin for ${entry.gamertag} to SkinCache")
-                // Если gamertag не работает, попробуй раскомментировать одну из следующих строк:
-                // SkinCache.putSkin(entry.name, entry.skin)
-                // sendClientMessage("Debug: Added skin for ${entry.name} to SkinCache")
-                // SkinCache.putSkin(entry.username, entry.skin)
-                // sendClientMessage("Debug: Added skin for ${entry.username} to SkinCache")
+                SkinCache.putSkin(entry.getName(), entry.skin) // Пробуем getName()
+                sendClientMessage("Debug: Added skin for ${entry.getName()} to SkinCache")
+                // Если getName() не работает, попробуй раскомментировать одну из следующих строк:
+                // SkinCache.putSkin(entry.getUsername(), entry.skin)
+                // sendClientMessage("Debug: Added skin for ${entry.getUsername()} to SkinCache")
                 // SkinCache.putSkin(entry.xuid, entry.skin)
                 // sendClientMessage("Debug: Added skin for ${entry.xuid} to SkinCache")
             }
@@ -76,6 +74,8 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT && packet.sourceName == session.localPlayer.name) {
             handleChatCommand(packet.message)
             interceptablePacket.cancelled = true // Используем cancelled
+            // Если cancelled не работает, раскомментируй:
+            // interceptablePacket.isCancelled = true
         }
     }
 
