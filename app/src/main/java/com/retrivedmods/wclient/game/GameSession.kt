@@ -38,7 +38,6 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         for (module in ModuleManager.modules) {
             // Установим сессию для модуля перед его использованием.
             // Это решит проблему с lateinit property session has not been initialized
-            // если Module.kt имеет lateinit var session: GameSession
             module.session = this 
             
             module.beforePacketBound(interceptablePacket)
@@ -61,14 +60,14 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
                 if (command != null) {
                     // Команда найдена, выполняем её
                     command.exec(args, this) // 'this' здесь - это текущий GameSession
-                    // После выполнения команды, можем её отменить, чтобы она не отображалась в чате
-                    interceptablePacket.setIntercepted(true) // Помечаем пакет как перехваченный
+                    // После выполнения команды, отменяем пакет, чтобы он не отображался в чате
+                    interceptablePacket.isIntercepted = true // <-- ИСПРАВЛЕНИЕ ЗДЕСЬ!
                     return true // Прерываем дальнейшую обработку пакета, так как команда обработана
                 } else {
                     // Команда не найдена - отправляем сообщение об ошибке
                     displayClientMessage("§cНеизвестная команда: §f.$commandName")
-                    // Также можно отменить пакет, чтобы неизвестная команда не отображалась в чате
-                    interceptablePacket.setIntercepted(true)
+                    // Также отменяем пакет, чтобы неизвестная команда не отображалась в чате
+                    interceptablePacket.isIntercepted = true // <-- ИСПРАВЛЕНИЕ ЗДЕСЬ!
                     return true
                 }
             }
