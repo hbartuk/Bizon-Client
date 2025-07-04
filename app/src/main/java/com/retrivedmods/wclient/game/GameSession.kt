@@ -34,10 +34,9 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
         val interceptablePacket = InterceptablePacket(packet)
 
-        // --- Обработка пакетов модулями ---
+        // --- Packet processing by modules ---
         for (module in ModuleManager.modules) {
-            // Установим сессию для модуля перед его использованием.
-            // Это решит проблему с lateinit property session has not been initialized
+            // Set the session for the module before using it.
             module.session = this 
             
             module.beforePacketBound(interceptablePacket)
@@ -46,33 +45,33 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
             }
         }
 
-        // --- Добавляем логику обработки команд здесь ---
+        // --- Add command processing logic here ---
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT) {
             val message = packet.message.trim()
-            if (message.startsWith(".")) { // Проверяем, начинается ли с префикса команды
-                // Разделяем сообщение на название команды и аргументы
+            if (message.startsWith(".")) { // Check if it starts with a command prefix
+                // Split the message into command name and arguments
                 val parts = message.substring(1).split(" ", limit = 2) 
-                val commandName = parts[0].lowercase() // Название команды в нижнем регистре
-                // Аргументы: если есть только название команды, аргументов нет
+                val commandName = parts[0].lowercase() // Command name in lowercase
+                // Arguments: if only command name is present, no arguments
                 val args = if (parts.size > 1) parts[1].split(" ").toTypedArray() else emptyArray()
 
-                val command = ModuleManager.getCommand(commandName) // Ищем команду в ModuleManager
+                val command = ModuleManager.getCommand(commandName) // Search for the command in ModuleManager
                 if (command != null) {
-                    // Команда найдена, выполняем её
-                    command.exec(args, this) // 'this' здесь - это текущий GameSession
-                    // После выполнения команды, отменяем пакет, чтобы он не отображался в чате
-                    interceptablePacket.isIntercepted = true // <-- ИСПРАВЛЕНИЕ ЗДЕСЬ!
-                    return true // Прерываем дальнейшую обработку пакета, так как команда обработана
+                    // Command found, execute it
+                    command.exec(args, this) // 'this' here is the current GameSession
+                    // After executing the command, intercept the packet so it doesn't show in chat
+                    interceptablePacket.intercept() // <-- FIX IS HERE!
+                    return true // Interrupt further packet processing, as the command is handled
                 } else {
-                    // Команда не найдена - отправляем сообщение об ошибке
-                    displayClientMessage("§cНеизвестная команда: §f.$commandName")
-                    // Также отменяем пакет, чтобы неизвестная команда не отображалась в чате
-                    interceptablePacket.isIntercepted = true // <-- ИСПРАВЛЕНИЕ ЗДЕСЬ!
+                    // Command not found - send an error message
+                    displayClientMessage("§cUnknown command: §f.$commandName")
+                    // Also intercept the packet so the unknown command doesn't show in chat
+                    interceptablePacket.intercept() // <-- FIX IS HERE!
                     return true
                 }
             }
         }
-        // --- Конец логики обработки команд ---
+        // --- End of command processing logic ---
 
         return false
     }
@@ -92,7 +91,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         }
     }
 
-    // Твой существующий метод displayClientMessage
+    // Your existing displayClientMessage method
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
         val textPacket = TextPacket()
         textPacket.type = type
