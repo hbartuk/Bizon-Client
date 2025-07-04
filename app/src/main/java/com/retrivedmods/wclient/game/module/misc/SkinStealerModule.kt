@@ -5,54 +5,16 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
-import org.cloudburstmc.protocol.bedrock.packet.ModalFormRequestPacket
-import org.cloudburstmc.protocol.bedrock.packet.ModalFormResponsePacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
-    private val FORM_ID = 12345 // Уникальный ID формы
-
     init {
         sendClientMessage("Debug: SkinStealerModule initialized, enabled: $isEnabled")
     }
 
-    // Открыть форму для ввода ника
-    fun openSkinForm() {
-        val form = JsonObject().apply {
-            addProperty("type", "form")
-            addProperty("title", "Skin Stealer")
-            addProperty("content", "Enter the player name to steal their skin:")
-            val elements = JsonArray().apply {
-                add(JsonObject().apply {
-                    addProperty("type", "input")
-                    addProperty("text", "Player Name")
-                    addProperty("placeholder", "e.g., Icha728")
-                    addProperty("default", "")
-                })
-            }
-            add("buttons", JsonArray().apply {
-                add(JsonObject().apply {
-                    addProperty("text", "Apply Skin")
-                })
-                add(JsonObject().apply {
-                    addProperty("text", "Cancel")
-                })
-            })
-        }
-        val packet = ModalFormRequestPacket().apply {
-            formId = FORM_ID
-            formData = Gson().toJson(form)
-        }
-        session.clientBound(packet)
-        sendClientMessage("Debug: Skin form sent to player")
-    }
-
-    // Обработка команды .skin
+    // Обработка команды /skin
     fun handleChatCommand(message: String) {
         sendClientMessage("Debug: Received message: $message")
         if (!isEnabled) {
@@ -60,41 +22,15 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
             return
         }
         val args = message.trim().split("\\s+".toRegex())
-        if (args.isEmpty() || args[0] != ".skin") {
-            sendClientMessage("Debug: Not a .skin command")
-            return
-        }
-        if (args.size == 1) {
-            openSkinForm() // Открываем форму, если введена просто .skin
+        if (args.isEmpty() || args[0] != "/skin") {
+            sendClientMessage("Debug: Not a /skin command")
             return
         }
         if (args.size != 2) {
-            sendClientMessage("§cUsage: .skin <ник> or .<|control186|>
+            sendClientMessage("§cUsage: /skin <ник>")
             return
         }
         applySkin(args[1])
-    }
-
-    // Обработка ответа формы
-    fun handleFormResponse(packet: ModalFormResponsePacket) {
-        if (packet.formId != FORM_ID) return
-        if (packet.formData == null) { // Заменил responseData на formData
-            sendClientMessage("§cForm cancelled")
-            return
-        }
-        try {
-            val response = Gson().fromJson(packet.formData, JsonArray::class.java)
-            if (response.size() > 0) {
-                val playerName = response[0].asJsonPrimitive.asString // Уточнил типизацию
-                if (playerName.isNotBlank()) {
-                    applySkin(playerName)
-                } else {
-                    sendClientMessage("§cPlayer name cannot be empty")
-                }
-            }
-        } catch (e: Exception) {
-            sendClientMessage("§cError processing form: ${e.message}")
-        }
     }
 
     // Логика применения скина
@@ -125,22 +61,20 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         // Заполнение SkinCache из PlayerListPacket
         if (packet is PlayerListPacket) {
             packet.entries.forEach { entry ->
-                SkinCache.putSkin(entry.username, entry.skin) // Заменил name на username
-                sendClientMessage("Debug: Added skin for ${entry.username} to SkinCache")
+                SkinCache.putSkin(entry.name, entry.skin)
+                sendClientMessage("Debug: Added skin for ${entry.name} to SkinCache")
             }
         }
         // Перехват чат-команд
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT && packet.sourceName == session.localPlayer.name) {
             handleChatCommand(packet.message)
-            interceptablePacket.cancelled = true // Заменил isCancelled на cancelled
-        }
-        // Обработка ответа формы
-        if (packet is ModalFormResponsePacket) {
-            handleFormResponse(packet)
+            interceptablePacket.isCancelled = true // Попробуем isCancelled
+            // Если isCancelled не работает, раскомментируй следующую строку:
+            // interceptablePacket.cancelled = true
         }
     }
 
     private fun sendClientMessage(msg: String) {
         session.displayClientMessage(msg)
     }
-                              }
+}
