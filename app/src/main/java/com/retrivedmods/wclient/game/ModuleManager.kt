@@ -1,9 +1,9 @@
 package com.retrivedmods.wclient.game
 
-
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
+// Импорты модулей
 import com.retrivedmods.wclient.game.module.combat.AdvanceCombatAuraModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
@@ -57,6 +57,11 @@ import com.retrivedmods.wclient.game.module.visual.NightVisionModule
 import com.retrivedmods.wclient.game.module.visual.FakeProxyModule
 import com.retrivedmods.wclient.game.module.visual.PlayerJoinNotifierModule
 import com.retrivedmods.wclient.game.module.world.FakeLagModule
+
+// Импорты для системы команд
+import com.retrivedmods.wclient.game.command.Command // Базовый класс команды
+import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand // Твоя новая команда SkinStealerCommand
+
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -66,8 +71,11 @@ import java.io.File
 object ModuleManager {
 
     private val _modules: MutableList<Module> = ArrayList()
-
     val modules: List<Module> = _modules
+
+    // --- Добавляем список для команд ---
+    private val _commands: MutableList<Command> = ArrayList()
+    val commands: List<Command> = _commands // Делаем список команд доступным для чтения
 
     private val json = Json {
         prettyPrint = true
@@ -75,6 +83,7 @@ object ModuleManager {
     }
 
     init {
+        // --- Регистрация модулей ---
         with(_modules) {
             add(FlyModule())
             add(ZoomModule())
@@ -93,11 +102,11 @@ object ModuleManager {
             add(JetPackModule())
             add(BlinkModule())
             add(AdvanceDisablerModule())
-            add(BlinkModule())
+            add(BlinkModule()) // Дублирование, но оставил как в оригинале
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
-            add(SkinStealerModule())
+            add(SkinStealerModule()) // SkinStealerModule остается здесь
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
             add(InfiniteAuraModule())
@@ -115,7 +124,6 @@ object ModuleManager {
             add(OpFightBotModule())
             add(FakeLagModule())
             add(FastBreakModule())
-
             add(BhopModule())
             add(SprintModule())
             add(NoHurtCameraModule())
@@ -126,17 +134,26 @@ object ModuleManager {
             add(MotionFlyModule())
             add(FreeCameraModule())
             add(KillauraModule())
-
-
             add(AntiCrystalModule())
-
             add(TimeShiftModule())
             add(WeatherControllerModule())
-
             add(MotionVarModule())
             add(PlayerTracerModule())
-
         }
+
+        // --- Добавляем регистрацию команд здесь ---
+        with(_commands) {
+            add(SkinStealerCommand()) // Регистрируем твою команду SkinStealerCommand!
+            // Если у тебя будут другие команды, создай для них отдельные классы
+            // и добавь их здесь:
+            // add(ТвояДругаяКоманда())
+        }
+    }
+
+    // --- Метод для поиска команды ---
+    fun getCommand(name: String): Command? {
+        // Ищем команду по её алиасу (имени), игнорируя регистр
+        return _commands.firstOrNull { it.alias.contains(name.lowercase()) }
     }
 
     fun saveConfig() {
@@ -238,5 +255,4 @@ object ModuleManager {
             false
         }
     }
-
 }
