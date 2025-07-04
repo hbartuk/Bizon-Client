@@ -4,37 +4,28 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.data.skin.SkinCache
-import com.retrivedmods.wclient.game.command.Command // Предполагаем, что у тебя есть этот импорт
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
+import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry // Убедись, что этот импорт верный!
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.skin // Это может понадобиться для доступа к скину напрямую
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
-    // Включаем модуль по умолчанию, если это необходимо
+    // WClient, похоже, не имеет стандартных onEnable/onDisable в Module.
+    // Используем init для инициализации.
     init {
-        // Убедись, что модуль зарегистрирован как CommandExecutor
-        // Это может быть сделано через какой-то CommandManager или в главном классе WClient
-        // Например: WClient.commandManager.register(this)
+        sendClientMessage("§aSkinStealer инициализирован. Используйте .skin <ник>.")
+        // Здесь можно добавить логику активации, если модуль может быть выключен/включен.
     }
 
-    override fun onEnable() {
-        sendClientMessage("§aSkinStealer включен. Используйте .skin <ник> для смены скина.")
-        // Регистрируем команду при включении модуля, если это не делается автоматически
-        // WClient.commandManager.registerCommand(SkinCommand()) // Предполагаем, что SkinCommand это отдельный класс
-    }
-
-    override fun onDisable() {
-        sendClientMessage("§cSkinStealer выключен.")
-        // Отменяем регистрацию команды при выключении модуля, если это необходимо
-        // WClient.commandManager.unregisterCommand(SkinCommand())
-    }
+    // Если WClient.game.Module не имеет onEnable/onDisable, просто удаляем их.
+    // Если есть onActivate/onDeactivate, используй их. Для примера я их убрал.
 
     // Логика применения скина
     fun applySkin(targetNick: String) {
+        // Проверка isEnabled в Module должна быть встроена или сделана через внешнюю проверку
+        // Если isEnabled это поле в Module, то оно должно работать.
         if (!isEnabled) {
             sendClientMessage("§cМодуль SkinStealer выключен!")
             return
@@ -49,9 +40,8 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         }
 
         try {
-            // Отправляем PlayerSkinPacket серверу
             val packet = PlayerSkinPacket().apply {
-                uuid = session.localPlayer.uuid // Используем UUID текущего игрока
+                uuid = session.localPlayer.uuid // UUID твоего игрока
                 this.skin = skin
             }
             session.serverBound(packet) // Отправляем пакет на сервер
@@ -59,13 +49,8 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
             sendClientMessage("§aСкин успешно изменён на скин игрока §b$targetNick!§a")
 
             // Важно: чтобы скин был виден другим, сервер должен разослать PlayerListPacket с обновленным скином.
-            // На стороне клиента мы можем попытаться форсировать это, но это зависит от логики сервера.
-            // Возможно, потребуется обновить свой собственный PlayerListEntry в кэше клиента.
-            // Если сервер не обновляет, то скин будет виден только после переподключения или обновления PlayerListPacket от сервера.
-
-            // Опционально: можно попытаться обновить свой собственный PlayerListEntry в локальном кэше,
-            // чтобы клиент сразу видел изменение. Однако это не гарантирует, что другие игроки увидят.
-            // session.localPlayer.updateSkin(skin) // Если у тебя есть такой метод
+            // Если сервер этого не делает автоматически, то скин будет виден другим только после переподключения.
+            // Мы уже отправили PlayerSkinPacket на сервер. Этого, по идее, должно быть достаточно.
         } catch (e: Exception) {
             sendClientMessage("§cОшибка смены скина: ${e.message}")
             e.printStackTrace() // Для более подробного дебага
@@ -80,35 +65,45 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         // Заполнение SkinCache из PlayerListPacket
         if (packet is PlayerListPacket) {
             packet.entries.forEach { entry ->
-                // Важно: PlayerListEntry содержит SerializedSkin.
-                // Убедись, что ты правильно извлекаешь имя/ник и скин.
-                // В зависимости от версии CloudburstMC.Protocol Bedrock, доступ к скину может быть через .skin или .getSkin()
-                val entrySkin: SerializedSkin? = entry.skin // Предполагаем, что доступ через .skin
-                val entryName: String = entry.displayName ?: entry.username ?: entry.xuid // Используем displayName, затем username, затем xuid
+                val entrySkin: SerializedSkin? = entry.skin
+                // В PlayerListEntry обычно есть поля username, xuid, и displayName.
+                // Если они недоступны напрямую как свойства, попробуй геттеры:
+                val entryName: String? = entry.displayName // Попробуй получить display name
+                    ?: entry.username // Если display name нет, попробуй username
+                    ?: entry.xuid // Если и того нет, используй xuid (хотя это не ник)
 
-                if (entrySkin != null && entryName.isNotBlank()) {
+                if (entrySkin != null && !entryName.isNullOrBlank()) {
                     SkinCache.putSkin(entryName, entrySkin)
-                    // sendClientMessage("Debug: Added skin for ${entryName} to SkinCache") // Закомментируй для продакшена
+                }
+            }
+        }
+
+        // --- Обработка команд через TextPacket ---
+        if (packet is TextPacket && packet.type == TextPacket.Type.CHAT) {
+            // Проверяем, что сообщение отправил именно твой клиент
+            // (хотя session.localPlayer.name может быть пустым, если ты его не установил).
+            // Лучше ориентироваться на то, что сообщение приходит от "тебя" или от сервера,
+            // а ты сам его сгенерировал.
+            // Для простоты, пока будем считать, что ты вводишь команду сам.
+            val message = packet.message.trim()
+            if (message.startsWith(".skin ", ignoreCase = true)) {
+                val args = message.split("\\s+".toRegex())
+                if (args.size == 2) {
+                    val targetNick = args[1]
+                    applySkin(targetNick)
+                    interceptablePacket.cancelled = true // Отменяем отправку команды в чат
+                } else {
+                    sendClientMessage("§cИспользование: .skin <ник>")
+                    interceptablePacket.cancelled = true
                 }
             }
         }
     }
 
-    // Метод для отправки сообщений в чат клиента
     private fun sendClientMessage(msg: String) {
         session.displayClientMessage(msg)
     }
 
-    // --- Интеграция с системой команд ---
-    // Это пример того, как ты можешь создать команду, если WClient имеет свою систему команд.
-    // Тебе нужно будет зарегистрировать этот класс команды в главном классе WClient или CommandManager.
-    class SkinCommand(private val module: SkinStealerModule) : Command("skin", "Изменить свой скин на скин другого игрока.", listOf("<ник>")) {
-        override fun execute(args: List<String>) {
-            if (args.size != 1) {
-                module.sendClientMessage("§cИспользование: .skin <ник>")
-                return
-            }
-            module.applySkin(args[0])
-        }
-    }
+    // Если нет базового класса Command, то внутренний класс SkinCommand нам не нужен.
+    // Вся логика обработки команды будет в beforePacketBound.
 }
