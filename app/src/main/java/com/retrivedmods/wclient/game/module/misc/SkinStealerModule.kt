@@ -4,11 +4,10 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.data.skin.SkinCache
-import com.retrivedmods.wclient.game.GameSession
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
-class SkinStealerModule(private val session: GameSession) : Module("skinstealer", ModuleCategory.Misc) {
+class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
     fun handleChatCommand(message: String) {
         if (!isEnabled) return
@@ -30,8 +29,9 @@ class SkinStealerModule(private val session: GameSession) : Module("skinstealer"
         }
 
         try {
+            // Используй session из Module (у тебя он, скорее всего, protected или public)
             val packet = PlayerSkinPacket().apply {
-                uuid = session.localPlayer.uuid // ВАЖНО! Используй UUID из localPlayer
+                uuid = session.localPlayer.uuid
                 this.skin = skin
             }
             session.clientBound(packet)
