@@ -5,7 +5,6 @@ import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-// import io.netty.buffer.ByteBuf // Этот импорт нам больше не нужен, если skinData не ByteBuf
 
 class SkinStealerCommand : Command("skin", "sks") {
 
@@ -26,16 +25,14 @@ class SkinStealerCommand : Command("skin", "sks") {
             return
         }
 
-        // --- Логирование для диагностики с исправленными названиями свойств ---
+        // --- Логирование для диагностики ---
         session.displayClientMessage("§aСкин найден в кэше.")
         session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
         
-        // **ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ:** // Используем skin.skinData?.size ?: 0 для получения размера ByteArray.
-        // Я предполагаю, что поле называется 'skinData'. Если оно называется 'data', 'imageData'
-        // или как-то ещё, замени 'skinData' на правильное название.
-        val skinDataSize = skin.skinData?.size ?: 0 
-
-        session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
+        // Удалили строку, вызывающую ошибку с 'size'
+        // val skinDataSize = skin.skinData?.size ?: 0
+        // session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
+        
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
         session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
 
