@@ -2,13 +2,14 @@ package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
+import com.retrivedmods.wclient.game.InterceptablePacket
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 
 class SourceModule : Module("source", ModuleCategory.Misc) {
 
-    // Этот метод вызывай из общего обработчика чата, если модуль включён
+    // Вызови этот метод из своего обработчика чата, если модуль включён
     fun handleChatCommand(message: String) {
         if (!isEnabled) return
 
@@ -45,9 +46,13 @@ class SourceModule : Module("source", ModuleCategory.Misc) {
         }
     }
 
+    // Пустая реализация обязательного метода
+    override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
+        // Если ничего не нужно — оставь пустым
+    }
+
     // Вспомогательный метод для вывода сообщений игроку
     private fun sendClientMessage(msg: String) {
-        // Используй аналогично PlayerTracerModule для отправки сообщений
-        // Например, через TextPacket или напрямую в чат клиента
+        // Реализуй по аналогии с PlayerTracerModule, если хочешь выводить сообщения в чат
     }
 }
