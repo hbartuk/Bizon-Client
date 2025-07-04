@@ -9,7 +9,6 @@ import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
-    // Вызови этот метод из обработчика чата, если модуль включён
     fun handleChatCommand(message: String) {
         if (!isEnabled) return
 
@@ -31,7 +30,8 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
         try {
             val packet = PlayerSkinPacket().apply {
-                uuid = session.uuid // Используй актуальный способ получения UUID игрока из сессии!
+                // ВАЖНО: замени на актуальный способ получения UUID в твоём проекте!
+                uuid = session.profile.uuid // <-- проверь это поле!
                 this.skin = skin
             }
             session.clientBound(packet)
@@ -41,12 +41,9 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         }
     }
 
-    // Обязательный метод (можно оставить пустым)
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {}
 
-    // Вспомогательный метод для вывода сообщений игроку
     private fun sendClientMessage(msg: String) {
         // Реализуй по аналогии с другими модулями
-        // Например: session.sendMessageToChat(msg)
     }
 }
