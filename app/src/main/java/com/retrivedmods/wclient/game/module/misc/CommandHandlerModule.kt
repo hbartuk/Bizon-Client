@@ -5,52 +5,76 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.ModuleManager
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.command.Command // Импорт для наших команд
+import com.retrivedmods.wclient.game.command.Command
 
-// Заглушки для модулей, если у тебя их нет.
-// Если у тебя есть BaritoneModule или ReplayModule, используй их реальные классы.
+// Updated Placeholder for BaritoneModule
 class BaritoneModule : Module("baritone", ModuleCategory.Misc) {
     fun handleGotoCommand(message: String) { session.displayClientMessage("§7[Baritone] Goto command received: $message"); }
+
+    // Implement abstract members from Module
+    override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
+        // No operation for placeholder
+    }
+    override fun afterPacketBound(packet: org.cloudburstmc.protocol.bedrock.packet.BedrockPacket) {
+        // No operation for placeholder
+    }
+    override fun onDisconnect(reason: String) {
+        // No operation for placeholder
+    }
 }
+
+// Updated Placeholder for ReplayModule
 class ReplayModule : Module("replay", ModuleCategory.Misc) {
     fun startRecording() { session.displayClientMessage("§7[Replay] Recording started."); }
     fun startPlayback() { session.displayClientMessage("§7[Replay] Playback started."); }
-    fun stopRecording() { session.displayClientMessage("§7[Replay] Recording/Playback stopped."); }
+    fun stopRecording() { session.displayClientMessage("§7[Replay] Recording stopped."); }
     fun saveReplay(name: String) { session.displayClientMessage("§7[Replay] Replay '$name' saved."); }
     fun loadReplay(name: String) { session.displayClientMessage("§7[Replay] Replay '$name' loaded."); }
+    
+    // Add the missing stopPlayback method
+    fun stopPlayback() { session.displayClientMessage("§7[Replay] Playback stopped."); }
+
+    // Implement abstract members from Module
+    override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
+        // No operation for placeholder
+    }
+    override fun afterPacketBound(packet: org.cloudburstmc.protocol.bedrock.packet.BedrockPacket) {
+        // No operation for placeholder
+    }
+    override fun onDisconnect(reason: String) {
+        // No operation for placeholder
+    }
 }
 
 
-// Основной класс обработчика команд
-class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true, true) { // true, true делает его всегда включенным и не приватным
+// Main command handler class (no changes here from previous version)
+class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true, true) {
     private val prefix = "."
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
-        if (!isEnabled) return // Проверяем, включен ли модуль (хотя он всегда включен)
+        if (!isEnabled) return
 
         val packet = interceptablePacket.packet
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT) {
             val message = packet.message
-            if (!message.startsWith(prefix)) return // Если сообщение не начинается с префикса, игнорируем
+            if (!message.startsWith(prefix)) return
 
-            interceptablePacket.intercept() // Перехватываем пакет, чтобы команда не отображалась в чате
+            interceptablePacket.intercept()
 
-            val rawArgs = message.substring(prefix.length).trim() // Убираем префикс и пробелы
-            val parts = rawArgs.split(" ", limit = 2) // Отделяем название команды от остального
-            val commandName = parts[0].lowercase() // Название команды в нижнем регистре
-            val commandArgs = if (parts.size > 1) parts[1].split(" ").toTypedArray() else emptyArray() // Аргументы
+            val rawArgs = message.substring(prefix.length).trim()
+            val parts = rawArgs.split(" ", limit = 2)
+            val commandName = parts[0].lowercase()
+            val commandArgs = if (parts.size > 1) parts[1].split(" ").toTypedArray() else emptyArray()
 
-            // --- ОБРАБОТКА ТВОИХ КОМАНД ЧЕРЕЗ ModuleManager ---
             val registeredCommand = ModuleManager.getCommand(commandName)
             if (registeredCommand != null) {
                 registeredCommand.exec(commandArgs, session)
-                return // Команда обработана, выходим
+                return
             }
 
-            // --- ОБРАБОТКА ВСТРОЕННЫХ КОМАНД (из твоего примера) ---
             when (commandName) {
                 "help" -> {
-                    displayHelp(commandArgs.getOrNull(0)) // args.getOrNull(1) стал commandArgs.getOrNull(0)
+                    displayHelp(commandArgs.getOrNull(0))
                 }
                 "goto" -> {
                     val baritoneModule = ModuleManager.modules.find { it is BaritoneModule } as? BaritoneModule
@@ -58,7 +82,7 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
                         session.displayClientMessage("§cBaritone module not found")
                         return
                     }
-                    baritoneModule.handleGotoCommand(message) // Здесь message - это всё сообщение, а не только аргументы
+                    baritoneModule.handleGotoCommand(message)
                 }
                 "replay" -> {
                     val replayModule = ModuleManager.modules.find { it is ReplayModule } as? ReplayModule
@@ -67,15 +91,16 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
                         return
                     }
 
-                    when (commandArgs.getOrNull(0)?.lowercase()) { // args.getOrNull(1) стал commandArgs.getOrNull(0)
+                    when (commandArgs.getOrNull(0)?.lowercase()) {
                         "record" -> replayModule.startRecording()
                         "play" -> replayModule.startPlayback()
                         "stop" -> {
                             replayModule.stopRecording()
-                            replayModule.stopPlayback()
+                            // No longer an "Unresolved reference"
+                            replayModule.stopPlayback() 
                         }
                         "save" -> {
-                            val name = commandArgs.getOrNull(1) // args.getOrNull(2) стал commandArgs.getOrNull(1)
+                            val name = commandArgs.getOrNull(1)
                             if (name == null) {
                                 session.displayClientMessage("§cUsage: .replay save <name>")
                                 return
@@ -83,7 +108,7 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
                             replayModule.saveReplay(name)
                         }
                         "load" -> {
-                            val name = commandArgs.getOrNull(1) // args.getOrNull(2) стал commandArgs.getOrNull(1)
+                            val name = commandArgs.getOrNull(1)
                             if (name == null) {
                                 session.displayClientMessage("§cUsage: .replay load <name>")
                                 return
@@ -103,8 +128,6 @@ class CommandHandlerModule : Module("command_handler", ModuleCategory.Misc, true
                     }
                 }
                 else -> {
-                    // Если это не известная команда и не команда из ModuleManager,
-                    // пытаемся переключить модуль по имени
                     val module = ModuleManager.modules.find { it.name.equals(commandName, ignoreCase = true) }
                     if (module != null && !module.private) {
                         module.isEnabled = !module.isEnabled
