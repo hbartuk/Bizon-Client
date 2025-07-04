@@ -21,7 +21,6 @@ import com.retrivedmods.wclient.game.module.combat.ReachModule
 import com.retrivedmods.wclient.game.module.combat.SmartAuraModule
 import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
 import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
-import com.retrivedmods.wclient.game.module.misc.SourceModule
 import com.retrivedmods.wclient.game.module.misc.SkinStealerModule
 import com.retrivedmods.wclient.game.module.player.DesyncModule
 import com.retrivedmods.wclient.game.module.motion.NoClipModule
@@ -98,7 +97,6 @@ object ModuleManager {
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
-            add(SourceModule())
             add(SkinStealerModule())
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
