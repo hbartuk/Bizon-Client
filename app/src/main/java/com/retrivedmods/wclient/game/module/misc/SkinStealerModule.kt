@@ -61,16 +61,21 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         // Заполнение SkinCache из PlayerListPacket
         if (packet is PlayerListPacket) {
             packet.entries.forEach { entry ->
-                SkinCache.putSkin(entry.name, entry.skin) // Вернулся к name
-                sendClientMessage("Debug: Added skin for ${entry.name} to SkinCache")
+                SkinCache.putSkin(entry.gamertag, entry.skin) // Пробуем gamertag
+                sendClientMessage("Debug: Added skin for ${entry.gamertag} to SkinCache")
+                // Если gamertag не работает, попробуй раскомментировать одну из следующих строк:
+                // SkinCache.putSkin(entry.name, entry.skin)
+                // sendClientMessage("Debug: Added skin for ${entry.name} to SkinCache")
+                // SkinCache.putSkin(entry.username, entry.skin)
+                // sendClientMessage("Debug: Added skin for ${entry.username} to SkinCache")
+                // SkinCache.putSkin(entry.xuid, entry.skin)
+                // sendClientMessage("Debug: Added skin for ${entry.xuid} to SkinCache")
             }
         }
         // Перехват чат-команд
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT && packet.sourceName == session.localPlayer.name) {
             handleChatCommand(packet.message)
-            interceptablePacket.isCancelled = true // Попробуем isCancelled
-            // Если isCancelled не работает, раскомментируй:
-            // interceptablePacket.cancelled = true
+            interceptablePacket.cancelled = true // Используем cancelled
         }
     }
 
