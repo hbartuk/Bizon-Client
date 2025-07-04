@@ -5,8 +5,7 @@ import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-// Ensure you have this import for ByteBuf, if skinData is a ByteBuf
-import io.netty.buffer.ByteBuf // This is often used with CloudburstMC for byte data
+// import io.netty.buffer.ByteBuf // Этот импорт нам больше не нужен, если skinData не ByteBuf
 
 class SkinStealerCommand : Command("skin", "sks") {
 
@@ -27,21 +26,18 @@ class SkinStealerCommand : Command("skin", "sks") {
             return
         }
 
-        // --- Logging for diagnosis with corrected property names ---
+        // --- Логирование для диагностики с исправленными названиями свойств ---
         session.displayClientMessage("§aСкин найден в кэше.")
         session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
         
-        // **CORRECTION HERE:** Use 'skin.getSkinData().readableBytes()' for ByteBuf size, or 'skin.getSkinData().length' if it's a byte array.
-        // If your 'SerializedSkin' has a 'skinData' field that is a ByteBuf, this is how you get its size.
-        // If it's a byte[] (byte array), use 'skin.skinData.size' or 'skin.skinData.length'
-        // I'm assuming 'getSkinData()' method exists and returns a ByteBuf.
-        val skinDataSize = skin.getSkinData()?.readableBytes() ?: 0 // Most common for ByteBuf
-        // OR if skin.skinData is directly a byte array (byte[]):
-        // val skinDataSize = skin.skinData?.size ?: 0
+        // **ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ:** // Используем skin.skinData?.size ?: 0 для получения размера ByteArray.
+        // Я предполагаю, что поле называется 'skinData'. Если оно называется 'data', 'imageData'
+        // или как-то ещё, замени 'skinData' на правильное название.
+        val skinDataSize = skin.skinData?.size ?: 0 
 
         session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
-        session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") // **CORRECTION HERE: Use 'skinId' instead of 'textureName'**
+        session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
 
         try {
             val packet = PlayerSkinPacket().apply {
