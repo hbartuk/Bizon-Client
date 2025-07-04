@@ -5,17 +5,25 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // Этот импорт оставляем, он нужен для типа пакета
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry // <-- Эту строку убираем!
+import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry // Оставляем, так как оно компилировалось без него, но для ясности можем вернуть, если проблем нет.
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
+    // Убираем вызов sendClientMessage из блока init.
+    // Если модуль не имеет onEnable(), то это самый безопасный способ.
     init {
-        sendClientMessage("§aSkinStealer инициализирован. Используйте .skin <ник> для смены скина.")
+        // sendClientMessage("§aSkinStealer инициализирован. Используйте .skin <ник> для смены скина.")
+        // Сообщение теперь будет отправляться только при активации или первом использовании.
     }
 
+    /**
+     * Применяет скин указанного игрока к текущему игроку.
+     * Скин берется из SkinCache.
+     * @param targetNick Ник игрока, скин которого нужно "украсть".
+     */
     fun applySkin(targetNick: String) {
         if (!isEnabled) {
             sendClientMessage("§cМодуль SkinStealer выключен!")
@@ -46,13 +54,18 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         }
     }
 
+    /**
+     * Перехватывает входящие и исходящие пакеты для обработки.
+     * Заполняет SkinCache и обрабатывает команды чата.
+     * @param interceptablePacket Пакет, который можно перехватить и, возможно, отменить.
+     */
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
 
         val packet = interceptablePacket.packet
 
         if (packet is PlayerListPacket) {
-            packet.entries.forEach { entry -> // <-- Здесь 'entry' все равно будет иметь тип PlayerListEntry
+            packet.entries.forEach { entry ->
                 val entrySkin: SerializedSkin? = entry.skin
                 val entryName: String = entry.name 
 
@@ -69,18 +82,18 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
                 if (args.size == 2) {
                     val targetNick = args[1] 
                     applySkin(targetNick) 
-                    // Если setCancelled() не работает, этот блок останется,
-                    // и команда будет видна в чате.
-                    // Если у тебя есть способ отмены, используй его здесь:
-                    // interceptablePacket.setCancelled(true) // Или .cancel(), или .isCancelled = true
+                    // Если у InterceptablePacket нет метода отмены, команда будет видна в чате.
                 } else {
                     sendClientMessage("§cИспользование: .skin <ник>")
-                    // interceptablePacket.setCancelled(true)
                 }
             }
         }
     }
 
+    /**
+     * Отправляет сообщение в клиентский чат.
+     * @param msg Сообщение для отображения.
+     */
     private fun sendClientMessage(msg: String) {
         session.displayClientMessage(msg)
     }
