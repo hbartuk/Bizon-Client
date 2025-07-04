@@ -34,14 +34,46 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
         val interceptablePacket = InterceptablePacket(packet)
 
+        // --- Обработка пакетов модулями ---
         for (module in ModuleManager.modules) {
+            // Установим сессию для модуля перед его использованием.
+            // Это решит проблему с lateinit property session has not been initialized
+            // если Module.kt имеет lateinit var session: GameSession
+            module.session = this 
+            
             module.beforePacketBound(interceptablePacket)
             if (interceptablePacket.isIntercepted) {
                 return true
             }
         }
 
+        // --- Добавляем логику обработки команд здесь ---
+        if (packet is TextPacket && packet.type == TextPacket.Type.CHAT) {
+            val message = packet.message.trim()
+            if (message.startsWith(".")) { // Проверяем, начинается ли с префикса команды
+                // Разделяем сообщение на название команды и аргументы
+                val parts = message.substring(1).split(" ", limit = 2) 
+                val commandName = parts[0].lowercase() // Название команды в нижнем регистре
+                // Аргументы: если есть только название команды, аргументов нет
+                val args = if (parts.size > 1) parts[1].split(" ").toTypedArray() else emptyArray()
 
+                val command = ModuleManager.getCommand(commandName) // Ищем команду в ModuleManager
+                if (command != null) {
+                    // Команда найдена, выполняем её
+                    command.exec(args, this) // 'this' здесь - это текущий GameSession
+                    // После выполнения команды, можем её отменить, чтобы она не отображалась в чате
+                    interceptablePacket.setIntercepted(true) // Помечаем пакет как перехваченный
+                    return true // Прерываем дальнейшую обработку пакета, так как команда обработана
+                } else {
+                    // Команда не найдена - отправляем сообщение об ошибке
+                    displayClientMessage("§cНеизвестная команда: §f.$commandName")
+                    // Также можно отменить пакет, чтобы неизвестная команда не отображалась в чате
+                    interceptablePacket.setIntercepted(true)
+                    return true
+                }
+            }
+        }
+        // --- Конец логики обработки команд ---
 
         return false
     }
@@ -61,6 +93,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         }
     }
 
+    // Твой существующий метод displayClientMessage
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
         val textPacket = TextPacket()
         textPacket.type = type
