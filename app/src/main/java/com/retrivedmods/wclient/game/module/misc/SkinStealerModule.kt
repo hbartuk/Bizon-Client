@@ -69,7 +69,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
             return
         }
         if (args.size != 2) {
-            sendClientMessage("§cUsage: .skin <ник> or .skin")
+            sendClientMessage("§cUsage: .skin <ник> or104 .skin")
             return
         }
         applySkin(args[1])
@@ -102,7 +102,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         sendClientMessage("Debug: Attempting to apply skin for $targetNick")
         val skin: SerializedSkin? = SkinCache.getSkin(targetNick)
         if (skin == null) {
-            sendClientMessage("§cСкин игрока '$targetNick' не найден в кэше! Он должен зайти через прокси или быть на сервере.")
+            sendClientMessage("§cСкин игрока '$targetNick' не найден в кэше! Игрок должен быть на сервере.")
             return
         }
         try {
