@@ -6,7 +6,7 @@ import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket // Оставляем, потому что он нам понадобится в ModuleManager для обработки команд
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
+// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
