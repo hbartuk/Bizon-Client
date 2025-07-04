@@ -24,18 +24,20 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         val skin: SerializedSkin? = SkinCache.getSkin(targetNick)
 
         if (skin == null) {
-            sendClientMessage("§cСкин игрока '$targetNick' не найден в кэше! Игрок должен быть онлайн через прокси.")
+            sendClientMessage("§cСкин игрока '$targetNick' не найден в кэше! Он должен зайти через прокси.")
             return
         }
 
         try {
-            // Используй session из Module (у тебя он, скорее всего, protected или public)
             val packet = PlayerSkinPacket().apply {
                 uuid = session.localPlayer.uuid
                 this.skin = skin
             }
+            // КЛЮЧЕВАЯ СТРОКА! Отправляем пакет на сервер, чтобы сервер реально увидел смену скина:
+            session.serverBound(packet)
+            // Можно дополнительно отправить и себе, чтобы сразу увидеть смену:
             session.clientBound(packet)
-            sendClientMessage("§aСкин успешно изменён на скин $targetNick!")
+            sendClientMessage("§aСкин успешно изменён на скин $targetNick (серверу отправлено)!")
         } catch (e: Exception) {
             sendClientMessage("§cОшибка смены скина: ${e.message}")
         }
