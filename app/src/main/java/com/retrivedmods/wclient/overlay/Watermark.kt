@@ -42,7 +42,7 @@ fun Watermark() {
 
     val richText: AnnotatedString = buildAnnotatedString {
         withStyle(style = SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold)) {
-            append("WClient")
+            append("Alifa-test 48f82j37b")
         }
         withStyle(
             style = SpanStyle(
@@ -51,7 +51,7 @@ fun Watermark() {
                 baselineShift = BaselineShift.Superscript
             )
         ) {
-            append(" v9.0")
+            append(" v0.1 alifa")
         }
     }
 
