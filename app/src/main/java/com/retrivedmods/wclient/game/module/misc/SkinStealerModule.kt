@@ -61,14 +61,16 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         // Заполнение SkinCache из PlayerListPacket
         if (packet is PlayerListPacket) {
             packet.entries.forEach { entry ->
-                SkinCache.putSkin(entry.username, entry.skin) // Заменил name на username
-                sendClientMessage("Debug: Added skin for ${entry.username} to SkinCache")
+                SkinCache.putSkin(entry.name, entry.skin) // Вернулся к name
+                sendClientMessage("Debug: Added skin for ${entry.name} to SkinCache")
             }
         }
         // Перехват чат-команд
         if (packet is TextPacket && packet.type == TextPacket.Type.CHAT && packet.sourceName == session.localPlayer.name) {
             handleChatCommand(packet.message)
-            interceptablePacket.cancelled = true // Заменил isCancelled на cancelled
+            interceptablePacket.isCancelled = true // Попробуем isCancelled
+            // Если isCancelled не работает, раскомментируй:
+            // interceptablePacket.cancelled = true
         }
     }
 
