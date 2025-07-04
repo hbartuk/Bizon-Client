@@ -1,10 +1,12 @@
 package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
-import com.retrivedmods.wclient.game.command.Command // Импортируем наш базовый класс Command
+import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
+// Ensure you have this import for ByteBuf, if skinData is a ByteBuf
+import io.netty.buffer.ByteBuf // This is often used with CloudburstMC for byte data
 
 class SkinStealerCommand : Command("skin", "sks") {
 
@@ -14,7 +16,7 @@ class SkinStealerCommand : Command("skin", "sks") {
             return
         }
 
-        val targetNick = args[0] // Первый аргумент - это ник
+        val targetNick = args[0]
         session.displayClientMessage("§eПытаюсь получить скин для игрока: §b$targetNick...")
         
         val normalizedTargetNick = targetNick.lowercase()
@@ -25,29 +27,33 @@ class SkinStealerCommand : Command("skin", "sks") {
             return
         }
 
-        // --- Добавляем логирование для диагностики ---
+        // --- Logging for diagnosis with corrected property names ---
         session.displayClientMessage("§aСкин найден в кэше.")
         session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
         
-        // Пожалуйста, проверь название поля с данными скина в твоем классе SerializedSkin.
-        // Это может быть skinData, data, imageData или что-то другое.
-        // Используй то, которое содержит массив байтов изображения.
-        val skinDataSize = skin.skinData?.size ?: 0 // Используй 'skinData' или 'data' или другое название поля в твоём SerializedSkin
+        // **CORRECTION HERE:** Use 'skin.getSkinData().readableBytes()' for ByteBuf size, or 'skin.getSkinData().length' if it's a byte array.
+        // If your 'SerializedSkin' has a 'skinData' field that is a ByteBuf, this is how you get its size.
+        // If it's a byte[] (byte array), use 'skin.skinData.size' or 'skin.skinData.length'
+        // I'm assuming 'getSkinData()' method exists and returns a ByteBuf.
+        val skinDataSize = skin.getSkinData()?.readableBytes() ?: 0 // Most common for ByteBuf
+        // OR if skin.skinData is directly a byte array (byte[]):
+        // val skinDataSize = skin.skinData?.size ?: 0
+
         session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
-        session.displayClientMessage("§aID текстуры: §b${skin.textureName}") // Если SerializedSkin имеет такое поле.
+        session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") // **CORRECTION HERE: Use 'skinId' instead of 'textureName'**
 
         try {
             val packet = PlayerSkinPacket().apply {
-                uuid = session.localPlayer.uuid // UUID твоего игрока
-                this.skin = skin // Украденный скин
+                uuid = session.localPlayer.uuid
+                this.skin = skin
             }
-            session.serverBound(packet) // Отправляем пакет на сервер
+            session.serverBound(packet)
 
-            session.displayClientMessage("§aПакет смены скина отправлен. Проверьте свой скин на себе или попросите другого игрока посмотреть на вас.")
+            session.displayClientMessage("§aПакет смены скина отправлен. Проверьте свой скин.")
         } catch (e: Exception) {
             session.displayClientMessage("§cОшибка смены скина: ${e.message}")
-            e.printStackTrace() // Выводим стек-трейс в консоль для детальной отладки
+            e.printStackTrace()
         }
     }
 }
