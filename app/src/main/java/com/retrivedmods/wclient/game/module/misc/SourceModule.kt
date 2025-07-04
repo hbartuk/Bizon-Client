@@ -1,7 +1,7 @@
 package com.retrivedmods.wclient.game.module.misc
 
-import com.retrivedmods.wclient.game.module.Module
-import com.retrivedmods.wclient.game.module.Category
+import com.retrivedmods.wclient.game.Module
+import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession
