@@ -7,7 +7,7 @@ import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry // Оставляем, так как оно компилировалось без него, но для ясности можем вернуть, если проблем нет.
+// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry // Оставляем, так как оно компилировалось без него, но для ясности можем вернуть, если проблем нет.
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
