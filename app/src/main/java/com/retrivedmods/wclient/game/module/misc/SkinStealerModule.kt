@@ -3,9 +3,9 @@ package com.retrivedmods.wclient.game.module.misc
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
-import com.retrivedmods.wclient.WClient
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
+import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
@@ -22,7 +22,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         }
 
         val targetNick = args[1]
-        val skin = SkinCache.getSkin(targetNick)
+        val skin: SerializedSkin? = SkinCache.getSkin(targetNick)
 
         if (skin == null) {
             sendClientMessage("§cСкин игрока '$targetNick' не найден в кэше! Игрок должен быть онлайн через прокси.")
@@ -31,7 +31,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
         try {
             val packet = PlayerSkinPacket().apply {
-                uuid = session.profile.uuid
+                uuid = session.uuid // Используй актуальный способ получения UUID игрока из сессии!
                 this.skin = skin
             }
             session.clientBound(packet)
@@ -46,7 +46,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
     // Вспомогательный метод для вывода сообщений игроку
     private fun sendClientMessage(msg: String) {
-        // Реализуй по аналогии с другими модулями (например, PlayerTracerModule)
+        // Реализуй по аналогии с другими модулями
         // Например: session.sendMessageToChat(msg)
     }
 }
