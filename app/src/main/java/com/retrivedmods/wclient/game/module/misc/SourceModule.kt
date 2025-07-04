@@ -4,22 +4,19 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
-import org.cloudburstmc.protocol.bedrock.BedrockServerSession
+import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 
-class SourceModule : Module(
-    "Source",
-    "Проигрывает выбранный звук на выбранных координатах по вашей команде",
-    Category.MISC
-) {
-    // Вставь сюда свой SoundUtils или реализуй метод прямо тут
-    fun onChatCommand(input: String, session: BedrockServerSession) {
-        if (!this.enabled) return
+class SourceModule : Module("source", ModuleCategory.Misc) {
 
-        val args = input.trim().split("\\s+".toRegex())
+    // Этот метод вызывай из общего обработчика чата, если модуль включён
+    fun handleChatCommand(message: String) {
+        if (!isEnabled) return
+
+        val args = message.trim().split("\\s+".toRegex())
         if (args.isEmpty() || args[0] != ".source") return
 
         if (args.size != 7) {
-            println("Использование: .source (громкость) (x) (y) (z) (тип_звука) (кол-во)")
+            sendClientMessage("§cUsage: .source <volume> <x> <y> <z> <SOUND_TYPE> <count>")
             return
         }
 
@@ -31,31 +28,26 @@ class SourceModule : Module(
             val soundType = args[5].uppercase()
             val count = args[6].toInt()
             val soundEvent = SoundEvent.valueOf(soundType)
-            val pos = Vector3f(x, y, z)
+            val pos = Vector3f.from(x, y, z)
 
             repeat(count) {
-                playSound(session, soundEvent, pos, volume)
+                val packet = LevelSoundEventPacket().apply {
+                    sound = soundEvent
+                    position = pos
+                    extraData = -1
+                    isBabySound = false
+                }
+                session.clientBound(packet)
             }
+            sendClientMessage("§aPlayed $soundType at $x $y $z volume $volume ($count times)")
         } catch (e: Exception) {
-            println("Ошибка в параметрах команды .source: ${e.message}")
+            sendClientMessage("§cОшибка: ${e.message}")
         }
     }
 
-    private fun playSound(
-        session: BedrockServerSession,
-        sound: SoundEvent,
-        position: Vector3f,
-        volume: Float
-    ) {
-        val packet = org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket().apply {
-            this.sound = sound
-            this.position = position
-            this.extraData = -1
-            this.pitch = 1.0f
-            this.volume = volume
-            this.isBabySound = false
-            this.relativeVolumeDisabled = false
-        }
-        session.sendPacket(packet)
+    // Вспомогательный метод для вывода сообщений игроку
+    private fun sendClientMessage(msg: String) {
+        // Используй аналогично PlayerTracerModule для отправки сообщений
+        // Например, через TextPacket или напрямую в чат клиента
     }
 }
