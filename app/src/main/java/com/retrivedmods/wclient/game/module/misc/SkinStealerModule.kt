@@ -14,7 +14,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
         sendClientMessage("Debug: SkinStealerModule initialized, enabled: $isEnabled")
     }
 
-    // Обработка команды /skin
+    // Обработка командыы /skin
     fun handleChatCommand(message: String) {
         sendClientMessage("Debug: Received message: $message")
         if (!isEnabled) {
