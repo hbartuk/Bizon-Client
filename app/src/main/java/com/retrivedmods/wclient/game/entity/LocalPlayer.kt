@@ -29,7 +29,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uniqueEntityId: Long = 0L
         private set
 
-    override var uuid: UUID = UUID.randomUUID() // Это инициализация по умолчанию, будет перезаписана
+    override var uuid: UUID = UUID.randomUUID()
         private set
 
     var blockBreakServerAuthoritative = false
@@ -51,11 +51,16 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
+    // ДОБАВЛЕННЫЕ СВОЙСТВА
+    var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
+    var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
+    // КОНЕЦ ДОБАВЛЕННЫХ СВОЙСТВ
+
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
         if (packet is StartGamePacket) {
             runtimeEntityId = packet.runtimeEntityId
-            uniqueEntityId = packet.uniqueEntityId // Это long ID сущности
+            uniqueEntityId = packet.uniqueEntityId
 
             session.displayClientMessage("§a[WClient] Обнаружен мой runtimeEntityId: §b${this.runtimeEntityId}")
             session.displayClientMessage("§a[WClient] Обнаружен мой uniqueEntityId (long): §b${this.uniqueEntityId}")
@@ -67,25 +72,28 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
 
+            // Инициализация vec3Position и vec3Motion при старте игры
+            this.vec3Position = packet.position
+            this.vec3Motion = Vector3f.ZERO
+
             reset()
         }
         // --- ОБРАБОТКА PlayerListPacket ДЛЯ ПОЛУЧЕНИЯ UUID И НИКНЕЙМА ---
         if (packet is PlayerListPacket) {
             for (entry in packet.entries) {
-                // Ищем свою собственную запись в списке игроков по entityId
-                // Используем entry.entityId вместо entry.uniqueEntityId
-                if (entry.entityId == this.uniqueEntityId) { // Сравниваем long ID из StartGamePacket с entityId из PlayerListPacket
-                    this.uuid = entry.uuid // Вот наш java.util.UUID!
+                if (entry.entityId == this.uniqueEntityId) {
+                    this.uuid = entry.uuid
                     session.displayClientMessage("§a[WClient] Обнаружен мой UUID из PlayerListPacket: §b${this.uuid}")
-                    session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.name}") // Используем entry.name вместо entry.username
-                    break // Нашли свою запись, можно выйти из цикла
+                    session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.name}")
+                    break
                 }
             }
         }
         // --- КОНЕЦ ОБРАБОТКИ PlayerListPacket ---
 
         if (packet is PlayerAuthInputPacket) {
-            move(packet.position)
+            // Обновление позиции из PlayerAuthInputPacket для локального игрока
+            this.vec3Position = packet.position
             rotate(packet.rotation)
             tickExists = packet.tick
         }
