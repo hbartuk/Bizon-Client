@@ -27,25 +27,25 @@ class SkinStealerCommand : Command("skin", "sks") {
         }
 
         session.displayClientMessage("§aСкин найден в кэше.")
-        session.displayClientMessage("§aUUID моего игрока (из localPlayer): §b${session.localPlayer.uuid}") // Добавил пометку
-
+        session.displayClientMessage("§aUUID моего игрока (из localPlayer): §b${session.localPlayer.uuid}")
+        
         val skinDataSize = skin.skinData?.image?.size ?: 0 
         session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
         
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
         session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
 
-        // --- ДОБАВЬТЕ/ОБНОВИТЕ ЭТИ НОВЫЕ ЛОГИ ДЛЯ ОТЛАДКИ ---
+        // --- ОБНОВЛЕННЫЕ ЛОГИ ДЛЯ ОТЛАДКИ (используются геттеры 'is...') ---
         session.displayClientMessage("§a--- Детали SerializedSkin ---")
         session.displayClientMessage("§a  PlayFab ID: §b${skin.playFabId}")
-        session.displayClientMessage("§a  Skin Resource Patch: §b${skin.skinResourcePatch}") // КРИТИЧЕСКОЕ ПОЛЕ
-        session.displayClientMessage("§a  Geometry Data (часть): §b${skin.geometryData.take(100)}...") // КРИТИЧЕСКОЕ ПОЛЕ
-        session.displayClientMessage("§a  Animation Data (часть): §b${skin.animationData.take(100)}...") 
-        session.displayClientMessage("§a  Premium: §b${skin.premium}")
-        session.displayClientMessage("§a  Persona: §b${skin.persona}")
-        session.displayClientMessage("§a  Cape On Classic: §b${skin.capeOnClassic}")
-        session.displayClientMessage("§a  Primary User: §b${skin.primaryUser}") 
-        session.displayClientMessage("§a  Overriding Player Appearance: §b${skin.overridingPlayerAppearance}")
+        session.displayClientMessage("§a  Skin Resource Patch: §b${skin.skinResourcePatch}")
+        session.displayClientMessage("§a  Geometry Data (часть): §b${skin.geometryData.take(100)}...")
+        session.displayClientMessage("§a  Animation Data (часть): §b${skin.animationData.take(100)}...")
+        session.displayClientMessage("§a  Premium: §b${skin.isPremium()}") // <-- ИСПРАВЛЕНО
+        session.displayClientMessage("§a  Persona: §b${skin.isPersona()}") // <-- ИСПРАВЛЕНО
+        session.displayClientMessage("§a  Cape On Classic: §b${skin.isCapeOnClassic()}") // <-- ИСПРАВЛЕНО
+        session.displayClientMessage("§a  Primary User: §b${skin.isPrimaryUser()}") // <-- ИСПРАВЛЕНО
+        session.displayClientMessage("§a  Overriding Player Appearance: §b${skin.isOverridingPlayerAppearance()}") // <-- ИСПРАВЛЕНО
         session.displayClientMessage("§a  Arm Size: §b${skin.armSize}")
         val capeDataSize = skin.capeData?.image?.size ?: 0
         session.displayClientMessage("§a  Cape Data Size: §b${capeDataSize} байт.")
