@@ -36,6 +36,7 @@ import com.retrivedmods.wclient.game.module.motion.AutoWalkModule
 import com.retrivedmods.wclient.game.module.motion.BhopModule
 import com.retrivedmods.wclient.game.module.motion.FastStopModule
 import com.retrivedmods.wclient.game.module.motion.FlyModule
+import com.retrivedmods.wclient.game.module.motion.GravityControl
 import com.retrivedmods.wclient.game.module.motion.GlideModule
 import com.retrivedmods.wclient.game.module.motion.HighJumpModule
 import com.retrivedmods.wclient.game.module.motion.JetPackModule
@@ -92,6 +93,7 @@ object ModuleManager {
 
             // Все остальные модули
             add(FlyModule())
+            add(GravityControlModule))
             add(ZoomModule())
             add(AutoHvHModule())
             add(AirJumpModule())
