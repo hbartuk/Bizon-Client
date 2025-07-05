@@ -28,7 +28,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uniqueEntityId: Long = 0L
         private set
 
-    // Это поле будет перезаписано UUID из StartGamePacket
+    // Это поле будет перезаписано UUID из StartGamePacket при подключении
     override var uuid: UUID = UUID.randomUUID()
         private set
 
@@ -59,7 +59,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             uniqueEntityId = packet.uniqueEntityId
 
             // --- ИСПРАВЛЕНИЕ: ПРАВИЛЬНОЕ ПРИСВОЕНИЕ UUID И ЛОГИРОВАНИЕ ---
-            this.uuid = packet.playerUuid // <-- ИСПОЛЬЗУЕМ packet.playerUuid (тип UUID)
+            this.uuid = packet.uuid // <-- ИСПОЛЬЗУЕМ packet.uuid (это поле типа UUID в StartGamePacket)
             session.displayClientMessage("§a[WClient] Обнаружен мой UUID из StartGamePacket: §b${this.uuid}")
             // Строка с 'packet.username' удалена, т.к. StartGamePacket не содержит этого поля
             // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
