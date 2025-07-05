@@ -27,7 +27,7 @@ fun AboutPageContent() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("About WClient") },
+                    title = { Text("информация об hbzon") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                         titleContentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
@@ -46,21 +46,22 @@ fun AboutPageContent() {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                InfoCard(title = "WClient") {
-                    Text("Version: 9.0", style = MaterialTheme.typography.bodyMedium)
-                    Text("Developer: RetrivedMods", style = MaterialTheme.typography.bodyMedium)
+                InfoCard(title = "hbzon") {
+                    Text("версия : 0.0.1 beta public", style = MaterialTheme.typography.bodyMedium)
+                    Text("создатель : Hbart/hbort", style = MaterialTheme.typography.bodyMedium)
                 }
 
-                InfoCard(title = "Credits") {
+                InfoCard(title = "Большое спасибо") {
                     Text("• MuCuteClient")
                     Text("• Protohax")
                     Text("• Project Lumina")
+                    Text("• WClient")
                 }
 
-                InfoCard(title = "GitHub & Socials") {
-                    ClickableText("GitHub Repository", "https://github.com/RetrivedMods/WClient")
-                    ClickableText("Developer YouTube", "https://youtube.com/@retrivedgamer")
-                    ClickableText("Join Discord", "https://discord.gg/N2Gejr8Fbp")
+                InfoCard(title = "Социальные сети") {
+                    ClickableText("GitHub", "https://github.com/hbartuk")
+                    ClickableText("telegram", "@hbortuk")
+                    ClickableText("vk", "@hbortik")
                 }
 
                 InfoCard(title = "License") {
