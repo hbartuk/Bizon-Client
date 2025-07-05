@@ -1,81 +1,71 @@
 package com.retrivedmods.wclient.game
 
 import android.util.Log
-import com.google.gson.JsonParser
 import com.retrivedmods.wclient.application.AppContext
 import com.retrivedmods.wclient.game.entity.Account
-import com.retrivedmods.wclient.game.entity.identityToken
+import com.mucheng.mucute.relay.MuCuteRelay
 import com.mucheng.mucute.relay.MuCuteRelaySession
-import org.cloudburstmc.protocol.bedrock.Bedrock
-import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-import org.cloudburstmc.protocol.bedrock.packet.LoginPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
-import java.util.Base64
+import com.mucheng.mucute.relay.address.MuCuteAddress
 import kotlin.concurrent.thread
 
 @Suppress("MemberVisibilityCanBePrivate")
 object GameConnectionManager {
 
-    var minecraftRelay: MuCuteRelaySession? = null
-
-    private fun fetchIdentityToken(accessToken: String, deviceInfo: String): String {
-        // Здесь должна быть логика получения identityToken.
-        // Я предполагаю, что у тебя уже есть эта функция или она находится в другом месте.
-        // Это заглушка, чтобы код был компилируемым.
-        // Убедись, что твоя реальная функция fetchIdentityToken возвращает нужный JSON-токен.
-        return AppContext.instance.accountManager.activeAccount?.identityToken?.toString() ?: "" // Пример: замени на твою реальную реализацию
-    }
-
-    private fun base64Encode(input: ByteArray): ByteArray {
-        return Base64.getEncoder().encode(input)
-    }
+    var minecraftRelay: MuCuteRelay? = null // Теперь это основной объект прокси MuCuteRelay
+    private var gameSession: GameSession? = null // Сессия для подключившегося клиента
 
     @Suppress("UnstableApiUsage")
     fun connect(hostname: String, port: Int, account: Account, callback: (Boolean) -> Unit) {
-        if (this.minecraftRelay != null) {
+        if (this.minecraftRelay != null && this.minecraftRelay!!.isRunning) {
             this.disconnect()
         }
         thread {
             try {
-                minecraftRelay = MuCuteRelaySession(Bedrock.getBedrockPeer().connect(hostname, port), 0, /* Здесь нужен объект MuCuteRelay */) // Предполагаем, что MuCuteRelaySession принимает MuCuteRelay
-                minecraftRelay?.start()?.whenComplete { _, throwable ->
-                    if (throwable == null) {
-                        minecraftRelay?.let { relay ->
-                            val identityToken = fetchIdentityToken(account.accessToken, account.deviceInfo)
+                // Определи локальный порт, на котором твой прокси будет слушать входящие подключения от клиентов
+                val localProxyPort = 19132 // Можешь изменить на любой свободный порт
+                val remoteServerPort = port // Порт целевого Minecraft-сервера
 
-                            val loginPacket = LoginPacket()
-                            loginPacket.setProtocol(Bedrock.PROTOCOL_VERSION)
-                            loginPacket.setChain(JsonParser.parseString(identityToken).asJsonArray.map { it.asString })
-                            loginPacket.setExtra("") // identityToken.extra может быть здесь, если он не объединен с main identityToken.chain
+                val localAddress = MuCuteAddress("0.0.0.0", localProxyPort)
+                val remoteAddress = MuCuteAddress(hostname, remoteServerPort)
 
-                            relay.client?.sendPacket(loginPacket) // <-- Отправка LoginPacket
+                // Инициализация MuCuteRelay.
+                // Важно: поскольку мы не можем изменять библиотеку,
+                // мы не можем передать 'account' напрямую в конструктор MuCuteRelay.
+                // Логин прокси к целевому серверу будет зависеть от поведения библиотеки по умолчанию.
+                minecraftRelay = MuCuteRelay(
+                    localAddress = localAddress,
+                    remoteAddress = remoteAddress // Устанавливаем целевой адрес сервера для прокси
+                )
 
-                            // --- ДОБАВЛЕНЫЙ БЛОК: Отправка PlayerSkinPacket после LoginPacket ---
-                            val playerSkinManager = PlayerSkinManager(account.uuid)
+                // Запускаем прокси-сервер. Метод capture() является блокирующим
+                // (до тех пор, пока сервер не будет отключен через disconnect()).
+                // Лямбда (onSessionCreated) внутри capture() выполняется, когда
+                // КЛИЕНТ подключается К ТВОЕМУ ПРОКСИ.
+                minecraftRelay?.capture(
+                    remoteAddress = remoteAddress // Убедимся, что capture использует правильный удаленный сервер
+                ) {
+                    // 'this' внутри этой лямбды относится к экземпляру MuCuteRelaySession,
+                    // который управляет соединением между клиентом (подключившимся к прокси)
+                    // и целевым Minecraft-сервером.
+                    val muCuteRelaySessionInstance = this
 
-                            // Здесь нужно получить реальный SerializedSkin игрока.
-                            // Используй твою логику для загрузки скина, например, из AppContext.instance.accountManager
-                            val playerSkin: SerializedSkin = AppContext.instance.accountManager.activeAccount?.skin // Пример: получить скин из активного аккаунта
-                                ?: playerSkinManager.defaultSkin() // Если скин не найден, используй дефолтный
+                    // Создаем твой GameSession для этого конкретного подключения клиента.
+                    // Передаем MuCuteRelaySession и объект Account.
+                    // Объект Account здесь — это аккаунт ТВОЕГО прокси, который ты хочешь использовать для скина.
+                    gameSession = GameSession(muCuteRelaySessionInstance, account)
 
-                            val playerSkinPacket = PlayerSkinPacket()
-                            playerSkinPacket.uuid = account.uuid // UUID игрока из твоего объекта Account
-                            playerSkinPacket.skin = playerSkin
-                            playerSkinPacket.newSkinName = playerSkin.skinResourcePatch ?: "Default Skin" // Имя скина
-                            playerSkinPacket.oldSkinName = "" // Старое имя скина, если меняется
-                            playerSkinPacket.trustedSkin = true // Установи true, если скин из надежного источника (из игры/MS)
-
-                            relay.client?.sendPacket(playerSkinPacket) // <-- Отправка PlayerSkinPacket
-                            Log.d("GameConnectionManager", "PlayerSkinPacket отправлен после логина.")
-                            // --- КОНЕЦ ДОБАВЛЯЕМОГО БЛОКА ---
-
-                            callback(true)
-                        } ?: callback(false)
-                    } else {
-                        Log.e("GameConnectionManager", "Relay start error: ${throwable.stackTraceToString()}")
-                        callback(false)
-                    }
+                    Log.d("GameConnectionManager", "MuCuteRelaySession создан для клиента. GameSession инициализирован.")
+                    // Фактическое подключение прокси к целевому серверу происходит внутренне в MuCuteRelay,
+                    // часто при первом подключении клиента к прокси или неявно.
+                    // Мы полагаемся на метод beforePacketBound в GameSession.kt для отправки PlayerSkinPacket.
                 }
+
+                // Вызываем коллбэк, чтобы сообщить, что настройка прокси инициирована.
+                // Обрати внимание: capture() является блокирующим, поэтому этот коллбэк
+                // будет вызван после того, как сервер начнет слушать, но до того,
+                // как он будет отключен.
+                callback(true)
+
             } catch (t: Throwable) {
                 Log.e("GameConnectionManager", "Connect error: ${t.stackTraceToString()}")
                 callback(false)
@@ -84,7 +74,11 @@ object GameConnectionManager {
     }
 
     fun disconnect() {
-        minecraftRelay?.disconnect()
+        if (minecraftRelay?.isRunning == true) {
+            minecraftRelay?.disconnect()
+        }
         minecraftRelay = null
+        gameSession = null // Очищаем GameSession тоже
+        Log.d("GameConnectionManager", "Прокси отключен.")
     }
 }
