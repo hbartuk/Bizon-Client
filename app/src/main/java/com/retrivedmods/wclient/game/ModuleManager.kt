@@ -1,4 +1,4 @@
-package com.retrivedmods.wclient.game
+Package com.retrivedmods.wclient.game
 
 import android.content.Context
 import android.net.Uri
@@ -60,7 +60,7 @@ import com.retrivedmods.wclient.game.module.visual.PlayerJoinNotifierModule
 import com.retrivedmods.wclient.game.module.world.FakeLagModule
 
 // Импорт нового CommandHandlerModule
-import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule 
+import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
 
 // Импорты для системы команд
 import com.retrivedmods.wclient.game.command.Command // Базовый класс команды
@@ -89,11 +89,11 @@ object ModuleManager {
         // --- Регистрация модулей ---
         with(_modules) {
             // CommandHandlerModule должен быть зарегистрирован, чтобы обрабатывать команды
-            add(CommandHandlerModule()) 
+            add(CommandHandlerModule())
 
             // Все остальные модули
             add(FlyModule())
-            add(GravityControlModule))
+            add(GravityControlModule()) // <-- ИСПРАВЛЕНО: добавлена закрывающая скобка )
             add(ZoomModule())
             add(AutoHvHModule())
             add(AirJumpModule())
@@ -110,11 +110,11 @@ object ModuleManager {
             add(JetPackModule())
             add(BlinkModule())
             add(AdvanceDisablerModule())
-            add(BlinkModule()) 
+            add(BlinkModule())
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
-            add(SkinStealerModule()) 
+            add(SkinStealerModule())
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
             add(InfiniteAuraModule())
@@ -146,12 +146,12 @@ object ModuleManager {
             add(WeatherControllerModule())
             add(MotionVarModule())
             add(PlayerTracerModule())
-            add(EnemyHunterModule()) // Добавил сюда, т.к. его не было в предыдущем списке init
+            add(EnemyHunterModule())
         }
 
         // --- Регистрация команд ---
         with(_commands) {
-            add(SkinStealerCommand()) 
+            add(SkinStealerCommand())
             // Добавляй другие команды здесь, например:
             // add(HelpCommand())
         }
