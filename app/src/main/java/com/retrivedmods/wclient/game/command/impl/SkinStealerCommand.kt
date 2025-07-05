@@ -5,6 +5,8 @@ import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
+// Убедись, что у тебя есть импорт для ImageData, если он не из того же пакета
+// import org.cloudburstmc.protocol.bedrock.data.skin.ImageData // <- Если нужен, добавь этот импорт
 
 class SkinStealerCommand : Command("skin", "sks") {
 
@@ -28,18 +30,10 @@ class SkinStealerCommand : Command("skin", "sks") {
         session.displayClientMessage("§aСкин найден в кэше.")
         session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
         
-        // --- ВОТ ЭТОТ БЛОК НУЖНО ИСПРАВИТЬ ---
-        // ПОЖАЛУЙСТА, ЗАМЕНИ 'skinData' на реальное название поля в твоём SerializedSkin.
-        // ПОСМОТРИ В ИСТОЧНИКАХ БИБЛИОТЕКИ CloudburstMC, КАК ОНО НАЗЫВАЕТСЯ.
-        // Это может быть 'data', 'imageData', 'skinBytes' и т.д.
-        // И убедись, что это массив байтов (byte[]/ByteArray) или ByteBuf.
-        val skinDataArray = skin.skinData // <<<< ПРОВЕРЬ ЭТО ИМЯ ПОЛЯ В SerializedSkin
-        val skinDataSize = skinDataArray?.size ?: 0 // Если skinDataArray - это ByteArray
-        // Если skinDataArray - это ByteBuf, то:
-        // val skinDataSize = skinDataArray?.readableBytes() ?: 0 
-
+        // --- ВОТ ИСПРАВЛЕННАЯ СТРОКА ---
+        val skinDataSize = skin.skinData?.image?.size ?: 0 
         session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
-        // --- КОНЕЦ БЛОКА ИСПРАВЛЕНИЯ ---
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
         session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
