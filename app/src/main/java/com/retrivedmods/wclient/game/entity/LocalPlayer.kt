@@ -16,6 +16,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- ДОБАВЬ ЭТОТ ИМПОРТ!
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import java.util.UUID
 
@@ -28,7 +29,49 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uniqueEntityId: Long = 0L
         private set
 
-    // Это поле будет перезаписано UUID из StartGamePacket при подключении
+    override var uuid: UUID = UUID.randomUUID() // Это инициализация по умолчанию, будет перезаписана
+        private set
+
+    var blockBreakServerAuthoritative = false
+        private set
+
+    var movementServerAuthoritative = true
+        private set
+
+    var inventoriesServerAuthoritative = false
+        private set<seg_17>```kotlin
+// ... (начало файла LocalPlayer.kt, импорты и другие поля) ...
+package com.retrivedmods.wclient.game.entity
+
+import android.util.Log
+import com.retrivedmods.wclient.game.GameSession
+import com.retrivedmods.wclient.game.inventory.AbstractInventory
+import com.retrivedmods.wclient.game.inventory.ContainerInventory
+import com.retrivedmods.wclient.game.inventory.PlayerInventory
+import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
+import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
+import org.cloudburstmc.protocol.bedrock.packet.ContainerClosePacket
+import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
+import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
+import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- УБЕДИСЬ, ЧТО ЭТОТ ИМПОРТ ЕСТЬ
+import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
+import java.util.UUID
+
+@Suppress("MemberVisibilityCanBePrivate")
+class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), "") {
+
+    override var runtimeEntityId: Long = 0L
+        private set
+
+    override var uniqueEntityId: Long = 0L
+        private set
+
     override var uuid: UUID = UUID.randomUUID()
         private set
 
@@ -49,24 +92,19 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     var openContainer: AbstractInventory? = null
         private set
 
-    // Overridden health property
-    override var health: Float = 100f // Default health is 100
+    override var health: Float = 100f
 
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
         if (packet is StartGamePacket) {
             runtimeEntityId = packet.runtimeEntityId
-            uniqueEntityId = packet.uniqueEntityId
+            uniqueEntityId = packet.uniqueEntityId // Это long ID сущности
 
-            // --- ИСПРАВЛЕНИЕ: ПРАВИЛЬНОЕ ПРИСВОЕНИЕ UUID И ЛОГИРОВАНИЕ ---
-            this.uuid = packet.uuid // <-- ИСПОЛЬЗУЕМ packet.uuid (это поле типа UUID в StartGamePacket)
-            session.displayClientMessage("§a[WClient] Обнаружен мой UUID из StartGamePacket: §b${this.uuid}")
-            // Строка с 'packet.username' удалена, т.к. StartGamePacket не содержит этого поля
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+            session.displayClientMessage("§a[WClient] Обнаружен мой runtimeEntityId: §b${this.runtimeEntityId}")
+            session.displayClientMessage("§a[WClient] Обнаружен мой uniqueEntityId (long): §b${this.uniqueEntityId}")
 
             movementServerAuthoritative =
                 packet.authoritativeMovementMode != AuthoritativeMovementMode.CLIENT
-            // Это поле часто меняется только для отладки, но оставлю как было:
             packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER
             inventoriesServerAuthoritative = packet.isInventoriesServerAuthoritative
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
@@ -74,6 +112,20 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
             reset()
         }
+        // --- НОВЫЙ БЛОК: ОБРАБОТКА PlayerListPacket ДЛЯ ПОЛУЧЕНИЯ UUID ---
+        if (packet is PlayerListPacket) {
+            for (entry in packet.entries) {
+                // Ищем свою собственную запись в списке игроков по uniqueEntityId
+                if (entry.uniqueEntityId == this.uniqueEntityId) {
+                    this.uuid = entry.uuid // Вот наш java.util.UUID!
+                    session.displayClientMessage("§a[WClient] Обнаружен мой UUID из PlayerListPacket: §b${this.uuid}")
+                    session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.username}")
+                    break // Нашли свою запись, можно выйти из цикла
+                }
+            }
+        }
+        // --- КОНЕЦ НОВОГО БЛОКА ---
+
         if (packet is PlayerAuthInputPacket) {
             move(packet.position)
             rotate(packet.rotation)
