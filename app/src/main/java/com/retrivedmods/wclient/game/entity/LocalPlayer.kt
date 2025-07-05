@@ -28,7 +28,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uniqueEntityId: Long = 0L
         private set
 
-    override var uuid: UUID = UUID.randomUUID()
+    override var uuid: UUID = UUID.randomUUID() // Это инициализация по умолчанию, но будет перезаписана
         private set
 
     var blockBreakServerAuthoritative = false
@@ -56,10 +56,15 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         if (packet is StartGamePacket) {
             runtimeEntityId = packet.runtimeEntityId
             uniqueEntityId = packet.uniqueEntityId
+            // --- ВОТ ИСПРАВЛЕНИЕ И ДОБАВЛЕНИЕ ЛОГА ---
+            this.uuid = packet.uniqueEntityId // <-- ПРИСВАИВАЕМ UUID ИЗ ПАКЕТА!
+            session.displayClientMessage("§a[WClient] Обнаружен мой UUID из StartGamePacket: §b${this.uuid}")
+            session.displayClientMessage("§a[WClient] Мой никнейм (из StartGamePacket): §b${packet.username}")
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ И ДОБАВЛЕНИЯ ЛОГА ---
 
             movementServerAuthoritative =
                 packet.authoritativeMovementMode != AuthoritativeMovementMode.CLIENT
-            packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER
+            packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER // Не уверен, зачем это меняется, но оставлю как есть.
             inventoriesServerAuthoritative = packet.isInventoriesServerAuthoritative
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
