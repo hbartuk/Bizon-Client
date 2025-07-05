@@ -28,7 +28,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uniqueEntityId: Long = 0L
         private set
 
-    override var uuid: UUID = UUID.randomUUID() // Это инициализация по умолчанию, но будет перезаписана
+    // Это поле будет перезаписано UUID из StartGamePacket
+    override var uuid: UUID = UUID.randomUUID()
         private set
 
     var blockBreakServerAuthoritative = false
@@ -56,15 +57,17 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         if (packet is StartGamePacket) {
             runtimeEntityId = packet.runtimeEntityId
             uniqueEntityId = packet.uniqueEntityId
-            // --- ВОТ ИСПРАВЛЕНИЕ И ДОБАВЛЕНИЕ ЛОГА ---
-            this.uuid = packet.uniqueEntityId // <-- ПРИСВАИВАЕМ UUID ИЗ ПАКЕТА!
+
+            // --- ИСПРАВЛЕНИЕ: ПРАВИЛЬНОЕ ПРИСВОЕНИЕ UUID И ЛОГИРОВАНИЕ ---
+            this.uuid = packet.playerUuid // <-- ИСПОЛЬЗУЕМ packet.playerUuid (тип UUID)
             session.displayClientMessage("§a[WClient] Обнаружен мой UUID из StartGamePacket: §b${this.uuid}")
-            session.displayClientMessage("§a[WClient] Мой никнейм (из StartGamePacket): §b${packet.username}")
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ И ДОБАВЛЕНИЯ ЛОГА ---
+            // Строка с 'packet.username' удалена, т.к. StartGamePacket не содержит этого поля
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             movementServerAuthoritative =
                 packet.authoritativeMovementMode != AuthoritativeMovementMode.CLIENT
-            packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER // Не уверен, зачем это меняется, но оставлю как есть.
+            // Это поле часто меняется только для отладки, но оставлю как было:
+            packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER
             inventoriesServerAuthoritative = packet.isInventoriesServerAuthoritative
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
