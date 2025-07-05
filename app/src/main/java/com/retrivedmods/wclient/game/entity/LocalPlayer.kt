@@ -16,7 +16,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- ДОБАВЬ ЭТОТ ИМПОРТ!
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- УБЕДИСЬ, ЧТО ЭТОТ ИМПОРТ ЕСТЬ!
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import java.util.UUID
 
@@ -39,49 +39,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         private set
 
     var inventoriesServerAuthoritative = false
-        private set<seg_17>```kotlin
-// ... (начало файла LocalPlayer.kt, импорты и другие поля) ...
-package com.retrivedmods.wclient.game.entity
-
-import android.util.Log
-import com.retrivedmods.wclient.game.GameSession
-import com.retrivedmods.wclient.game.inventory.AbstractInventory
-import com.retrivedmods.wclient.game.inventory.ContainerInventory
-import com.retrivedmods.wclient.game.inventory.PlayerInventory
-import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.AuthoritativeMovementMode
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent
-import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
-import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
-import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
-import org.cloudburstmc.protocol.bedrock.packet.ContainerClosePacket
-import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
-import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
-import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- УБЕДИСЬ, ЧТО ЭТОТ ИМПОРТ ЕСТЬ
-import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
-import java.util.UUID
-
-@Suppress("MemberVisibilityCanBePrivate")
-class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), "") {
-
-    override var runtimeEntityId: Long = 0L
-        private set
-
-    override var uniqueEntityId: Long = 0L
-        private set
-
-    override var uuid: UUID = UUID.randomUUID()
-        private set
-
-    var blockBreakServerAuthoritative = false
-        private set
-
-    var movementServerAuthoritative = true
-        private set
-
-    var inventoriesServerAuthoritative = false
         private set
 
     var soundServerAuthoritative = false
@@ -92,7 +49,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     var openContainer: AbstractInventory? = null
         private set
 
-    override var health: Float = 100f
+    // Overridden health property
+    override var health: Float = 100f // Default health is 100
 
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
