@@ -5,8 +5,7 @@ import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.data.skin.SkinCache
 import org.cloudburstmc.protocol.bedrock.packet.PlayerSkinPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
-// Убедись, что у тебя есть импорт для ImageData, если он не из того же пакета
-// import org.cloudburstmc.protocol.bedrock.data.skin.ImageData // <- Если нужен, добавь этот импорт
+// import org.cloudburstmc.protocol.bedrock.data.skin.ImageData // <-- Возможно, потребуется этот импорт
 
 class SkinStealerCommand : Command("skin", "sks") {
 
@@ -28,15 +27,30 @@ class SkinStealerCommand : Command("skin", "sks") {
         }
 
         session.displayClientMessage("§aСкин найден в кэше.")
-        session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
-        
-        // --- ВОТ ИСПРАВЛЕННАЯ СТРОКА ---
+        session.displayClientMessage("§aUUID моего игрока (из localPlayer): §b${session.localPlayer.uuid}") // Добавил пометку
+
         val skinDataSize = skin.skinData?.image?.size ?: 0 
         session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
         session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
+
+        // --- ДОБАВЬТЕ/ОБНОВИТЕ ЭТИ НОВЫЕ ЛОГИ ДЛЯ ОТЛАДКИ ---
+        session.displayClientMessage("§a--- Детали SerializedSkin ---")
+        session.displayClientMessage("§a  PlayFab ID: §b${skin.playFabId}")
+        session.displayClientMessage("§a  Skin Resource Patch: §b${skin.skinResourcePatch}") // КРИТИЧЕСКОЕ ПОЛЕ
+        session.displayClientMessage("§a  Geometry Data (часть): §b${skin.geometryData.take(100)}...") // КРИТИЧЕСКОЕ ПОЛЕ
+        session.displayClientMessage("§a  Animation Data (часть): §b${skin.animationData.take(100)}...") 
+        session.displayClientMessage("§a  Premium: §b${skin.premium}")
+        session.displayClientMessage("§a  Persona: §b${skin.persona}")
+        session.displayClientMessage("§a  Cape On Classic: §b${skin.capeOnClassic}")
+        session.displayClientMessage("§a  Primary User: §b${skin.primaryUser}") 
+        session.displayClientMessage("§a  Overriding Player Appearance: §b${skin.overridingPlayerAppearance}")
+        session.displayClientMessage("§a  Arm Size: §b${skin.armSize}")
+        val capeDataSize = skin.capeData?.image?.size ?: 0
+        session.displayClientMessage("§a  Cape Data Size: §b${capeDataSize} байт.")
+        session.displayClientMessage("§a--------------------------")
+
 
         try {
             val packet = PlayerSkinPacket().apply {
