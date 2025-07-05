@@ -16,7 +16,7 @@ import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // <-- УБЕДИСЬ, ЧТО ЭТОТ ИМПОРТ ЕСТЬ!
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket
 import java.util.UUID
 
@@ -49,8 +49,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     var openContainer: AbstractInventory? = null
         private set
 
-    // Overridden health property
-    override var health: Float = 100f // Default health is 100
+    override var health: Float = 100f
 
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
@@ -70,19 +69,20 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
             reset()
         }
-        // --- НОВЫЙ БЛОК: ОБРАБОТКА PlayerListPacket ДЛЯ ПОЛУЧЕНИЯ UUID ---
+        // --- ОБРАБОТКА PlayerListPacket ДЛЯ ПОЛУЧЕНИЯ UUID И НИКНЕЙМА ---
         if (packet is PlayerListPacket) {
             for (entry in packet.entries) {
-                // Ищем свою собственную запись в списке игроков по uniqueEntityId
-                if (entry.uniqueEntityId == this.uniqueEntityId) {
+                // Ищем свою собственную запись в списке игроков по entityId
+                // Используем entry.entityId вместо entry.uniqueEntityId
+                if (entry.entityId == this.uniqueEntityId) { // Сравниваем long ID из StartGamePacket с entityId из PlayerListPacket
                     this.uuid = entry.uuid // Вот наш java.util.UUID!
                     session.displayClientMessage("§a[WClient] Обнаружен мой UUID из PlayerListPacket: §b${this.uuid}")
-                    session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.username}")
+                    session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.name}") // Используем entry.name вместо entry.username
                     break // Нашли свою запись, можно выйти из цикла
                 }
             }
         }
-        // --- КОНЕЦ НОВОГО БЛОКА ---
+        // --- КОНЕЦ ОБРАБОТКИ PlayerListPacket ---
 
         if (packet is PlayerAuthInputPacket) {
             move(packet.position)
