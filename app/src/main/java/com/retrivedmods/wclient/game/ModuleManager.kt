@@ -1,4 +1,4 @@
-Package com.retrivedmods.wclient.game
+package com.retrivedmods.wclient.game
 
 import android.content.Context
 import android.net.Uri
