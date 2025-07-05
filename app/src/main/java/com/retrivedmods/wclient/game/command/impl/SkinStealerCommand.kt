@@ -25,13 +25,21 @@ class SkinStealerCommand : Command("skin", "sks") {
             return
         }
 
-        // --- Логирование для диагностики ---
         session.displayClientMessage("§aСкин найден в кэше.")
         session.displayClientMessage("§aUUID моего игрока: §b${session.localPlayer.uuid}")
         
-        // Удалили строку, вызывающую ошибку с 'size'
-        // val skinDataSize = skin.skinData?.size ?: 0
-        // session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
+        // --- ВОТ ЭТОТ БЛОК НУЖНО ИСПРАВИТЬ ---
+        // ПОЖАЛУЙСТА, ЗАМЕНИ 'skinData' на реальное название поля в твоём SerializedSkin.
+        // ПОСМОТРИ В ИСТОЧНИКАХ БИБЛИОТЕКИ CloudburstMC, КАК ОНО НАЗЫВАЕТСЯ.
+        // Это может быть 'data', 'imageData', 'skinBytes' и т.д.
+        // И убедись, что это массив байтов (byte[]/ByteArray) или ByteBuf.
+        val skinDataArray = skin.skinData // <<<< ПРОВЕРЬ ЭТО ИМЯ ПОЛЯ В SerializedSkin
+        val skinDataSize = skinDataArray?.size ?: 0 // Если skinDataArray - это ByteArray
+        // Если skinDataArray - это ByteBuf, то:
+        // val skinDataSize = skinDataArray?.readableBytes() ?: 0 
+
+        session.displayClientMessage("§aРазмер данных скина: §b${skinDataSize} байт.")
+        // --- КОНЕЦ БЛОКА ИСПРАВЛЕНИЯ ---
         
         session.displayClientMessage("§aГеометрия скина: §b${skin.geometryName}")
         session.displayClientMessage("§aID Скина (или текстуры): §b${skin.skinId}") 
