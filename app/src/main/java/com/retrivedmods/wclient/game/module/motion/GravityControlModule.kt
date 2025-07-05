@@ -2,10 +2,10 @@ package com.retrivedmods.wclient.game.module.motion
 
 import android.util.Log
 import com.retrivedmods.wclient.game.InterceptablePacket
-import com.retrivedmods.wclient.game.Module // Твой базовый класс Module
-import com.retrivedmods.wclient.game.ModuleCategory // ДОБАВЬ ЭТОТ ИМПОРТ
+import com.retrivedmods.wclient.game.Module
+import com.retrivedmods.wclient.game.ModuleCategory // Убедитесь, что этот импорт присутствует
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.PacketDirection // ДОБАВЬ ЭТОТ ИМПОРТ
+import org.cloudburstmc.protocol.bedrock.data.PacketDirection // Убедитесь, что этот импорт присутствует
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 
@@ -18,7 +18,6 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
 
     private var lastOnGroundState: Boolean = true
 
-    // Убираем 'override', если в твоем базовом классе Module нет open fun onEnable()/onDisable().
     fun onEnable() {
         Log.d("GravityControlModule", "Модуль управления гравитацией включен.")
     }
@@ -34,10 +33,10 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
         val playerEntityId = session.localPlayer.runtimeEntityId
         if (playerEntityId == 0L) return
 
-        // Изменено на bedrockPacket.direction и bedrockPacket.onGround (прямой доступ к свойствам)
-        if (bedrockPacket is MovePlayerPacket && bedrockPacket.direction == PacketDirection.SERVER_BOUND) {
-            val currentPos = bedrockPacket.position // Используем прямое свойство
-            val currentOnGround = bedrockPacket.onGround // Используем прямое свойство
+        // Изменено на использование методов getDirection() и isOnGround()
+        if (bedrockPacket is MovePlayerPacket && bedrockPacket.getDirection() == PacketDirection.SERVER_BOUND) {
+            val currentPos = bedrockPacket.position // Предполагается, что 'position' доступно напрямую или через getPosition()
+            val currentOnGround = bedrockPacket.isOnGround() // Изменено на isOnGround()
 
             val lastPos = session.localPlayer.vec3Position
             val playerMotion = if (lastPos != null) {
@@ -50,8 +49,8 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
                 Vector3f.ZERO
             }
             // Обновляем позицию и скорость локального игрока в GameSession
-            session.localPlayer.vec3Position = currentPos // <-- Требует 'var' в LocalPlayer.kt
-            session.localPlayer.vec3Motion = playerMotion // <-- Требует 'var' в LocalPlayer.kt
+            session.localPlayer.vec3Position = currentPos // Теперь это 'var' в LocalPlayer.kt
+            session.localPlayer.vec3Motion = playerMotion // Теперь это 'var' в LocalPlayer.kt
 
             // --- ЛОГИКА ВЫСОКОГО ПРЫЖКА ---
             if (highJumpEnabled && lastOnGroundState && !currentOnGround && playerMotion.y > 0.01f) {
