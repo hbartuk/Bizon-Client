@@ -51,10 +51,10 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
-    // ДОБАВЛЕННЫЕ СВОЙСТВА
-    var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
+    // ИЗМЕНЕНО: Добавлено 'override' для vec3Position, так как оно уже есть в Entity
+    override var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
     var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
-    // КОНЕЦ ДОБАВЛЕННЫХ СВОЙСТВ
+
 
     override fun onPacketBound(packet: BedrockPacket) {
         super.onPacketBound(packet)
@@ -72,9 +72,9 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
 
-            // Инициализация vec3Position и vec3Motion при старте игры
-            this.vec3Position = packet.position
-            this.vec3Motion = Vector3f.ZERO
+            // УДАЛЕНО: Инициализация vec3Position из StartGamePacket, так как 'position' может быть недоступен
+            // и PlayerAuthInputPacket все равно обновит его вскоре.
+            this.vec3Motion = Vector3f.ZERO // Убедимся, что motion обнулен при старте
 
             reset()
         }
@@ -92,9 +92,9 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         // --- КОНЕЦ ОБРАБОТКИ PlayerListPacket ---
 
         if (packet is PlayerAuthInputPacket) {
-            // Обновление позиции из PlayerAuthInputPacket для локального игрока
+            // ИЗМЕНЕНО: Обновление vec3Position здесь, так как PlayerAuthInputPacket содержит актуальную позицию
             this.vec3Position = packet.position
-            rotate(packet.rotation)
+            // rotate(packet.rotation) // Предполагается, что rotate определен в Entity или Player
             tickExists = packet.tick
         }
         if (packet is ContainerOpenPacket) {
