@@ -296,10 +296,10 @@ fun HomePageContent() {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("To join, go to Minecraft's Friends tab and join through LAN. If LAN doesn't show up, you can add a new server in the Servers tab by entering the IP address and port provided below, then press Play.")
+                        Text("Чтобы присоединиться с читами нужно - зайти в майнкрафт -> нажать на кнопку 'играть' -> друзья -> присоединиться к миру. Либо ввести айпи и порт через вкладку сервера.")
 
                         Text(
-                            "IP Address:",
+                            "Айпи:",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -310,7 +310,7 @@ fun HomePageContent() {
                         )
 
                         Text(
-                            "Port:",
+                            "порт:",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -325,7 +325,7 @@ fun HomePageContent() {
                     TextButton(
                         onClick = { showConnectionDialog = false }
                     ) {
-                        Text("OK")
+                        Text("Хорошо")
                     }
                 }
             )
@@ -363,11 +363,11 @@ private fun BackendCard() {
             )
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    "WClient : Ultimate Cheats For MCPE",
+                    "Bizon client - аналог WClient, созданным hbort/Hbart ",
                     style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onPrimary)
                 )
                 Text(
-                    "Seamlessly connect and manage your games with WClient's robust backend.",
+                    "Подключайтесь к серверу и наслаждайтесь игрой в полном объёме, используя Bizon client",
                     style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onPrimary)
                 )
             }
@@ -388,13 +388,13 @@ private fun IntroductionCard() {
     ) {
         Column(Modifier.padding(15.dp)) {
             Text(
-                "Welcome to WClient",
+                "Рад видеть в Bizon Client",
                 style = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
             Text(
-                "Experience the ultimate gaming management solution with WClient. Optimize your gaming experience effortlessly.",
+                "Используйте WClient чтоб настроить весь сервер под свои руки...)",
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -444,7 +444,7 @@ private fun GameCard() {
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Minecraft",
+                    "Майнкрафт",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
@@ -490,7 +490,7 @@ private fun GameCard() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            "Select Your Game",
+                            "Выберите ваш клиент",
                             modifier = Modifier.fillMaxWidth(),
                             style = MaterialTheme.typography.headlineSmall
                         )
@@ -614,10 +614,10 @@ private fun GameCard() {
                                 readOnly = true,
                                 maxLines = 1,
                                 label = {
-                                    Text("Select Game")
+                                    Text("Выбрать клиент")
                                 },
                                 placeholder = {
-                                    Text("No game selected")
+                                    Text("Клиент не выбран")
                                 },
                                 interactionSource = interactionSource,
                                 enabled = !Services.isActive
@@ -628,7 +628,7 @@ private fun GameCard() {
                                 TextField(
                                     value = serverHostName,
                                     label = {
-                                        Text("Server Host Name")
+                                        Text("Домен сервера")
                                     },
                                     onValueChange = {
                                         serverHostName = it
@@ -647,7 +647,7 @@ private fun GameCard() {
                                 TextField(
                                     value = serverPort,
                                     label = {
-                                        Text("Server Port")
+                                        Text("Серверный порт")
                                     },
                                     onValueChange = {
                                         serverPort = it
@@ -689,11 +689,11 @@ private fun GameCard() {
                                         )
                                         Column {
                                             Text(
-                                                "Tips",
+                                                "Чаевые",
                                                 style = MaterialTheme.typography.bodyLarge
                                             )
                                             Text(
-                                                "Change game settings while the service is inactive.",
+                                                "Вы можете изменить настройки пока чит не запущен.",
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }
