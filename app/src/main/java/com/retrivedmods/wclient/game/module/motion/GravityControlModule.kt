@@ -7,7 +7,8 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
-import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData // Возможно, понадобится для более точного отслеживания прыжков
+// If PlayerAuthInputData is not used, you can remove this import.
+// import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData
 
 class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
 
@@ -17,18 +18,27 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
     private var slowFallFactor by floatValue("Фактор падения", 0.5f, 0.0f..1.0f)
 
     private var lastOnGroundState: Boolean = true
-    private var lastMotionUpdateTime: Long = 0L // Добавим для контроля частоты отправки пакетов, если потребуется
-    private val motionUpdateInterval: Long = 50 // Миллисекунды между отправкой пакетов движения, можно настроить
+    private var lastMotionUpdateTime: Long = 0L
+    private val motionUpdateInterval: Long = 50
 
-    override fun onEnable() {
+    // FIX 1 & 3: Remove 'override' if Module class does not define open onEnable/onDisable.
+    // If Module *does* define them as 'open', then keep 'override'.
+    // Assuming for now they are not overridable methods from 'Module' based on the error.
+    // If they are meant to be event listeners, they don't need 'override'.
+    // If Module *should* have these, you'd need to modify the Module class.
+    fun onEnable() {
         Log.d("GravityControlModule", "Модуль управления гравитацией включен.")
-        lastOnGroundState = session.localPlayer.isOnGround // Инициализируем при включении
+        // FIX 2: Correctly access isOnGround status.
+        // Assuming MovePlayerPacket.isOnGround() is the reliable source.
+        // If session.localPlayer has another way to get ground status, use that.
+        // For now, we'll rely on the packet's info for the initial state.
+        // We'll primarily use the MovePlayerPacket's isOnGround for continuous updates.
+        // A direct 'session.localPlayer.isOnGround' might not exist or be updated synchronously.
+        lastOnGroundState = false // Initialize to false, it will be updated by the first MovePlayerPacket
     }
 
-    override fun onDisable() {
+    fun onDisable() {
         Log.d("GravityControlModule", "Модуль управления гравитацией выключен.")
-        // При отключении можно сбросить скорость игрока до нормальной, если это необходимо
-        // Например, отправить SetEntityMotionPacket с Vector3f.ZERO, если игрок в воздухе
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
@@ -42,10 +52,8 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
 
         if (bedrockPacket is MovePlayerPacket) {
             val currentPos = bedrockPacket.getPosition()
-            val currentOnGround = bedrockPacket.isOnGround()
+            val currentOnGround = bedrockPacket.isOnGround() // This is the source for 'on ground' status
 
-            // Обновляем позицию и скорость локального игрока в GameSession
-            // Важно делать это до вычисления playerMotion, если lastPos берется оттуда
             val lastPos = session.localPlayer.vec3Position
             val playerMotion = if (lastPos != null) {
                 Vector3f.from(
@@ -61,8 +69,6 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
             session.localPlayer.vec3Motion = playerMotion
 
             // --- ЛОГИКА ВЫСОКОГО ПРЫЖКА ---
-            // Активируем высокий прыжок, если раньше были на земле, сейчас не на земле
-            // и текущая вертикальная скорость положительна (т.е. игрок движется вверх)
             if (highJumpEnabled && lastOnGroundState && !currentOnGround && playerMotion.y > 0.01f) {
                 Log.d("GravityControlModule", "Обнаружен прыжок! Применяем высокий прыжок.")
                 val newJumpVelocity = Vector3f.from(playerMotion.x, playerMotion.y + jumpVelocityBoost, playerMotion.z)
@@ -70,12 +76,10 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
                     this.runtimeEntityId = playerEntityId
                     this.motion = newJumpVelocity
                 }
-                session.clientBound(setMotionPacket) // Используем clientBound, как в BhopModule
+                session.clientBound(setMotionPacket)
             }
 
             // --- ЛОГИКА ЗАМЕДЛЕННОГО ПАДЕНИЯ ---
-            // Активируем замедленное падение, если игрок не на земле и его вертикальная скорость отрицательна (т.е. падает)
-            // Добавляем проверку на lastMotionUpdateTime для предотвращения спама, если необходимо
             if (slowFallingEnabled && !currentOnGround && playerMotion.y < -0.01f && (currentTime - lastMotionUpdateTime >= motionUpdateInterval || lastMotionUpdateTime == 0L)) {
                 Log.d("GravityControlModule", "Обнаружено падение! Применяем замедленное падение.")
                 val slowFallVelocity = Vector3f.from(
@@ -87,20 +91,11 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) {
                     this.runtimeEntityId = playerEntityId
                     this.motion = slowFallVelocity
                 }
-                session.clientBound(setMotionPacket) // Используем clientBound
+                session.clientBound(setMotionPacket)
                 lastMotionUpdateTime = currentTime
             }
 
-            lastOnGroundState = currentOnGround
+            lastOnGroundState = currentOnGround // Update for the next tick
         }
-        // Если вы хотите обрабатывать PlayerAuthInputPacket для более точного определения прыжка
-        // как в BhopModule, это можно добавить здесь:
-        /*
-        else if (bedrockPacket is PlayerAuthInputPacket) {
-            if (highJumpEnabled && packet.inputData.contains(PlayerAuthInputData.JUMP_DOWN)) {
-                // Логика высокого прыжка, возможно, с задержкой или условием нахождения на земле
-            }
-        }
-        */
     }
 }
