@@ -171,7 +171,7 @@ class OverlayClickGUI : OverlayWindow() {
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_wclient),
-                        contentDescription = "WClient Logo",
+                        contentDescription = "Bizon Logo",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
