@@ -35,11 +35,11 @@ fun SettingsPageContent() {
             uri?.let {
                 if (ModuleManager.importConfigFromFile(context, it)) {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("✅ Config imported successfully")
+                        snackbarHostState.showSnackbar("✅ Конфигурация загружена")
                     }
                 } else {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("❌ Failed to import config")
+                        snackbarHostState.showSnackbar("❌ ошибка при загрузке конфигурации")
                     }
                 }
             }
@@ -72,11 +72,11 @@ fun SettingsPageContent() {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 Text(
-                    text = "Configuration",
+                    text = "Конфигурация",
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = "First Activate WClient Then Import/Export Your Config.",
+                    text = "Сначало включите Bizon client, после экспортируйте/импортируйте конфигурацию.",
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -90,7 +90,7 @@ fun SettingsPageContent() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "Manage Your Configs",
+                            text = "Управляйте своими конфигурациями",
                             style = MaterialTheme.typography.titleMedium
                         )
 
@@ -101,7 +101,7 @@ fun SettingsPageContent() {
                         ) {
                             Icon(Icons.Rounded.Upload, contentDescription = null)
                             Spacer(Modifier.width(10.dp))
-                            Text("Import Config")
+                            Text("Импортировать конфиг")
                         }
 
                         ElevatedButton(
@@ -111,7 +111,7 @@ fun SettingsPageContent() {
                         ) {
                             Icon(Icons.Rounded.SaveAlt, contentDescription = null)
                             Spacer(Modifier.width(10.dp))
-                            Text("Export Config")
+                            Text("Экспортируйте конфиг")
                         }
                     }
                 }
@@ -134,11 +134,11 @@ fun SettingsPageContent() {
                         // Show the result in the snackbar
                         if (filePath != null) {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("✅ Config exported successfully to: $filePath")
+                                snackbarHostState.showSnackbar("✅ Конфиг успешно экспортирован в: $filePath")
                             }
                         } else {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("❌ Failed to export config")
+                                snackbarHostState.showSnackbar("❌ неудачная экспортированная попытка конфига")
                             }
                         }
 
