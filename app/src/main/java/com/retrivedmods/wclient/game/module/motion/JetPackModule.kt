@@ -11,7 +11,7 @@ import kotlin.math.sin
 
 class JetPackModule : Module("jetpack", ModuleCategory.Motion) {
 
-    private val speed by floatValue("speed", 2.5f, 1.0f..10.0f)
+    private val speed by floatValue("speed", 2.5f, 1.0f..1000.0f)
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) {
