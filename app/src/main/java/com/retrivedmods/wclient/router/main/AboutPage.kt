@@ -27,7 +27,7 @@ fun AboutPageContent() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("информация об hbzon") },
+                    title = { Text("информация об bizon client") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                         titleContentColor = contentColorFor(MaterialTheme.colorScheme.surfaceContainer)
@@ -46,7 +46,7 @@ fun AboutPageContent() {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                InfoCard(title = "hbzon") {
+                InfoCard(title = "bizon client") {
                     Text("версия : 0.0.1 beta public", style = MaterialTheme.typography.bodyMedium)
                     Text("создатель : Hbart/hbort", style = MaterialTheme.typography.bodyMedium)
                 }
