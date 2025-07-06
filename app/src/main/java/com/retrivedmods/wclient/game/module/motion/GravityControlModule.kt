@@ -33,9 +33,9 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
         val playerEntityId = session.localPlayer.runtimeEntityId
         if (playerEntityId == 0L) return
 
-        // Изменено на использование методов getDirection() и isOnGround()
+        // ИЗМЕНЕНО: Используем методы getDirection() и isOnGround()
         if (bedrockPacket is MovePlayerPacket && bedrockPacket.getDirection() == PacketDirection.SERVER_BOUND) {
-            val currentPos = bedrockPacket.position // Предполагается, что 'position' доступно напрямую или через getPosition()
+            val currentPos = bedrockPacket.getPosition() // Изменено на getPosition()
             val currentOnGround = bedrockPacket.isOnGround() // Изменено на isOnGround()
 
             val lastPos = session.localPlayer.vec3Position
@@ -49,8 +49,8 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
                 Vector3f.ZERO
             }
             // Обновляем позицию и скорость локального игрока в GameSession
-            session.localPlayer.vec3Position = currentPos // Теперь это 'var' в LocalPlayer.kt
-            session.localPlayer.vec3Motion = playerMotion // Теперь это 'var' в LocalPlayer.kt
+            session.localPlayer.vec3Position = currentPos
+            session.localPlayer.vec3Motion = playerMotion
 
             // --- ЛОГИКА ВЫСОКОГО ПРЫЖКА ---
             if (highJumpEnabled && lastOnGroundState && !currentOnGround && playerMotion.y > 0.01f) {
