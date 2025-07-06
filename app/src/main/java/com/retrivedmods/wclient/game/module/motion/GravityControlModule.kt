@@ -5,11 +5,11 @@ import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory // Убедитесь, что этот импорт присутствует
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.PacketDirection // Этот импорт все еще нужен для других мест, если ты используешь PacketDirection
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.data.PacketDirection (больше не используется)
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket
 
-class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) { // Ошибка "Movement" здесь
+class GravityControlModule : Module("GravityControl", ModuleCategory.Motion) { // ИЗМЕНЕНО: Movement на Motion
 
     private var highJumpEnabled by boolValue("Высокий прыжок", true)
     private var slowFallingEnabled by boolValue("Замедленное падение", true)
@@ -33,10 +33,9 @@ class GravityControlModule : Module("GravityControl", ModuleCategory.Movement) {
         val playerEntityId = session.localPlayer.runtimeEntityId
         if (playerEntityId == 0L) return
 
-        // ИЗМЕНЕНО: Удалена проверка getDirection(), так как MovePlayerPacket не имеет такого метода.
         if (bedrockPacket is MovePlayerPacket) {
-            val currentPos = bedrockPacket.getPosition() // Используем getPosition()
-            val currentOnGround = bedrockPacket.isOnGround() // Используем isOnGround()
+            val currentPos = bedrockPacket.getPosition()
+            val currentOnGround = bedrockPacket.isOnGround()
 
             val lastPos = session.localPlayer.vec3Position
             val playerMotion = if (lastPos != null) {
