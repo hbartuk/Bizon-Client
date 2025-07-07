@@ -6,8 +6,9 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent
-import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
+// import org.cloudburstmc.protocol.bedrock.data.SoundEvent // Это больше не нужно для PlaySoundPacket
+// import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket // Это больше не нужно
+import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket // <-- Импортируйте PlaySoundPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -19,7 +20,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val activeSounds = mutableMapOf<String, ScheduledFuture<*>>()
 
-    private val allSoundEvents: Array<SoundEvent> = SoundEvent.values()
+    // private val allSoundEvents: Array<SoundEvent> = SoundEvent.values() // Это больше не нужно
 
     override fun onEnabled() {
         super.onEnabled()
@@ -37,9 +38,9 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     }
 
     fun playSound(
-        soundId: Int,
+        soundId: Int, // Этот параметр теперь может быть не совсем актуален, если sound - это String
         volume: Float,
-        distance: Float,
+        distance: Float, // Этот параметр тоже может быть не совсем актуален для PlaySoundPacket
         soundsPerSecond: Int,
         durationSeconds: Int,
         soundNameForDisplay: String = soundId.toString()
@@ -57,25 +58,20 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
         session.displayClientMessage("§a[SoundModule] Воспроизведение звука: §b$soundNameForDisplay§a (громкость: §b$volume§a, дистанция: §b$distance§a, частота: §b$soundsPerSecond§a/с, длительность: §b$durationSeconds§a сек.)")
 
         val periodMillis = if (soundsPerSecond > 0) (1000L / soundsPerSecond) else 0L
-        val extraDataValue = (distance * 1000).toInt()
+        // val extraDataValue = (distance * 1000).toInt() // Не нужно для PlaySoundPacket
 
-        // Определяем SoundEvent до создания пакета
-        val targetSoundEvent = if (soundId >= 0 && soundId < allSoundEvents.size) {
-            allSoundEvents[soundId]
-        } else {
-            SoundEvent.UNDEFINED
-        }
+        // PlaySoundPacket использует String для имени звука, а не SoundEvent
+        // Вам нужно будет решить, как преобразовать soundId в String имя звука
+        val targetSoundName: String = soundNameForDisplay // Или как-то иначе получить имя звука
 
         val task = scheduler.scheduleAtFixedRate({
             if (isSessionCreated) {
-                // Создаем пакет и присваиваем свойства явно
-                val packet = LevelSoundEventPacket()
-                packet.sound = targetSoundEvent // Это строка 78
+                // Создаем пакет PlaySoundPacket
+                val packet = PlaySoundPacket()
+                packet.sound = targetSoundName // Имя звука (String)
                 packet.position = initialPosition
                 packet.volume = volume
-                packet.isBabySound = false
-                packet.isRelativeVolumeDisabled = false
-                packet.extraData = extraDataValue
+                packet.pitch = 1.0f // Установите желаемый pitch, например, по умолчанию 1.0f
 
                 session.serverBound(packet)
                 session.clientBound(packet)
