@@ -7,8 +7,8 @@ import com.retrivedmods.wclient.game.world.Level
 import com.mucheng.mucute.relay.MuCuteRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.module.Module // <-- НОВЫЙ ИМПОРТ: Убедитесь, что это правильный путь к вашему базовому классу Module
-import com.retrivedmods.wclient.game.module.ModuleManager // <-- НОВЫЙ ИМПОРТ: Если ModuleManager находится здесь, иначе поправьте
+import com.retrivedmods.wclient.game.Module // <-- ИСПРАВЛЕНО: Правильный путь для Module.kt
+import com.retrivedmods.wclient.game.ModuleManager // <-- ИСПРАВЛЕНО: Предполагаю, что ModuleManager тоже здесь
 
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
@@ -37,17 +37,13 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
         val interceptablePacket = InterceptablePacket(packet)
 
-        // --- Обработка пакетов модулями (этот блок остаётся) ---
         for (module in ModuleManager.modules) {
-            // module.session = this // Устанавливаем сессию для каждого модуля. Если модуль получает сессию через конструктор, эта строка не нужна.
+            // module.session = this // Эта строка не нужна, если сессия передаётся в конструктор Module
             module.beforePacketBound(interceptablePacket)
             if (interceptablePacket.isIntercepted) {
                 return true
             }
         }
-
-        // --- БЛОК ОБРАБОТКИ КОМАНД, КОТОРЫЙ БЫЛ ЗДЕСЬ, УДАЛЁН! ---
-        // Теперь он находится в CommandHandlerModule.kt
 
         return false
     }
@@ -81,13 +77,11 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
     // НОВЫЙ МЕТОД: для получения модуля по его классу
     fun <T : Module> getModule(moduleClass: Class<T>): T? {
-        // Мы итерируемся по списку модулей из ModuleManager.
-        // Предполагается, что ModuleManager.modules является доступным списком ваших активных модулей.
         for (module in ModuleManager.modules) {
             if (moduleClass.isInstance(module)) {
-                return moduleClass.cast(module) // Возвращаем найденный модуль, приведенный к нужному типу.
+                return moduleClass.cast(module)
             }
         }
-        return null // Модуль не найден.
+        return null
     }
 }
