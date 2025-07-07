@@ -156,6 +156,7 @@ object ModuleManager {
         // --- Регистрация команд ---
         with(_commands) {
             add(SkinStealerCommand())
+            add(SoundCommand())
             // Добавляй другие команды здесь, например:
             // add(HelpCommand())
         }
