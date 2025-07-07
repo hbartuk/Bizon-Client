@@ -27,9 +27,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.encodeToString // <-- Убедиться, что этот импорт есть
-import kotlinx.serialization.decodeFromString // <-- Убедиться, что этот импорт есть
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import java.io.File
+import java.util.Locale // Важно: Добавлен импорт для Locale
 
 object ModuleManager {
 
@@ -126,8 +127,8 @@ object ModuleManager {
     }
 
     fun getCommand(name: String): Command? {
-        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
-        return _commands.firstOrNull { it.alias.toLowerCase() == name.toLowerCase() }
+        // Использование toLowerCase(Locale.ROOT) для совместимости
+        return _commands.firstOrNull { it.alias.toLowerCase(Locale.ROOT) == name.toLowerCase(Locale.ROOT) }
     }
 
     fun saveConfig() {
@@ -146,7 +147,6 @@ object ModuleManager {
             })
         }
 
-        // ИСПРАВЛЕНИЕ: Используем более современный синтаксис encodeToString
         config.writeText(json.encodeToString(jsonObject))
     }
 
@@ -164,7 +164,6 @@ object ModuleManager {
             return
         }
 
-        // ИСПРАВЛЕНИЕ: Используем более современный синтаксис decodeFromString
         val jsonObject = json.decodeFromString<JsonObject>(jsonString)
         val modulesConfig = jsonObject["modules"]?.jsonObject
         modulesConfig?.let {
