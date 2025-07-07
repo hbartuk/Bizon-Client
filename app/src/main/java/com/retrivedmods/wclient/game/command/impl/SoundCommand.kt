@@ -37,7 +37,7 @@ class SoundCommand : Command("sound") {
                 val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
                 val distance = args.getOrNull(2)?.toFloatOrNull() ?: 16.0f
                 val soundsPerSecond = args.getOrNull(3)?.toIntOrNull() ?: 1
-                val durationSeconds = args.getOrOrNull(4)?.toIntOrNull() ?: 1
+                val durationSeconds = args.getOrNull(4)?.toIntOrNull() ?: 1
 
                 val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
 
