@@ -9,31 +9,47 @@ class SoundCommand : Command("sound") {
 
     override fun exec(args: Array<String>, session: GameSession) {
         if (args.isEmpty()) {
-            session.displayClientMessage("§cИспользование: §7.sound <name> [volume] [distance] [sounds/sec] [duration(sec)]")
-            session.displayClientMessage("§eДоступные звуки (пример): §bstep, explode, click, place, break, levelup, attack, drink")
+            session.displayClientMessage("§cИспользование: §7.sound <ID_звука> [громкость] [дистанция] [частота] [длительность]")
+            session.displayClientMessage("§eДля остановки всех звуков: §b.sound stopall")
+            session.displayClientMessage("§eПример ID звука: §b4 (это для RANDOM_CLICK в старых версиях)")
             return
         }
 
-        val soundName = args[0]
-        val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
-        val distance = args.getOrNull(2)?.toFloatOrNull() ?: 16.0f
-        val soundsPerSecond = args.getOrNull(3)?.toIntOrNull() ?: 1
-        val durationSeconds = args.getOrNull(4)?.toIntOrNull() ?: 1
+        // ИСПРАВЛЕНИЕ: Используем java.lang.String.toLowerCase()
+        when (java.lang.String.toLowerCase(args[0])) {
+            "stopall" -> {
+                val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
+                if (soundModule == null) {
+                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
+                    return
+                }
+                soundModule.stopAllSounds()
+                session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку всех звуков.")
+            }
+            else -> {
+                // ИСПРАВЛЕНИЕ: Теперь мы ожидаем Integer (ID звука)
+                val soundId = args[0].toIntOrNull()
+                if (soundId == null) {
+                    session.displayClientMessage("§cНеверный ID звука. Используйте числовой ID (например, 4) или 'stopall'.")
+                    return
+                }
 
-        // Метод getModule ожидает Class<T>, SoundModule::class.java правилен
-        val soundModule = session.getModule(SoundModule::class.java)
+                val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
+                val distance = args.getOrNull(2)?.toFloatOrNull() ?: 16.0f
+                val soundsPerSecond = args.getOrNull(3)?.toIntOrNull() ?: 1
+                val durationSeconds = args.getOrNull(4)?.toIntOrNull() ?: 1
 
-        if (soundModule == null) {
-            session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
-            return
+                val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
+
+                if (soundModule == null) {
+                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
+                    return
+                }
+
+                // Вызываем playSound с целочисленным ID
+                soundModule.playSound(soundId, volume, distance, soundsPerSecond, durationSeconds)
+                session.displayClientMessage("§aНачинаю воспроизведение звука с ID: §b$soundId")
+            }
         }
-
-        if (soundName.lowercase() == "stopall") { // `lowercase()` должна быть доступна здесь
-            soundModule.stopAllSounds() // Этот метод должен быть корректно распознан
-            session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку всех звуков.")
-            return
-        }
-
-        soundModule.playSound(soundName, volume, distance, soundsPerSecond, durationSeconds) // Этот метод должен быть корректно распознан
     }
 }
