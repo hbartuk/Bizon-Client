@@ -18,7 +18,7 @@ import kotlin.math.sin
 class JitterFlyModule : Module("JitterFly", ModuleCategory.Motion) {
 
     private val horizontalSpeed by floatValue("Horizontal Speed", 3.0f, 0.5f..10.0f)
-    private val verticalSpeed by floatValue("Vertical Speed", 2.0f, 0.5f..5.0f)
+    private val verticalSpeed by floatValue("Vertical Speed", 2.0f, 0.5f..20.0f)
     private val jitterAmount by floatValue("Jitter Power", 0.05f, 0.01f..0.3f)
     private val motionInterval by intValue("Motion Delay", 50, 10..100)
 
