@@ -12,9 +12,9 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket // Нам 
 class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
 
     // Настройка КПС: от 1 до 5000 кликов в секунду
-    private var clicksPerSecond by intValue("КПС", 10, 1..5000)
+    private var clicksPerSecond by intValue("КПС", 10, 1..500000)
     // Максимальная дистанция, на которой будет работать кликер
-    private var attackRange by floatValue("Дистанция атаки", 4.0f, 1.0f..8.0f)
+    private var attackRange by floatValue("Дистанция атаки", 4.0f, 1.0f..800.0f)
 
     private var lastAttackTime: Long = 0L
 
