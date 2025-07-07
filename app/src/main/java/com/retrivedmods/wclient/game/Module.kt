@@ -1,91 +1,119 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/GameSession.kt
+// File: app/src/main/java/com/retrivedmods/wclient/game/Module.kt
 package com.retrivedmods.wclient.game
 
-import com.retrivedmods.wclient.application.AppContext
-import com.retrivedmods.wclient.game.entity.LocalPlayer
-import com.retrivedmods.wclient.game.world.Level
-import com.mucheng.mucute.relay.MuCuteRelaySession
-import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
-import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.Module // <-- ПРАВИЛЬНЫЙ ИМПОРТ: Теперь точно
-import com.retrivedmods.wclient.game.ModuleManager // <-- ПРАВИЛЬНЫЙ ИМПОРТ: Предполагаю, что ModuleManager тоже здесь
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.retrivedmods.wclient.overlay.OverlayShortcutButton
+import com.retrivedmods.wclient.util.translatedSelf
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.put
 
-@Suppress("MemberVisibilityCanBePrivate")
-class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
+abstract class Module(
+    val name: String,
+    val category: ModuleCategory,
+    defaultEnabled: Boolean = false,
+    val private: Boolean = false
+) : InterruptiblePacketHandler, Configurable {
 
-    val localPlayer = LocalPlayer(this)
+    // ВАЖНО: session должна быть open lateinit var
+    open lateinit var session: GameSession
 
-    val level = Level(this)
+    private var _isEnabled by mutableStateOf(defaultEnabled)
 
-    private val versionName by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        AppContext.instance.packageManager.getPackageInfo(
-            AppContext.instance.packageName, 0
-        ).versionName
-    }
-
-    fun clientBound(packet: BedrockPacket) {
-        muCuteRelaySession.clientBound(packet)
-    }
-
-    fun serverBound(packet: BedrockPacket) {
-        muCuteRelaySession.serverBound(packet)
-    }
-
-    override fun beforePacketBound(packet: BedrockPacket): Boolean {
-        localPlayer.onPacketBound(packet)
-        level.onPacketBound(packet)
-
-        val interceptablePacket = InterceptablePacket(packet)
-
-        for (module in ModuleManager.modules) {
-            // Инициализируем session для каждого модуля перед использованием
-            // Это необходимо, так как Module.session - lateinit var
-            if (!module.isSessionCreated) { // Проверяем, инициализирована ли уже
-                module.session = this
-            }
-            module.beforePacketBound(interceptablePacket)
-            if (interceptablePacket.isIntercepted) {
-                return true
+    open var isEnabled: Boolean // Добавил open для isEnabled, если вдруг где-то переопределяется
+        get() = _isEnabled
+        set(value) {
+            _isEnabled = value
+            if (value) {
+                onEnabled()
+            } else {
+                onDisabled()
             }
         }
 
-        return false
+    val isSessionCreated: Boolean
+        get() = ::session.isInitialized
+
+    var isExpanded by mutableStateOf(false)
+
+    var isShortcutDisplayed by mutableStateOf(false)
+
+    var shortcutX = 0
+
+    var shortcutY = 100
+
+    // overlayShortcutButton должен создаваться с this (ссылкой на модуль)
+    val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
+
+    override val values: MutableList<Value<*>> = ArrayList()
+
+    open fun onEnabled() {
+        sendToggleMessage(true)
     }
 
-    override fun afterPacketBound(packet: BedrockPacket) {
-        for (module in ModuleManager.modules) {
-            module.afterPacketBound(packet)
+    open fun onDisabled() {
+        sendToggleMessage(false)
+    }
+
+    // Эти методы уже были в вашем Module.kt
+    override fun beforePacketBound(interceptablePacket: InterceptablePacket) { /* реализация */ }
+    override fun afterPacketBound(packet: org.cloudburstmc.protocol.bedrock.packet.BedrockPacket) { /* реализация */ }
+    override fun onDisconnect(reason: String) { /* реализация */ }
+
+
+    open fun toJson() = buildJsonObject {
+        put("state", isEnabled)
+        put("values", buildJsonObject {
+            values.forEach { value ->
+                put(value.name, value.toJson())
+            }
+        })
+        if (isShortcutDisplayed) {
+            put("shortcut", buildJsonObject {
+                put("x", shortcutX)
+                put("y", shortcutY)
+            })
         }
     }
 
-    override fun onDisconnect(reason: String) {
-        localPlayer.onDisconnect()
-        level.onDisconnect()
-
-        for (module in ModuleManager.modules) {
-            module.onDisconnect(reason)
-        }
-    }
-
-    fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
-        val textPacket = TextPacket()
-        textPacket.type = type
-        textPacket.isNeedsTranslation = false
-        textPacket.sourceName = ""
-        textPacket.message = message
-        textPacket.xuid = ""
-        textPacket.platformChatId = ""
-        textPacket.filteredMessage = ""
-        clientBound(textPacket)
-    }
-
-    // Метод для получения модуля по его классу
-    fun <T : Module> getModule(moduleClass: Class<T>): T? {
-        for (module in ModuleManager.modules) {
-            if (moduleClass.isInstance(module)) {
-                return moduleClass.cast(module)
+    open fun fromJson(jsonElement: JsonElement) {
+        if (jsonElement is JsonObject) {
+            isEnabled = (jsonElement["state"] as? JsonPrimitive)?.boolean ?: isEnabled
+            (jsonElement["values"] as? JsonObject)?.let {
+                it.forEach { jsonObject ->
+                    val value = getValue(jsonObject.key) ?: return@forEach
+                    try {
+                        value.fromJson(jsonObject.value)
+                    } catch (e: Throwable) {
+                        value.reset()
+                    }
+                }
+            }
+            (jsonElement["shortcut"] as? JsonObject)?.let {
+                shortcutX = (it["x"] as? JsonPrimitive)?.int ?: shortcutX
+                shortcutY = (it["y"] as? JsonPrimitive)?.int ?: shortcutY
+                isShortcutDisplayed = true
             }
         }
-        return null
     }
+
+    private fun sendToggleMessage(enabled: Boolean) {
+        if (!isSessionCreated) { // Проверяем, инициализирована ли сессия перед использованием
+            return
+        }
+
+        val stateText = if (enabled) "enabled".translatedSelf else "disabled".translatedSelf
+        val status = (if (enabled) "§a" else "§c") + stateText
+        val moduleName = name.translatedSelf
+        val message = "§l§c[WClient] §r§7${moduleName} §8» $status"
+
+        session.displayClientMessage(message)
+    }
+
 }
