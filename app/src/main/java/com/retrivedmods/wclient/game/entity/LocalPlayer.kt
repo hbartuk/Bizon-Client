@@ -51,11 +51,10 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
-    // Возвращаем 'override' для vec3Position
     override var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
-
-    // ВОЗВРАЩЕНО: 'override' для vec3Rotation
-    override var vec3Rotation: Vector3f = Vector3f.ZERO // Инициализация начальной ротацией
+    // УДАЛЕНО: var/override var vec3Rotation: Vector3f = Vector3f.ZERO, так как это вызывает ошибку компиляции.
+    // Если ротация необходима, она должна быть объявлена в 'Entity' как 'open var'
+    // или управляться методами в 'Player'/'Entity'.
     var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
 
 
@@ -92,7 +91,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
         if (packet is PlayerAuthInputPacket) {
             this.vec3Position = packet.position
-            this.vec3Rotation = packet.rotation // Обновляем ротацию игрока из пакета
+            // УДАЛЕНО: Обновление vec3Rotation из пакета, так как свойство было удалено.
+            // Если 'rotate(packet.rotation)' определено в 'Entity', оно должно использоваться там.
             tickExists = packet.tick
         }
         if (packet is ContainerOpenPacket) {
@@ -154,7 +154,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             itemInHand = inventory.hand
             playerPosition = vec3Position
 
-            // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ: РАСЧЁТ clickPosition
+            // Изменение для clickPosition сохранено, так как оно критично для прохождения урона
             clickPosition = entity.vec3Position.add(0f, 0.9f, 0f)
         }
 
