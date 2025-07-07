@@ -51,8 +51,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
-    // ИЗМЕНЕНО: Добавлено 'override' для vec3Position, так как оно уже есть в Entity
     override var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
+    override var vec3Rotation: Vector3f = Vector3f.ZERO // Добавил override для ротации
     var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
 
 
@@ -67,13 +67,13 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
             movementServerAuthoritative =
                 packet.authoritativeMovementMode != AuthoritativeMovementMode.CLIENT
+            // Здесь мы устанавливаем AuthoritativeMovementMode.SERVER для исходящего StartGamePacket,
+            // чтобы клиент сообщал серверу о своей позиции.
             packet.authoritativeMovementMode = AuthoritativeMovementMode.SERVER
             inventoriesServerAuthoritative = packet.isInventoriesServerAuthoritative
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
 
-            // УДАЛЕНО: Инициализация vec3Position из StartGamePacket, так как 'position' может быть недоступен
-            // и PlayerAuthInputPacket все равно обновит его вскоре.
             this.vec3Motion = Vector3f.ZERO // Убедимся, что motion обнулен при старте
 
             reset()
@@ -92,9 +92,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         // --- КОНЕЦ ОБРАБОТКИ PlayerListPacket ---
 
         if (packet is PlayerAuthInputPacket) {
-            // ИЗМЕНЕНО: Обновление vec3Position здесь, так как PlayerAuthInputPacket содержит актуальную позицию
             this.vec3Position = packet.position
-            // rotate(packet.rotation) // Предполагается, что rotate определен в Entity или Player
+            this.vec3Rotation = packet.rotation // Обновляем ротацию игрока из пакета
             tickExists = packet.tick
         }
         if (packet is ContainerOpenPacket) {
@@ -117,22 +116,28 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     }
 
     fun swing() {
-        val animatePacket = AnimatePacket()
-        animatePacket.action = AnimatePacket.Action.SWING_ARM
-        animatePacket.runtimeEntityId = runtimeEntityId
+        val animatePacket = AnimatePacket().apply {
+            action = AnimatePacket.Action.SWING_ARM
+            runtimeEntityId = this@LocalPlayer.runtimeEntityId
+        }
 
+        // Отправляем пакет на сервер, чтобы сервер увидел анимацию
         session.serverBound(animatePacket)
+        // Отправляем пакет на клиент, чтобы мы сами видели анимацию
         session.clientBound(animatePacket)
 
-        val levelSoundEventPacket = LevelSoundEventPacket()
-        levelSoundEventPacket.sound = SoundEvent.ATTACK_NODAMAGE
-        levelSoundEventPacket.position = vec3Position
-        levelSoundEventPacket.extraData = -1
-        levelSoundEventPacket.identifier = "minecraft:player"
-        levelSoundEventPacket.isBabySound = false
-        levelSoundEventPacket.isRelativeVolumeDisabled = false
+        val levelSoundEventPacket = LevelSoundEventPacket().apply {
+            sound = SoundEvent.ATTACK_NODAMAGE
+            position = vec3Position
+            extraData = -1
+            identifier = "minecraft:player"
+            isBabySound = false
+            isRelativeVolumeDisabled = false
+        }
 
+        // Отправляем звук на сервер, чтобы другие игроки слышали удар
         session.serverBound(levelSoundEventPacket)
+        // Отправляем звук на клиент, чтобы мы сами слышали удар
         session.clientBound(levelSoundEventPacket)
     }
 
@@ -146,14 +151,18 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         """.trimIndent()
         )
 
-        val inventoryTransactionPacket = InventoryTransactionPacket()
-        inventoryTransactionPacket.transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
-        inventoryTransactionPacket.actionType = 1
-        inventoryTransactionPacket.runtimeEntityId = entity.runtimeEntityId
-        inventoryTransactionPacket.hotbarSlot = inventory.heldItemSlot
-        inventoryTransactionPacket.itemInHand = inventory.hand
-        inventoryTransactionPacket.playerPosition = vec3Position
-        inventoryTransactionPacket.clickPosition = Vector3f.ZERO
+        val inventoryTransactionPacket = InventoryTransactionPacket().apply {
+            transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
+            actionType = 1 // Убедись, что '1' корректен для твоей версии протокола
+            runtimeEntityId = entity.runtimeEntityId
+            hotbarSlot = inventory.heldItemSlot
+            itemInHand = inventory.hand
+            playerPosition = vec3Position
+
+            // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ: РАСЧЁТ clickPosition ---
+            // Указываем точку попадания в центр хитбокса цели
+            clickPosition = entity.vec3Position.add(0f, 0.9f, 0f) // 0.9f примерно середина игрового хитбокса
+        }
 
         session.serverBound(inventoryTransactionPacket)
     }
