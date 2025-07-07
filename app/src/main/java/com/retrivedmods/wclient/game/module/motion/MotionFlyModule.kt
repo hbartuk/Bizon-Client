@@ -18,7 +18,7 @@ import kotlin.math.sin
 class MotionFlyModule : Module("motion_fly", ModuleCategory.Motion) {
 
     private val horizontalSpeed = floatValue("horizontalSpeed", 3.5f, 0.5f..10.0f)
-    private val verticalSpeed = floatValue("verticalSpeed", 1.5f, 0.5f..50.0f)
+    private val verticalSpeed = floatValue("verticalSpeed", 1.5f, 0.5f..150.0f)
     private val glideSpeed = floatValue("glideSpeed", 0.1f, -0.01f..1.0f)
     private val bypassMode = boolValue("lifeboatBypass", true)
     private val motionInterval = floatValue("delay", 50.0f, 10.0f..100.0f)
