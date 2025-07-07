@@ -30,7 +30,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import java.io.File
-import java.util.Locale // Важно: Добавлен импорт для Locale
+// import java.util.Locale // Убрал, так как lowercase() не требует Locale
 
 object ModuleManager {
 
@@ -127,8 +127,8 @@ object ModuleManager {
     }
 
     fun getCommand(name: String): Command? {
-        // Использование toLowerCase(Locale.ROOT) для совместимости
-        return _commands.firstOrNull { it.alias.toLowerCase(Locale.ROOT) == name.toLowerCase(Locale.ROOT) }
+        // ИСПРАВЛЕНИЕ: Использование lowercase()
+        return _commands.firstOrNull { it.alias.lowercase() == name.lowercase() }
     }
 
     fun saveConfig() {
