@@ -5,13 +5,12 @@ import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
 
-// --- IMPORTANT: Adding specific imports for problematic modules ---
-// If these are still unresolved after this, double-check their exact file paths.
-import com.retrivedmods.wclient.game.module.player.DesyncModule // Explicit import
-import com.retrivedmods.wclient.game.module.player.FreeCameraModule // Explicit import
-import com.retrivedmods.wclient.game.module.misc.SoundModule // Explicit import (already done, but reconfirm)
+// --- Явные импорты для проблемных модулей ---
+import com.retrivedmods.wclient.game.module.player.DesyncModule
+import com.retrivedmods.wclient.game.module.player.FreeCameraModule
+import com.retrivedmods.wclient.game.module.misc.SoundModule
 
-// Wildcard imports (keep for other modules not explicitly imported)
+// Wildcard imports (оставить для остальных модулей)
 import com.retrivedmods.wclient.game.module.combat.*
 import com.retrivedmods.wclient.game.module.misc.*
 import com.retrivedmods.wclient.game.module.motion.*
@@ -19,7 +18,7 @@ import com.retrivedmods.wclient.game.module.player.*
 import com.retrivedmods.wclient.game.module.visual.*
 import com.retrivedmods.wclient.game.module.world.*
 
-// Imports for the command system
+// Импорты для системы команд
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
@@ -44,15 +43,16 @@ object ModuleManager {
     }
 
     fun initialize(session: GameSession) {
-        _modules.clear()
+        _modules.clear() // Очистить, чтобы избежать дубликатов при повторной инициализации
 
+        // Вспомогательная функция для упрощения регистрации модулей и присвоения сессии
         fun <T : Module> addAndInitModule(module: T) {
-            module.session = session
+            module.session = session // Присвоить сессию lateinit var модуля
             _modules.add(module)
         }
 
-        // --- Registering Modules ---
-        addAndInitModule(CommandHandlerModule())
+        // --- Регистрация модулей ---
+        addAndInitModule(CommandHandlerModule()) // CommandHandlerModule должен быть зарегистрирован первым
         addAndInitModule(FlyModule())
         addAndInitModule(GravityControlModule())
         addAndInitModule(ZoomModule())
@@ -97,11 +97,11 @@ object ModuleManager {
         addAndInitModule(NoHurtCameraModule())
         addAndInitModule(AutoWalkModule())
         addAndInitModule(AntiAFKModule())
-        addAndInitModule(DesyncModule()) // <-- Explicitly imported, should resolve
+        addAndInitModule(DesyncModule()) // Теперь должен быть найден
         addAndInitModule(PositionLoggerModule())
-        addAndInitModule(SoundModule()) // <-- Explicitly imported, should resolve
+        addAndInitModule(SoundModule()) // Теперь должен быть найден
         addAndInitModule(MotionFlyModule())
-        addAndInitModule(FreeCameraModule()) // <-- Explicitly imported, should resolve
+        addAndInitModule(FreeCameraModule()) // Теперь должен быть найден
         addAndInitModule(KillauraModule())
         addAndInitModule(AntiCrystalModule())
         addAndInitModule(TimeShiftModule())
@@ -110,33 +110,26 @@ object ModuleManager {
         addAndInitModule(PlayerTracerModule())
         addAndInitModule(EnemyHunterModule())
 
-        // --- Registering Commands ---
-        _commands.clear()
+        // --- Регистрация команд ---
+        _commands.clear() // Очистить, чтобы избежать дубликатов при повторной инициализации
         _commands.add(SkinStealerCommand())
         _commands.add(SoundCommand())
+        // Добавьте другие команды здесь
 
-        loadConfig()
+        loadConfig() // Загрузить конфигурацию после инициализации всех модулей с их сессиями
 
         _modules.forEach {
             if (it.isEnabled) {
-                it.onEnabled()
+                it.onEnabled() // Вызвать onEnabled для модулей, которые включены по умолчанию или через конфиг
             }
         }
     }
 
     fun getCommand(name: String): Command? {
-        // Changed to .equals(String, Boolean) using Java's String.equalsIgnoreCase()
-        // or a manual comparison if equals(..., ignoreCase) is truly unavailable.
-        // Let's try `equalsIgnoreCase` from Java if the Kotlin extension isn't there.
-        return _commands.firstOrNull { it.alias.equals(name, ignoreCase = true) }
-        // If `ignoreCase = true` still fails, try:
-        // return _commands.firstOrNull { it.alias.equals(name, true) } // sometimes it needs explicit boolean
-        // Or if all else fails:
-        // return _commands.firstOrNull { it.alias.toLowerCase() == name.toLowerCase() } // uses older toLowerCase()
+        // Использование equals с явным boolean для ignoreCase
+        return _commands.firstOrNull { it.alias.equals(name, true) }
     }
 
-    // The rest of the ModuleManager methods (saveConfig, loadConfig, exportConfig, importConfig, etc.)
-    // should remain as they were.
     fun saveConfig() {
         val configsDir = AppContext.instance.filesDir.resolve("configs")
         configsDir.mkdirs()
