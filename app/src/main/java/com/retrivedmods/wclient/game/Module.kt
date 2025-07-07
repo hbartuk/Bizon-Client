@@ -13,6 +13,7 @@ import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.put
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket // Убедитесь, что этот импорт есть для beforePacketBound/afterPacketBound
 
 abstract class Module(
     val name: String,
@@ -21,12 +22,11 @@ abstract class Module(
     val private: Boolean = false
 ) : InterruptiblePacketHandler, Configurable {
 
-    // ВАЖНО: session должна быть open lateinit var
     open lateinit var session: GameSession
 
     private var _isEnabled by mutableStateOf(defaultEnabled)
 
-    open var isEnabled: Boolean // Добавил open для isEnabled, если вдруг где-то переопределяется
+    open var isEnabled: Boolean
         get() = _isEnabled
         set(value) {
             _isEnabled = value
@@ -48,10 +48,23 @@ abstract class Module(
 
     var shortcutY = 100
 
-    // overlayShortcutButton должен создаваться с this (ссылкой на модуль)
     val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
 
     override val values: MutableList<Value<*>> = ArrayList()
+
+    // --- Добавьте этот метод initialize() ---
+    /**
+     * Вызывается один раз при инициализации ModuleManager,
+     * после того как сессия становится доступной.
+     * Подклассы могут переопределять этот метод для своей специфической инициализации.
+     */
+    open fun initialize() {
+        // Здесь можно добавить общую логику инициализации для всех модулей,
+        // или оставить пустой, если каждый модуль будет реализовывать свою.
+        // Например, можно вызвать метод для загрузки начальных настроек,
+        // который требует доступа к сессии.
+    }
+    // ----------------------------------------
 
     open fun onEnabled() {
         sendToggleMessage(true)
@@ -61,9 +74,10 @@ abstract class Module(
         sendToggleMessage(false)
     }
 
-    // Эти методы уже были в вашем Module.kt
+    // Эти методы должны быть реализованы в конкретных модулях,
+    // если они не имеют общей реализации в базовом классе.
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) { /* реализация */ }
-    override fun afterPacketBound(packet: org.cloudburstmc.protocol.bedrock.packet.BedrockPacket) { /* реализация */ }
+    override fun afterPacketBound(packet: BedrockPacket) { /* реализация */ }
     override fun onDisconnect(reason: String) { /* реализация */ }
 
 
@@ -104,7 +118,7 @@ abstract class Module(
     }
 
     private fun sendToggleMessage(enabled: Boolean) {
-        if (!isSessionCreated) { // Проверяем, инициализирована ли сессия перед использованием
+        if (!isSessionCreated) {
             return
         }
 
