@@ -3,14 +3,14 @@ package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.module.misc.SoundModule // <-- Correct import for SoundModule (from misc package)
+import com.retrivedmods.wclient.game.module.misc.SoundModule // <-- Убедитесь, что этот путь к SoundModule правильный
 
 class SoundCommand : Command("sound") {
 
     override fun exec(args: Array<String>, session: GameSession) {
         if (args.isEmpty()) {
-            session.displayClientMessage("§cUsage: §7.sound <name> [volume] [distance] [sounds/sec] [duration(sec)]")
-            session.displayClientMessage("§eAvailable sounds (example): §bstep, explode, click, place, break, levelup, attack, drink")
+            session.displayClientMessage("§cИспользование: §7.sound <name> [volume] [distance] [sounds/sec] [duration(sec)]")
+            session.displayClientMessage("§eДоступные звуки (пример): §bstep, explode, click, place, break, levelup, attack, drink")
             return
         }
 
@@ -20,20 +20,20 @@ class SoundCommand : Command("sound") {
         val soundsPerSecond = args.getOrNull(3)?.toIntOrNull() ?: 1
         val durationSeconds = args.getOrNull(4)?.toIntOrNull() ?: 1
 
-        // The getModule method expects a Class<T>, SoundModule::class.java is correct
+        // Метод getModule ожидает Class<T>, SoundModule::class.java правилен
         val soundModule = session.getModule(SoundModule::class.java)
 
         if (soundModule == null) {
-            session.displayClientMessage("§c[SoundCommand] SoundModule not found or inactive.")
+            session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
             return
         }
 
-        if (soundName.lowercase() == "stopall") { // `lowercase()` should be available here
-            soundModule.stopAllSounds() // This method should now be correctly recognized
-            session.displayClientMessage("§a[SoundCommand] Command sent to stop all sounds.")
+        if (soundName.lowercase() == "stopall") { // `lowercase()` должна быть доступна здесь
+            soundModule.stopAllSounds() // Этот метод должен быть корректно распознан
+            session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку всех звуков.")
             return
         }
 
-        soundModule.playSound(soundName, volume, distance, soundsPerSecond, durationSeconds) // This method should now be correctly recognized
+        soundModule.playSound(soundName, volume, distance, soundsPerSecond, durationSeconds) // Этот метод должен быть корректно распознан
     }
 }
