@@ -7,8 +7,8 @@ import com.retrivedmods.wclient.game.world.Level
 import com.mucheng.mucute.relay.MuCuteRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.Module // <-- ИСПРАВЛЕНО: Правильный путь для Module.kt
-import com.retrivedmods.wclient.game.ModuleManager // <-- ИСПРАВЛЕНО: Предполагаю, что ModuleManager тоже здесь
+import com.retrivedmods.wclient.game.Module
+// ModuleManager уже в этом же пакете, импорт не нужен
 
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
@@ -21,6 +21,12 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         AppContext.instance.packageManager.getPackageInfo(
             AppContext.instance.packageName, 0
         ).versionName
+    }
+
+    init {
+        // <-- ВАЖНО: Вызываем инициализацию ModuleManager здесь!
+        // Это гарантирует, что ModuleManager настроен, и его модули получают session.
+        ModuleManager.initialize(this)
     }
 
     fun clientBound(packet: BedrockPacket) {
@@ -38,7 +44,10 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         val interceptablePacket = InterceptablePacket(packet)
 
         for (module in ModuleManager.modules) {
-            // module.session = this // Эта строка не нужна, если сессия передаётся в конструктор Module
+            // Module.session уже инициализирована в ModuleManager.initialize(this)
+            // ИЛИ: Если ModuleManager.initialize(this) вызывается только один раз,
+            // и GameSession может быть пересоздана, то `if (!module.isSessionCreated)` может быть полезным.
+            // Но в большинстве случаев, при создании новой GameSession, вы будете очищать и переинициализировать модули.
             module.beforePacketBound(interceptablePacket)
             if (interceptablePacket.isIntercepted) {
                 return true
@@ -75,7 +84,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         clientBound(textPacket)
     }
 
-    // НОВЫЙ МЕТОД: для получения модуля по его классу
+    // Метод для получения модуля по его классу
     fun <T : Module> getModule(moduleClass: Class<T>): T? {
         for (module in ModuleManager.modules) {
             if (moduleClass.isInstance(module)) {
