@@ -3,7 +3,8 @@ package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.module.misc.SoundModule // <-- Убедитесь, что этот путь к SoundModule правильный
+import com.retrivedmods.wclient.game.module.misc.SoundModule
+import java.util.Locale // Важно: Добавлен импорт для Locale
 
 class SoundCommand : Command("sound") {
 
@@ -11,12 +12,12 @@ class SoundCommand : Command("sound") {
         if (args.isEmpty()) {
             session.displayClientMessage("§cИспользование: §7.sound <ID_звука> [громкость] [дистанция] [частота] [длительность]")
             session.displayClientMessage("§eДля остановки всех звуков: §b.sound stopall")
-            session.displayClientMessage("§eПример ID звука: §b4 (это для RANDOM_CLICK в старых версиях)")
+            session.displayClientMessage("§eID звука - это число от 0 до ${SoundEvent.values().size - 1}. Посмотрите SoundEvent.java для точного соответствия ID.")
+            session.displayClientMessage("§eПример: §b.sound 0 (ITEM_USE_ON)§e, §b.sound 5 (BREAK)§e, §b.sound 39 (ATTACK_NODAMAGE)")
             return
         }
 
-        // ИСПРАВЛЕНИЕ: Используем java.lang.String.toLowerCase()
-        when (java.lang.String.toLowerCase(args[0])) {
+        when (args[0].toLowerCase(Locale.ROOT)) {
             "stopall" -> {
                 val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
                 if (soundModule == null) {
@@ -27,10 +28,9 @@ class SoundCommand : Command("sound") {
                 session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку всех звуков.")
             }
             else -> {
-                // ИСПРАВЛЕНИЕ: Теперь мы ожидаем Integer (ID звука)
                 val soundId = args[0].toIntOrNull()
                 if (soundId == null) {
-                    session.displayClientMessage("§cНеверный ID звука. Используйте числовой ID (например, 4) или 'stopall'.")
+                    session.displayClientMessage("§cНеверный ID звука. Используйте числовой ID или 'stopall'.")
                     return
                 }
 
@@ -46,7 +46,6 @@ class SoundCommand : Command("sound") {
                     return
                 }
 
-                // Вызываем playSound с целочисленным ID
                 soundModule.playSound(soundId, volume, distance, soundsPerSecond, durationSeconds)
                 session.displayClientMessage("§aНачинаю воспроизведение звука с ID: §b$soundId")
             }
