@@ -8,6 +8,7 @@ import com.mucheng.mucute.relay.MuCuteRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 import com.retrivedmods.wclient.game.module.Module // <-- НОВЫЙ ИМПОРТ: Убедитесь, что это правильный путь к вашему базовому классу Module
+import com.retrivedmods.wclient.game.module.ModuleManager // <-- НОВЫЙ ИМПОРТ: Если ModuleManager находится здесь, иначе поправьте
 
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
@@ -78,13 +79,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         clientBound(textPacket)
     }
 
-    ---
-
-    ## Добавленный метод `getModule`
-
-    Этот метод позволяет получить экземпляр любого зарегистрированного модуля, если он является подтипом `Module`.
-
-    ```kotlin
+    // НОВЫЙ МЕТОД: для получения модуля по его классу
     fun <T : Module> getModule(moduleClass: Class<T>): T? {
         // Мы итерируемся по списку модулей из ModuleManager.
         // Предполагается, что ModuleManager.modules является доступным списком ваших активных модулей.
@@ -95,5 +90,4 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         }
         return null // Модуль не найден.
     }
-    ```
 }
