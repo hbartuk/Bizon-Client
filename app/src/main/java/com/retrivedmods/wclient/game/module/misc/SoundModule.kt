@@ -6,12 +6,12 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent // Важно: убедитесь, что этот импорт есть
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import java.util.Locale // Важно: Добавлен импорт для Locale
+// import java.util.Locale // Убрал, так как lowercase() не требует Locale
 
 class SoundModule() : Module("Sound", ModuleCategory.Misc) {
 
@@ -50,7 +50,8 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
             return
         }
 
-        val stopKey = soundNameForDisplay.toLowerCase(Locale.ROOT)
+        // ИСПРАВЛЕНИЕ: Использование lowercase()
+        val stopKey = soundNameForDisplay.lowercase()
 
         stopSound(stopKey)
 
@@ -69,11 +70,9 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
                     sound = if (soundId >= 0 && soundId < allSoundEvents.size) {
                         allSoundEvents[soundId]
                     } else {
-                        // Если ID некорректен, используем UNDEFINED или ATTACK_NODAMAGE
-                        // UNDEFINED - это последний элемент в вашем SoundEvent.java
+                        // Если ID некорректен, используем UNDEFINED.
+                        // Это строка 79
                         SoundEvent.UNDEFINED
-                        // Или, если UNDEFINED вызывает проблемы, используйте SoundEvent.ATTACK_NODAMAGE
-                        // SoundEvent.ATTACK_NODAMAGE
                     }
                     position = initialPosition
                     volume = volume
@@ -97,7 +96,8 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     }
 
     fun stopSound(soundIdentifier: String) {
-        activeSounds.remove(soundIdentifier.toLowerCase(Locale.ROOT))?.cancel(false)
+        // ИСПРАВЛЕНИЕ: Использование lowercase()
+        activeSounds.remove(soundIdentifier.lowercase())?.cancel(false)
     }
 
     fun stopAllSounds() {
