@@ -1,20 +1,18 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/module/misc/SoundModule.kt (path should be ...misc/SoundModule.kt)
-package com.retrivedmods.wclient.game.module.misc // Correct package for misc module
+// File: app/src/main/java/com/retrivedmods/wclient/game/module/misc/SoundModule.kt
+package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.GameSession
-import com.retrivedmods.wclient.game.Module // <-- Correct import for your base Module class
-import com.retrivedmods.wclient.game.ModuleCategory // Assuming this import exists and is correct
-import org.cloudburstmc.math.vector.Vector3f // Should be correct
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent // This import is crucial for SoundEvent
+import com.retrivedmods.wclient.game.Module
+import com.retrivedmods.wclient.game.ModuleCategory // <-- Ensure this import is correct
+import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent // <-- CRITICAL: Ensure this import is correct and Bedrock Protocol is in your dependencies
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-// SoundModule now correctly inherits from Module, no session in its constructor
-class SoundModule() : Module("Sound", ModuleCategory.MISC) { // Use ModuleCategory.MISC, not RENDER for SoundModule
+class SoundModule() : Module("Sound", ModuleCategory.MISC) { // <-- ModuleCategory.MISC used here
 
-    // Override lateinit var session to make it explicit, though not strictly required if already in Module
     override lateinit var session: GameSession
 
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
@@ -23,29 +21,30 @@ class SoundModule() : Module("Sound", ModuleCategory.MISC) { // Use ModuleCatego
     private val soundEventMap = mapOf(
         "step" to SoundEvent.STEP,
         "explode" to SoundEvent.EXPLODE,
-        "click" to SoundEvent.CLICK, // Keeping CLICK as an example Bedrock SoundEvent
+        "click" to SoundEvent.CLICK, // <-- SoundEvent.CLICK must exist here
         "place" to SoundEvent.PLACE,
         "break" to SoundEvent.BREAK,
         "levelup" to SoundEvent.LEVELUP,
         "attack" to SoundEvent.ATTACK_STRONG,
         "drink" to SoundEvent.DRINK
-        // "ui_button_click" to SoundEvent.UI_BUTTON_CLICK // REMOVED: UI_BUTTON_CLICK is not a standard SoundEvent
-        // If you need custom sounds, you'll need a different mechanism or to ensure UI_BUTTON_CLICK is a valid enum value.
     )
 
-    // IMPORTANT: Changed to onEnabled() and onDisabled() to match your Module.kt
+    // 'val' cannot be reassigned: This error in previous logs was likely a typo or an attempt
+    // to assign something to `soundEventMap` again outside its initialization.
+    // The current code for `soundEventMap` should not cause this.
+    // If it *still* causes it, you must have another line of code trying to re-assign it.
+
     override fun onEnabled() {
-        super.onEnabled() // Call base implementation for toggle message
-        if (isSessionCreated) { // Ensure session is ready before using
+        super.onEnabled()
+        if (isSessionCreated) {
             session.displayClientMessage("§a[SoundModule] Module activated.")
         }
     }
 
-    // IMPORTANT: Changed to onEnabled() and onDisabled() to match your Module.kt
     override fun onDisabled() {
-        super.onDisabled() // Call base implementation for toggle message
+        super.onDisabled()
         stopAllSounds()
-        if (isSessionCreated) { // Ensure session is ready before using
+        if (isSessionCreated) {
             session.displayClientMessage("§c[SoundModule] Module deactivated. All active sounds stopped.")
         }
     }
@@ -58,11 +57,10 @@ class SoundModule() : Module("Sound", ModuleCategory.MISC) { // Use ModuleCatego
         durationSeconds: Int
     ) {
         if (!isSessionCreated) {
-            // No session, cannot play sounds or display messages
             return
         }
 
-        val soundEvent = soundEventMap[soundName.lowercase()]
+        val soundEvent = soundEventMap[soundName.lowercase()] // lowercase() should be fine here
         if (soundEvent == null) {
             session.displayClientMessage("§c[SoundModule] Sound '$soundName' not found. Check available sounds.")
             return
@@ -79,7 +77,6 @@ class SoundModule() : Module("Sound", ModuleCategory.MISC) { // Use ModuleCatego
         val extraDataValue = (distance * 1000).toInt()
 
         val task = scheduler.scheduleAtFixedRate({
-            // Ensure session is still valid inside the lambda
             if (isSessionCreated) {
                 val packet = LevelSoundEventPacket().apply {
                     sound = soundEvent
@@ -107,7 +104,6 @@ class SoundModule() : Module("Sound", ModuleCategory.MISC) { // Use ModuleCatego
 
     fun stopSound(soundName: String) {
         activeSounds.remove(soundName.lowercase())?.cancel(false)
-        // No session message here as it might be called on module disable
     }
 
     fun stopAllSounds() {
