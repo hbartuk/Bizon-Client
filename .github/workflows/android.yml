@@ -7,35 +7,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Правильный способ использования actions/checkout
     - name: Checkout MuCuteClient
-      uses: actions/checkout@v4 # <-- 'uses' должен быть здесь, на том же уровне, что и 'name'
-
-      # Настройка JDK
+      uses: actions/checkout@v4
+      with:
+           uses: actions/setup-java@v4
     - name: set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: gradle
-        # Важно: Чтобы принудительно сбросить кеш Gradle, если проблема с `lowercase` сохранится,
-        # можно добавить уникальный 'key' к кэшу Gradle, например:
-        # key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-v5 
-        # (Удалите или закомментируйте строку 'cache: gradle' выше, если будете использовать 'key')
 
-      # Предоставление разрешений исполняемому файлу gradlew
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-
-      # Сборка отладочной версии APK
     - name: Build Debug APK with Gradle
       run: ./gradlew assembleDebug
-
-      # Сборка релизной версии APK
     - name: Build Release APK with Gradle
       run: ./gradlew assembleRelease
-
-      # Создание релиза на GitHub
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
