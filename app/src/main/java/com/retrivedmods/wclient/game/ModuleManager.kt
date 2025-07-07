@@ -97,11 +97,11 @@ object ModuleManager {
         addAndInitModule(NoHurtCameraModule())
         addAndInitModule(AutoWalkModule())
         addAndInitModule(AntiAFKModule())
-        addAndInitModule(DesyncModule()) // Теперь должен быть найден
+        addAndInitModule(DesyncModule())
         addAndInitModule(PositionLoggerModule())
-        addAndInitModule(SoundModule()) // Теперь должен быть найден
+        addAndInitModule(SoundModule())
         addAndInitModule(MotionFlyModule())
-        addAndInitModule(FreeCameraModule()) // Теперь должен быть найден
+        addAndInitModule(FreeCameraModule())
         addAndInitModule(KillauraModule())
         addAndInitModule(AntiCrystalModule())
         addAndInitModule(TimeShiftModule())
@@ -126,8 +126,9 @@ object ModuleManager {
     }
 
     fun getCommand(name: String): Command? {
-        // Использование equals с явным boolean для ignoreCase
-        return _commands.firstOrNull { it.alias.equals(name, true) }
+        // Использование equals с явным boolean для ignoreCase для совместимости
+        // с различными версиями Kotlin и избежания "Too many arguments"
+        return _commands.firstOrNull { it.alias.equals(name, ignoreCase = true) }
     }
 
     fun saveConfig() {
