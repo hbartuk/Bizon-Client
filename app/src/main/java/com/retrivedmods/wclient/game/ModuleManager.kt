@@ -9,6 +9,7 @@ import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
 import com.retrivedmods.wclient.game.module.combat.HitboxModule
 import com.retrivedmods.wclient.game.module.combat.TrollerModule
+import com.retrivedmods.wclient.game.module.combat.AutoClickerModule
 import com.retrivedmods.wclient.game.module.combat.InfiniteAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
 import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
@@ -104,6 +105,7 @@ object ModuleManager {
             add(TriggerBotModule())
             add(CrystalauraModule())
             add(TrollerModule())
+            add(AutoClickerModule())
             add(DamageTextModule())
             add(WAuraModule())
             add(SpeedModule())
