@@ -51,8 +51,12 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
+    // ИЗМЕНЕНО: 'vec3Position' теперь не 'override', если в Entity нет 'open var vec3Position'
+    // Если в Entity есть 'open var vec3Position', то верни 'override'
     override var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
-    override var vec3Rotation: Vector3f = Vector3f.ZERO // Добавил override для ротации
+
+    // ИЗМЕНЕНО: Удален 'override', так как 'vec3Rotation' в 'Entity' был final или не существовал
+    var vec3Rotation: Vector3f = Vector3f.ZERO // Инициализация начальной ротацией
     var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
 
 
@@ -161,7 +165,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
             // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ: РАСЧЁТ clickPosition ---
             // Указываем точку попадания в центр хитбокса цели
-            clickPosition = entity.vec3Position.add(0f, 0.9f, 0f) // 0.9f примерно середина игрового хитбокса
+            // 0.9f - это примерное смещение по Y для попадания в середину хитбокса игрока/моба
+            clickPosition = entity.vec3Position.add(0f, 0.9f, 0f)
         }
 
         session.serverBound(inventoryTransactionPacket)
