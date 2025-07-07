@@ -20,6 +20,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val activeSounds = mutableMapOf<String, ScheduledFuture<*>>()
 
+    // Эта карта остаётся пустой, так как мы не можем использовать строковые идентификаторы звуков напрямую
     private val soundEventMap: Map<String, SoundEvent> = emptyMap()
 
     override fun onEnabled() {
@@ -38,7 +39,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
     }
 
     fun playSound(
-        soundId: Int, // Целочисленный ID звука
+        soundId: Int, // Это пока что будет игнорироваться для SoundEvent, но используется для команд
         volume: Float,
         distance: Float,
         soundsPerSecond: Int,
@@ -49,7 +50,8 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
             return
         }
 
-        val stopKey = soundNameForDisplay.toLowerCase() // Используем toLowerCase()
+        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
+        val stopKey = java.lang.String.toLowerCase(soundNameForDisplay)
 
         stopSound(stopKey)
 
@@ -63,7 +65,10 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
         val task = scheduler.scheduleAtFixedRate({
             if (isSessionCreated) {
                 val packet = LevelSoundEventPacket().apply {
-                    sound = SoundEvent.from(soundId) // Используем числовой ID
+                    // ИСПРАВЛЕНИЕ: Используем базовый SoundEvent.RANDOM_CLICK, т.к. SoundEvent.from() отсутствует
+                    // Это означает, что все звуки будут "случайным кликом"
+                    // пока не обновится bedrock-codec.
+                    sound = SoundEvent.RANDOM_CLICK
                     position = initialPosition
                     volume = volume
                     isBabySound = false
@@ -86,7 +91,8 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
     }
 
     fun stopSound(soundIdentifier: String) {
-        activeSounds.remove(soundIdentifier.toLowerCase())?.cancel(false)
+        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
+        activeSounds.remove(java.lang.String.toLowerCase(soundIdentifier))?.cancel(false)
     }
 
     fun stopAllSounds() {
