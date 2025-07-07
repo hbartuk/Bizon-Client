@@ -3,25 +3,25 @@ package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.Module
-import com.retrivedmods.wclient.game.ModuleCategory // Правильный путь
+import com.retrivedmods.wclient.game.ModuleCategory
 
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent // Важно: убедитесь, что этот импорт есть
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.Locale // Важно: Добавлен импорт для Locale
 
-// ИСПРАВЛЕНИЕ: Используем 'ModuleCategory.Misc' (с большой 'M')
-class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь должно компилироваться
+class SoundModule() : Module("Sound", ModuleCategory.Misc) {
 
     override lateinit var session: GameSession
 
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val activeSounds = mutableMapOf<String, ScheduledFuture<*>>()
 
-    // Эта карта остаётся пустой, так как мы не можем использовать строковые идентификаторы звуков напрямую
-    private val soundEventMap: Map<String, SoundEvent> = emptyMap()
+    // Используем массив всех SoundEvent из Enum
+    private val allSoundEvents: Array<SoundEvent> = SoundEvent.values()
 
     override fun onEnabled() {
         super.onEnabled()
@@ -39,7 +39,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
     }
 
     fun playSound(
-        soundId: Int, // Это пока что будет игнорироваться для SoundEvent, но используется для команд
+        soundId: Int, // Этот ID теперь используется как индекс в SoundEvent.values()
         volume: Float,
         distance: Float,
         soundsPerSecond: Int,
@@ -50,8 +50,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
             return
         }
 
-        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
-        val stopKey = java.lang.String.toLowerCase(soundNameForDisplay)
+        val stopKey = soundNameForDisplay.toLowerCase(Locale.ROOT)
 
         stopSound(stopKey)
 
@@ -65,10 +64,17 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
         val task = scheduler.scheduleAtFixedRate({
             if (isSessionCreated) {
                 val packet = LevelSoundEventPacket().apply {
-                    // ИСПРАВЛЕНИЕ: Используем базовый SoundEvent.RANDOM_CLICK, т.к. SoundEvent.from() отсутствует
-                    // Это означает, что все звуки будут "случайным кликом"
-                    // пока не обновится bedrock-codec.
-                    sound = SoundEvent.RANDOM_CLICK
+                    // Получаем SoundEvent по индексу из массива.
+                    // Если soundId выходит за границы, будет использоваться SoundEvent.UNDEFINED.
+                    sound = if (soundId >= 0 && soundId < allSoundEvents.size) {
+                        allSoundEvents[soundId]
+                    } else {
+                        // Если ID некорректен, используем UNDEFINED или ATTACK_NODAMAGE
+                        // UNDEFINED - это последний элемент в вашем SoundEvent.java
+                        SoundEvent.UNDEFINED
+                        // Или, если UNDEFINED вызывает проблемы, используйте SoundEvent.ATTACK_NODAMAGE
+                        // SoundEvent.ATTACK_NODAMAGE
+                    }
                     position = initialPosition
                     volume = volume
                     isBabySound = false
@@ -91,8 +97,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) { // Теперь д�
     }
 
     fun stopSound(soundIdentifier: String) {
-        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
-        activeSounds.remove(java.lang.String.toLowerCase(soundIdentifier))?.cancel(false)
+        activeSounds.remove(soundIdentifier.toLowerCase(Locale.ROOT))?.cancel(false)
     }
 
     fun stopAllSounds() {
