@@ -11,7 +11,6 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-// import java.util.Locale // Убрал, так как lowercase() не требует Locale
 
 class SoundModule() : Module("Sound", ModuleCategory.Misc) {
 
@@ -20,7 +19,6 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val activeSounds = mutableMapOf<String, ScheduledFuture<*>>()
 
-    // Используем массив всех SoundEvent из Enum
     private val allSoundEvents: Array<SoundEvent> = SoundEvent.values()
 
     override fun onEnabled() {
@@ -39,7 +37,7 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     }
 
     fun playSound(
-        soundId: Int, // Этот ID теперь используется как индекс в SoundEvent.values()
+        soundId: Int,
         volume: Float,
         distance: Float,
         soundsPerSecond: Int,
@@ -50,7 +48,6 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
             return
         }
 
-        // ИСПРАВЛЕНИЕ: Использование lowercase()
         val stopKey = soundNameForDisplay.lowercase()
 
         stopSound(stopKey)
@@ -62,24 +59,24 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
         val periodMillis = if (soundsPerSecond > 0) (1000L / soundsPerSecond) else 0L
         val extraDataValue = (distance * 1000).toInt()
 
+        // Определяем SoundEvent до создания пакета
+        val targetSoundEvent = if (soundId >= 0 && soundId < allSoundEvents.size) {
+            allSoundEvents[soundId]
+        } else {
+            SoundEvent.UNDEFINED
+        }
+
         val task = scheduler.scheduleAtFixedRate({
             if (isSessionCreated) {
-                val packet = LevelSoundEventPacket().apply {
-                    // Получаем SoundEvent по индексу из массива.
-                    // Если soundId выходит за границы, будет использоваться SoundEvent.UNDEFINED.
-                    sound = if (soundId >= 0 && soundId < allSoundEvents.size) {
-                        allSoundEvents[soundId]
-                    } else {
-                        // Если ID некорректен, используем UNDEFINED.
-                        // Это строка 79
-                        SoundEvent.UNDEFINED
-                    }
-                    position = initialPosition
-                    volume = volume
-                    isBabySound = false
-                    isRelativeVolumeDisabled = false
-                    extraData = extraDataValue
-                }
+                // Создаем пакет и присваиваем свойства явно
+                val packet = LevelSoundEventPacket()
+                packet.sound = targetSoundEvent // Это строка 78
+                packet.position = initialPosition
+                packet.volume = volume
+                packet.isBabySound = false
+                packet.isRelativeVolumeDisabled = false
+                packet.extraData = extraDataValue
+
                 session.serverBound(packet)
                 session.clientBound(packet)
             }
@@ -96,7 +93,6 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
     }
 
     fun stopSound(soundIdentifier: String) {
-        // ИСПРАВЛЕНИЕ: Использование lowercase()
         activeSounds.remove(soundIdentifier.lowercase())?.cancel(false)
     }
 
