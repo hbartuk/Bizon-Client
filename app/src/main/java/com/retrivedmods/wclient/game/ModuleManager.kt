@@ -67,8 +67,10 @@ import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
 // Импорты для системы команд
 import com.retrivedmods.wclient.game.command.Command // Базовый класс команды
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand // Твоя команда SkinStealerCommand
-import com.retrivedmods.wclient.game.command.impl. SoundCommand
+import com.retrivedmods.wclient.game.command.impl.SoundCommand
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -76,6 +78,10 @@ import kotlinx.serialization.json.jsonObject
 import java.io.File
 
 object ModuleManager {
+
+    // Добавляем свойство для хранения текущей игровой сессии
+    var session: GameSession? = null
+        private set // Делаем сеттер приватным, чтобы устанавливать сессию только через initialize
 
     private val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
@@ -88,6 +94,7 @@ object ModuleManager {
         ignoreUnknownKeys = true
     }
 
+    // Блок init будет использоваться только для регистрации модулей и команд
     init {
         // --- Регистрация модулей ---
         with(_modules) {
@@ -96,7 +103,7 @@ object ModuleManager {
 
             // Все остальные модули
             add(FlyModule())
-            add(GravityControlModule()) // <-- ИСПРАВЛЕНО: добавлена закрывающая скобка )
+            add(GravityControlModule())
             add(ZoomModule())
             add(AutoHvHModule())
             add(AirJumpModule())
@@ -160,6 +167,15 @@ object ModuleManager {
             add(SoundCommand())
             // Добавляй другие команды здесь, например:
             // add(HelpCommand())
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Инициализация ModuleManager с GameSession
+    fun initialize(session: GameSession) {
+        this.session = session // Сохраняем ссылку на текущую сессию
+        _modules.forEach { module ->
+            module.session = session // Передаем сессию каждому модулю
+            module.initialize() // Вызываем метод инициализации модуля
         }
     }
 
