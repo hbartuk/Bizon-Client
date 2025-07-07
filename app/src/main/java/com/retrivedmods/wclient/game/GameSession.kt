@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/retrivedmods/wclient/game/GameSession.kt
 package com.retrivedmods.wclient.game
 
 import com.retrivedmods.wclient.application.AppContext
@@ -6,6 +7,7 @@ import com.retrivedmods.wclient.game.world.Level
 import com.mucheng.mucute.relay.MuCuteRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
+import com.retrivedmods.wclient.game.module.Module // <-- НОВЫЙ ИМПОРТ: Убедитесь, что это правильный путь к вашему базовому классу Module
 
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
@@ -36,7 +38,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
         // --- Обработка пакетов модулями (этот блок остаётся) ---
         for (module in ModuleManager.modules) {
-            module.session = this // Устанавливаем сессию для каждого модуля
+            // module.session = this // Устанавливаем сессию для каждого модуля. Если модуль получает сессию через конструктор, эта строка не нужна.
             module.beforePacketBound(interceptablePacket)
             if (interceptablePacket.isIntercepted) {
                 return true
@@ -76,4 +78,22 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         clientBound(textPacket)
     }
 
+    ---
+
+    ## Добавленный метод `getModule`
+
+    Этот метод позволяет получить экземпляр любого зарегистрированного модуля, если он является подтипом `Module`.
+
+    ```kotlin
+    fun <T : Module> getModule(moduleClass: Class<T>): T? {
+        // Мы итерируемся по списку модулей из ModuleManager.
+        // Предполагается, что ModuleManager.modules является доступным списком ваших активных модулей.
+        for (module in ModuleManager.modules) {
+            if (moduleClass.isInstance(module)) {
+                return moduleClass.cast(module) // Возвращаем найденный модуль, приведенный к нужному типу.
+            }
+        }
+        return null // Модуль не найден.
+    }
+    ```
 }
