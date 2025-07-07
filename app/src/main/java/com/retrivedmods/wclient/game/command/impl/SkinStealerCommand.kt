@@ -1,8 +1,8 @@
 // File: app/src/main/java/com/retrivedmods/wclient/game/command/impl/SkinStealerCommand.kt
 package com.retrivedmods.wclient.game.command.impl
 
-import com.retrivedmods.wclient.game.command.Command // Ваш базовый класс Command
-import com.retrivedmods.wclient.game.GameSession // Ваш класс GameSession
+import com.retrivedmods.wclient.game.command.Command
+import com.retrivedmods.wclient.game.GameSession
 import org.cloudburstmc.protocol.bedrock.data.skin.AnimationData
 import org.cloudburstmc.protocol.bedrock.data.skin.ImageData
 import org.cloudburstmc.protocol.bedrock.data.skin.PersonaPieceData
@@ -22,11 +22,10 @@ import java.util.UUID
  */
 class SkinStealerCommand : Command("steal") {
 
-    // Изменен тип возвращаемого значения на Unit (нет явного return true/false в конце)
     override fun exec(args: Array<String>, session: GameSession) {
         if (args.isEmpty()) {
             session.displayClientMessage("§cИспользование: §7.steal <никнейм>")
-            return // Нет возврата false, просто выходим
+            return
         }
 
         val targetUsername = args[0]
@@ -35,14 +34,14 @@ class SkinStealerCommand : Command("steal") {
 
         if (targetSkin == null) {
             session.displayClientMessage("§cНе удалось найти скин игрока §7$targetUsername§c. Возможно, он не в зоне видимости или его скин не был кэширован.")
-            return // Нет возврата false, просто выходим
+            return
         }
 
         val newSkinId = UUID.randomUUID().toString()
 
         val stolenSkin = SerializedSkin.builder()
             .skinId(newSkinId)
-            .playFabId(session.localPlayer.playFabId) // ИСПРАВЛЕНО
+            .playFabId(session.localPlayer.uuid.toString()) // ИСПРАВЛЕНО: Используем строковое представление UUID как PlayFabId
             .skinData(targetSkin.getSkinData())
             .capeData(targetSkin.getCapeData() ?: ImageData.EMPTY)
             .geometryData(targetSkin.getGeometryData() ?: DEFAULT_GEOMETRY_DATA)
@@ -60,7 +59,6 @@ class SkinStealerCommand : Command("steal") {
             .skinColor(targetSkin.getSkinColor() ?: "#0")
             .personaPieces(targetSkin.getPersonaPieces() ?: emptyList())
             .tintColors(targetSkin.getTintColors() ?: emptyList())
-            // .overridingPlayerAppearance(true) // УДАЛЕНО: Этот метод отсутствует
             .build()
 
         session.displayClientMessage("§e--- Логи SerializedSkin для отправки ---")
@@ -83,11 +81,10 @@ class SkinStealerCommand : Command("steal") {
         session.displayClientMessage("§e--- Конец логов SerializedSkin ---")
 
         val playerSkinPacket = PlayerSkinPacket().apply {
-            uuid = session.localPlayer.uuid // ИСПРАВЛЕНО
+            uuid = session.localPlayer.uuid
             skin = stolenSkin
             newSkinName = newSkinId
-            oldSkinName = session.localPlayer.skin.getSkinId() // ИСПРАВЛЕНО
-            // premium = false // УДАЛЕНО: Это поле отсутствует в PlayerSkinPacket
+            oldSkinName = newSkinId // ВРЕМЕННОЕ ИСПРАВЛЕНИЕ: Используем newSkinId как oldSkinName, если текущий скин недоступен
         }
 
         session.serverBound(playerSkinPacket)
@@ -100,12 +97,12 @@ class SkinStealerCommand : Command("steal") {
     }
 
     private fun createTestSkin(): SerializedSkin {
-        val testSkinData = ByteArray(SerializedSkin.DOUBLE_SKIN_SIZE) { 0xFF.toByte() } // Белый скин 64x64
+        val testSkinData = ByteArray(SerializedSkin.DOUBLE_SKIN_SIZE) { 0xFF.toByte() }
         val testImageData = ImageData.of(64, 64, testSkinData)
 
         return SerializedSkin.builder()
             .skinId(UUID.randomUUID().toString())
-            .playFabId("")
+            .playFabId("") // Здесь пока оставляем пустую строку, так как это тестовый скин
             .skinData(testImageData)
             .geometryData(DEFAULT_GEOMETRY_DATA)
             .skinResourcePatch(DEFAULT_SKIN_RESOURCE_PATCH)
