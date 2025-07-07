@@ -5,7 +5,6 @@ import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.module.misc.SoundModule
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent // ВАЖНО: ЯВНО ДОБАВЛЕН ИМПОРТ SoundEvent
-// import java.util.Locale // Убрал, так как lowercase() не требует Locale
 
 class SoundCommand : Command("sound") {
 
@@ -13,13 +12,11 @@ class SoundCommand : Command("sound") {
         if (args.isEmpty()) {
             session.displayClientMessage("§cИспользование: §7.sound <ID_звука> [громкость] [дистанция] [частота] [длительность]")
             session.displayClientMessage("§eДля остановки всех звуков: §b.sound stopall")
-            // ИСПРАВЛЕНИЕ: Обращаемся к SoundEvent.values().size
             session.displayClientMessage("§eID звука - это число от 0 до ${SoundEvent.values().size - 1}. Посмотрите SoundEvent.java для точного соответствия ID.")
             session.displayClientMessage("§eПример: §b.sound 0 (ITEM_USE_ON)§e, §b.sound 5 (BREAK)§e, §b.sound 39 (ATTACK_NODAMAGE)")
             return
         }
 
-        // ИСПРАВЛЕНИЕ: Использование lowercase()
         when (args[0].lowercase()) {
             "stopall" -> {
                 val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
@@ -40,7 +37,7 @@ class SoundCommand : Command("sound") {
                 val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
                 val distance = args.getOrNull(2)?.toFloatOrNull() ?: 16.0f
                 val soundsPerSecond = args.getOrNull(3)?.toIntOrNull() ?: 1
-                val durationSeconds = args.getOrNull(4)?.toIntOrNull() ?: 1
+                val durationSeconds = args.getOrOrNull(4)?.toIntOrNull() ?: 1
 
                 val soundModule = session.getModule(SoundModule::class.java) as? SoundModule
 
