@@ -20,33 +20,29 @@ import java.util.UUID
  * В реальном клиенте вам нужно будет перехватывать пакеты AddPlayerPacket или SetEntityDataPacket
  * чтобы получить данные скина других игроков.
  */
-// Изменяем конструктор, чтобы он соответствовал вашему классу Command
-class SkinStealerCommand : Command("steal") { // Теперь конструктор не принимает GameSession напрямую
+class SkinStealerCommand : Command("steal") {
 
-    // Метод exec теперь принимает GameSession как аргумент
-    override fun exec(args: Array<String>, session: GameSession): Boolean {
+    // Изменен тип возвращаемого значения на Unit (нет явного return true/false в конце)
+    override fun exec(args: Array<String>, session: GameSession) {
         if (args.isEmpty()) {
             session.displayClientMessage("§cИспользование: §7.steal <никнейм>")
-            return false
+            return // Нет возврата false, просто выходим
         }
 
         val targetUsername = args[0]
 
-        // --- ВАЖНО: Здесь вам нужно получить объект SerializedSkin целевого игрока ---
-        val targetSkin: SerializedSkin? = getSkinFromCache(targetUsername, session) // Передаем session в getSkinFromCache
+        val targetSkin: SerializedSkin? = getSkinFromCache(targetUsername, session)
 
         if (targetSkin == null) {
             session.displayClientMessage("§cНе удалось найти скин игрока §7$targetUsername§c. Возможно, он не в зоне видимости или его скин не был кэширован.")
-            return false
+            return // Нет возврата false, просто выходим
         }
 
-        // Генерируем новый уникальный ID для нашего "украденного" скина
         val newSkinId = UUID.randomUUID().toString()
 
-        // --- Формируем новый SerializedSkin для отправки ---
         val stolenSkin = SerializedSkin.builder()
             .skinId(newSkinId)
-            .playFabId(session.localPlayer.getPlayFabId())
+            .playFabId(session.localPlayer.playFabId) // ИСПРАВЛЕНО
             .skinData(targetSkin.getSkinData())
             .capeData(targetSkin.getCapeData() ?: ImageData.EMPTY)
             .geometryData(targetSkin.getGeometryData() ?: DEFAULT_GEOMETRY_DATA)
@@ -64,10 +60,9 @@ class SkinStealerCommand : Command("steal") { // Теперь конструкт
             .skinColor(targetSkin.getSkinColor() ?: "#0")
             .personaPieces(targetSkin.getPersonaPieces() ?: emptyList())
             .tintColors(targetSkin.getTintColors() ?: emptyList())
-            .overridingPlayerAppearance(true)
+            // .overridingPlayerAppearance(true) // УДАЛЕНО: Этот метод отсутствует
             .build()
 
-        // --- Детальные логи для отладки ---
         session.displayClientMessage("§e--- Логи SerializedSkin для отправки ---")
         session.displayClientMessage("§eSkinId: §b${stolenSkin.getSkinId()}")
         session.displayClientMessage("§ePlayFabId: §b${stolenSkin.getPlayFabId()}")
@@ -87,42 +82,32 @@ class SkinStealerCommand : Command("steal") { // Теперь конструкт
         session.displayClientMessage("§eFullSkinId: §b${stolenSkin.getFullSkinId()}")
         session.displayClientMessage("§e--- Конец логов SerializedSkin ---")
 
-        // Создаем и отправляем PlayerSkinPacket
         val playerSkinPacket = PlayerSkinPacket().apply {
-            uuid = session.localPlayer.getUuid()
+            uuid = session.localPlayer.uuid // ИСПРАВЛЕНО
             skin = stolenSkin
             newSkinName = newSkinId
-            oldSkinName = session.localPlayer.getSkin().getSkinId()
-            premium = false
+            oldSkinName = session.localPlayer.skin.getSkinId() // ИСПРАВЛЕНО
+            // premium = false // УДАЛЕНО: Это поле отсутствует в PlayerSkinPacket
         }
 
         session.serverBound(playerSkinPacket)
         session.displayClientMessage("§a[WClient] Попытка установить скин игрока §b$targetUsername§a. Проверьте результат.")
-
-        return true
     }
 
-    // --- Заглушка для получения скина из кэша ---
-    // Теперь метод принимает GameSession
     private fun getSkinFromCache(username: String, session: GameSession): SerializedSkin? {
-        // Здесь должен быть код, который ищет скин по никнейму в вашем хранилище
-        // Например:
-        // return session.entityManager.getPlayerSkin(username)
         session.displayClientMessage("§6[DEBUG] Вызов заглушки getSkinFromCache. Вам нужно реализовать её!")
-        // Возвращаем тестовый скин для демонстрации, если нет реального
-        return createTestSkin() // В реальном коде заменить на реальное получение скина
+        return createTestSkin()
     }
 
-    // --- Заглушка для создания тестового скина (только для демонстрации!) ---
     private fun createTestSkin(): SerializedSkin {
         val testSkinData = ByteArray(SerializedSkin.DOUBLE_SKIN_SIZE) { 0xFF.toByte() } // Белый скин 64x64
-        val testImageData = ImageData.of(64, 64, testSkinData) // Используем ImageData.of()
+        val testImageData = ImageData.of(64, 64, testSkinData)
 
         return SerializedSkin.builder()
             .skinId(UUID.randomUUID().toString())
             .playFabId("")
             .skinData(testImageData)
-            .geometryData(DEFAULT_GEOMETRY_DATA) // Стандартная геометрия для 64x64
+            .geometryData(DEFAULT_GEOMETRY_DATA)
             .skinResourcePatch(DEFAULT_SKIN_RESOURCE_PATCH)
             .premium(false)
             .persona(false)
@@ -131,7 +116,6 @@ class SkinStealerCommand : Command("steal") { // Теперь конструкт
             .build()
     }
 
-    // --- Константы для стандартной геометрии ---
     private val DEFAULT_GEOMETRY_DATA = """
         {
           "format_version": "1.8.0",
