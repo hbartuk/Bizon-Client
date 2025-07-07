@@ -1,72 +1,22 @@
+// File: app/src/main/java/com/retrivedmods/wclient/game/ModuleManager.kt
 package com.retrivedmods.wclient.game
 
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-// Импорты модулей
-import com.retrivedmods.wclient.game.module.combat.AdvanceCombatAuraModule
-import com.retrivedmods.wclient.game.module.combat.WAuraModule
-import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
-import com.retrivedmods.wclient.game.module.combat.HitboxModule
-import com.retrivedmods.wclient.game.module.combat.TrollerModule
-import com.retrivedmods.wclient.game.module.combat.AutoClickerModule
-import com.retrivedmods.wclient.game.module.combat.InfiniteAuraModule
-import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
-import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
-import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
-import com.retrivedmods.wclient.game.module.combat.CriticalsModule
-import com.retrivedmods.wclient.game.module.combat.CrystalauraModule
-import com.retrivedmods.wclient.game.module.combat.EnemyHunterModule
-import com.retrivedmods.wclient.game.module.combat.KillauraModule
-import com.retrivedmods.wclient.game.module.combat.ReachModule
-import com.retrivedmods.wclient.game.module.combat.SmartAuraModule
-import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
-import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
-import com.retrivedmods.wclient.game.module.misc.SkinStealerModule
-import com.retrivedmods.wclient.game.module.player.DesyncModule
-import com.retrivedmods.wclient.game.module.motion.NoClipModule
-import com.retrivedmods.wclient.game.module.misc.PlayerTracerModule
-import com.retrivedmods.wclient.game.module.misc.PositionLoggerModule
-import com.retrivedmods.wclient.game.module.misc.SoundModule
-import com.retrivedmods.wclient.game.module.world.TimeShiftModule
-import com.retrivedmods.wclient.game.module.player.BlinkModule
-import com.retrivedmods.wclient.game.module.player.RegenerationModule
-import com.retrivedmods.wclient.game.module.world.WeatherControllerModule
-import com.retrivedmods.wclient.game.module.motion.AirJumpModule
-import com.retrivedmods.wclient.game.module.motion.AntiAFKModule
-import com.retrivedmods.wclient.game.module.motion.AutoWalkModule
-import com.retrivedmods.wclient.game.module.motion.BhopModule
-import com.retrivedmods.wclient.game.module.motion.FastStopModule
-import com.retrivedmods.wclient.game.module.motion.FlyModule
-import com.retrivedmods.wclient.game.module.motion.GravityControlModule
-import com.retrivedmods.wclient.game.module.motion.GlideModule
-import com.retrivedmods.wclient.game.module.motion.HighJumpModule
-import com.retrivedmods.wclient.game.module.motion.JetPackModule
-import com.retrivedmods.wclient.game.module.motion.JitterFlyModule
-import com.retrivedmods.wclient.game.module.motion.MotionFlyModule
-import com.retrivedmods.wclient.game.module.motion.MotionVarModule
-import com.retrivedmods.wclient.game.module.motion.OpFightBotModule
-import com.retrivedmods.wclient.game.module.motion.SpeedModule
-import com.retrivedmods.wclient.game.module.motion.SprintModule
-import com.retrivedmods.wclient.game.module.player.FreeCameraModule
-import com.retrivedmods.wclient.game.module.visual.NoHurtCameraModule
-import com.retrivedmods.wclient.game.module.visual.ZoomModule
-import com.retrivedmods.wclient.game.module.visual.DamageTextModule
-import com.retrivedmods.wclient.game.module.motion.PlayerTPModule
-import com.retrivedmods.wclient.game.module.motion.SpiderModule
-import com.retrivedmods.wclient.game.module.player.FastBreakModule
-import com.retrivedmods.wclient.game.module.player.JesusModule
-import com.retrivedmods.wclient.game.module.visual.NightVisionModule
-import com.retrivedmods.wclient.game.module.visual.FakeProxyModule
-import com.retrivedmods.wclient.game.module.visual.PlayerJoinNotifierModule
-import com.retrivedmods.wclient.game.module.world.FakeLagModule
 
-// Импорт нового CommandHandlerModule
-import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
+// Импорты модулей
+import com.retrivedmods.wclient.game.module.combat.* // Использование wildcard для удобства, если все модули в пакетах с одинаковыми именами
+import com.retrivedmods.wclient.game.module.misc.*
+import com.retrivedmods.wclient.game.module.motion.*
+import com.retrivedmods.wclient.game.module.player.*
+import com.retrivedmods.wclient.game.module.visual.*
+import com.retrivedmods.wclient.game.module.world.*
 
 // Импорты для системы команд
-import com.retrivedmods.wclient.game.command.Command // Базовый класс команды
-import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand // Твоя команда SkinStealerCommand
+import com.retrivedmods.wclient.game.command.Command
+import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
+import com.retrivedmods.wclient.game.command.impl.SoundCommand // <-- ИСПРАВЛЕНО: Добавлен импорт SoundCommand
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -77,94 +27,120 @@ import java.io.File
 object ModuleManager {
 
     private val _modules: MutableList<Module> = ArrayList()
-    val modules: List<Module> = _modules
+    val modules: List<Module> = _modules // Публичный неизменяемый список
 
     private val _commands: MutableList<Command> = ArrayList()
-    val commands: List<Command> = _commands
+    val commands: List<Command> = _commands // Публичный неизменяемый список
 
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
     }
 
+    // Блок init теперь только для настройки JSON и, возможно, загрузки конфигов при старте приложения
+    // Регистрация модулей и команд перенесена в initialize(session)
     init {
+        // Здесь можно было бы загрузить конфиги, но пока оставим это в initialize,
+        // так как для fromJson() нужна инициализированная session для некоторых модулей.
+    }
+
+    /**
+     * Инициализирует ModuleManager, регистрируя все модули и команды.
+     * Этот метод должен быть вызван один раз после создания GameSession.
+     */
+    fun initialize(session: GameSession) {
         // --- Регистрация модулей ---
+        // Инициализируем сессию для каждого модуля здесь.
+        // ModuleManager.modules должен быть MutableList<Module>
+        // А Module.session должен быть lateinit var open var session: GameSession
+        _modules.clear() // Очищаем на случай повторной инициализации
         with(_modules) {
             // CommandHandlerModule должен быть зарегистрирован, чтобы обрабатывать команды
-            add(CommandHandlerModule())
+            // Ему также понадобится ссылка на ModuleManager для доступа к командам
+            add(CommandHandlerModule().apply { this.session = session }) // Инициализация session для CommandHandlerModule
 
-            // Все остальные модули
-            add(FlyModule())
-            add(GravityControlModule()) // <-- ИСПРАВЛЕНО: добавлена закрывающая скобка )
-            add(ZoomModule())
-            add(AutoHvHModule())
-            add(AirJumpModule())
-            add(NoClipModule())
-            add(GlideModule())
-            add(JitterFlyModule())
-            add(AdvanceCombatAuraModule())
-            add(TriggerBotModule())
-            add(CrystalauraModule())
-            add(TrollerModule())
-            add(AutoClickerModule())
-            add(DamageTextModule())
-            add(WAuraModule())
-            add(SpeedModule())
-            add(JetPackModule())
-            add(BlinkModule())
-            add(AdvanceDisablerModule())
-            add(BlinkModule())
-            add(NightVisionModule())
-            add(RegenerationModule())
-            add(AutoDisconnectModule())
-            add(SkinStealerModule())
-            add(PlayerJoinNotifierModule())
-            add(HitboxModule())
-            add(InfiniteAuraModule())
-            add(CriticalsModule())
-            add(FakeProxyModule())
-            add(ReachModule())
-            add(SmartAuraModule())
-            add(PlayerTPModule())
-            add(HighJumpModule())
-            add(SpiderModule())
-            add(JesusModule())
-            add(AntiKnockbackModule())
-            add(FastStopModule())
-            add(OpFightBotModule())
-            add(FakeLagModule())
-            add(FastBreakModule())
-            add(BhopModule())
-            add(SprintModule())
-            add(NoHurtCameraModule())
-            add(AutoWalkModule())
-            add(AntiAFKModule())
-            add(DesyncModule())
-            add(PositionLoggerModule())
-            add(SoundModule())
-            add(MotionFlyModule())
-            add(FreeCameraModule())
-            add(KillauraModule())
-            add(AntiCrystalModule())
-            add(TimeShiftModule())
-            add(WeatherControllerModule())
-            add(MotionVarModule())
-            add(PlayerTracerModule())
-            add(EnemyHunterModule())
+            // Все остальные модули. Инициализируем их session сразу.
+            add(FlyModule().apply { this.session = session })
+            add(GravityControlModule().apply { this.session = session })
+            add(ZoomModule().apply { this.session = session })
+            add(AutoHvHModule().apply { this.session = session })
+            add(AirJumpModule().apply { this.session = session })
+            add(NoClipModule().apply { this.session = session })
+            add(GlideModule().apply { this.session = session })
+            add(JitterFlyModule().apply { this.session = session })
+            add(AdvanceCombatAuraModule().apply { this.session = session })
+            add(TriggerBotModule().apply { this.session = session })
+            add(CrystalauraModule().apply { this.session = session })
+            add(TrollerModule().apply { this.session = session })
+            add(AutoClickerModule().apply { this.session = session })
+            add(DamageTextModule().apply { this.session = session })
+            add(WAuraModule().apply { this.session = session })
+            add(SpeedModule().apply { this.session = session })
+            add(JetPackModule().apply { this.session = session })
+            add(BlinkModule().apply { this.session = session })
+            add(AdvanceDisablerModule().apply { this.session = session })
+            // add(BlinkModule().apply { this.session = session }) // Дубликат BlinkModule
+            add(NightVisionModule().apply { this.session = session })
+            add(RegenerationModule().apply { this.session = session })
+            add(AutoDisconnectModule().apply { this.session = session })
+            add(SkinStealerModule().apply { this.session = session })
+            add(PlayerJoinNotifierModule().apply { this.session = session })
+            add(HitboxModule().apply { this.session = session })
+            add(InfiniteAuraModule().apply { this.session = session })
+            add(CriticalsModule().apply { this.session = session })
+            add(FakeProxyModule().apply { this.session = session })
+            add(ReachModule().apply { this.session = session })
+            add(SmartAuraModule().apply { this.session = session })
+            add(PlayerTPModule().apply { this.session = session })
+            add(HighJumpModule().apply { this.session = session })
+            add(SpiderModule().apply { this.session = session })
+            add(JesusModule().apply { this.session = session })
+            add(AntiKnockbackModule().apply { this.session = session })
+            add(FastStopModule().apply { this.session = session })
+            add(OpFightBotModule().apply { this.session = session })
+            add(FakeLagModule().apply { this.session = session })
+            add(FastBreakModule().apply { this.session = session })
+            add(BhopModule().apply { this.session = session })
+            add(SprintModule().apply { this.session = session })
+            add(NoHurtCameraModule().apply { this.session = session })
+            add(AutoWalkModule().apply { this.session = session })
+            add(AntiAFKModule().apply { this.session = session })
+            add(DesyncModule().apply { this.session = session })
+            add(PositionLoggerModule().apply { this.session = session })
+            add(SoundModule().apply { this.session = session }) // <-- Инициализация session для SoundModule
+            add(MotionFlyModule().apply { this.session = session })
+            add(FreeCameraModule().apply { this.session = session })
+            add(KillauraModule().apply { this.session = session })
+            add(AntiCrystalModule().apply { this.session = session })
+            add(TimeShiftModule().apply { this.session = session })
+            add(WeatherControllerModule().apply { this.session = session })
+            add(MotionVarModule().apply { this.session = session })
+            add(PlayerTracerModule().apply { this.session = session })
+            add(EnemyHunterModule().apply { this.session = session })
         }
 
         // --- Регистрация команд ---
+        _commands.clear() // Очищаем на случай повторной инициализации
         with(_commands) {
             add(SkinStealerCommand())
             add(SoundCommand())
-            // Добавляй другие команды здесь, например:
-            // add(HelpCommand())
+            // Добавляй другие команды здесь
+        }
+
+        // Загружаем конфиг после того, как все модули инициализированы session
+        loadConfig()
+
+        // Включаем модули, которые должны быть включены по умолчанию
+        _modules.forEach {
+            if (it.isEnabled) { // Если модуль был включен в конфиге или по defaultEnabled
+                it.onEnabled() // Вызываем onEnabled, чтобы отправить сообщение и запустить логику
+            }
         }
     }
 
+
     fun getCommand(name: String): Command? {
-        // Ищем команду по её алиасу (имени), игнорируя регистр
-        return _commands.firstOrNull { it.alias.contains(name.lowercase()) }
+        return _commands.firstOrNull { it.alias.lowercase() == name.lowercase() } // Сравниваем точно, а не contains
     }
 
     fun saveConfig() {
@@ -201,10 +177,12 @@ object ModuleManager {
         }
 
         val jsonObject = json.parseToJsonElement(jsonString).jsonObject
-        val modules = jsonObject["modules"]!!.jsonObject
-        _modules.forEach { module ->
-            (modules[module.name] as? JsonObject)?.let {
-                module.fromJson(it)
+        val modulesConfig = jsonObject["modules"]?.jsonObject // Переименовал, чтобы не конфликтовать с `modules`
+        modulesConfig?.let {
+            _modules.forEach { module ->
+                (it[module.name] as? JsonObject)?.let { moduleJson ->
+                    module.fromJson(moduleJson)
+                }
             }
         }
     }
@@ -226,10 +204,10 @@ object ModuleManager {
     fun importConfig(configStr: String) {
         try {
             val jsonObject = json.parseToJsonElement(configStr).jsonObject
-            val modules = jsonObject["modules"]?.jsonObject ?: return
+            val modulesConfig = jsonObject["modules"]?.jsonObject ?: return // Переименовал
 
             _modules.forEach { module ->
-                modules[module.name]?.let {
+                modulesConfig[module.name]?.let {
                     if (it is JsonObject) {
                         module.fromJson(it)
                     }
