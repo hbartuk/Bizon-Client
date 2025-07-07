@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/ModuleManager.kt
 package com.retrivedmods.wclient.game
 
 import android.content.Context
@@ -21,14 +20,14 @@ import com.retrivedmods.wclient.game.module.world.*
 // Импорты для системы команд
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
-import com.retrivedmods.wclient.game.command.impl.SoundCommand
+import com.retrivedmods.wclient.game.command.impl.SoundCommand // Убедитесь, что эта команда существует и импортирована
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString // <-- Необходим для encodeToString
+import kotlinx.serialization.decodeFromString // <-- Необходим для decodeFromString
 import java.io.File
 
 object ModuleManager {
@@ -36,8 +35,10 @@ object ModuleManager {
     private val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
+    // --- Добавлены для поддержки команд ---
     private val _commands: MutableList<Command> = ArrayList()
     val commands: List<Command> = _commands
+    // -----------------------------------
 
     private val json = Json {
         prettyPrint = true
@@ -111,10 +112,11 @@ object ModuleManager {
         addAndInitModule(PlayerTracerModule())
         addAndInitModule(EnemyHunterModule())
 
-        // --- Регистрация команд ---
+        // --- Регистрация команд (отличное от init блока) ---
         _commands.clear()
         _commands.add(SkinStealerCommand())
         _commands.add(SoundCommand())
+        // ----------------------------------------------------
 
         loadConfig()
 
@@ -125,10 +127,11 @@ object ModuleManager {
         }
     }
 
+    // --- Функция getCommand, которая использует lowercase() ---
     fun getCommand(name: String): Command? {
-        // Использование lowercase()
         return _commands.firstOrNull { it.alias.lowercase() == name.lowercase() }
     }
+    // --------------------------------------------------------
 
     fun saveConfig() {
         val configsDir = AppContext.instance.filesDir.resolve("configs")
@@ -146,6 +149,7 @@ object ModuleManager {
             })
         }
 
+        // Используется kotlinx.serialization.encodeToString
         config.writeText(json.encodeToString(jsonObject))
     }
 
@@ -163,6 +167,7 @@ object ModuleManager {
             return
         }
 
+        // Используется kotlinx.serialization.decodeFromString
         val jsonObject = json.decodeFromString<JsonObject>(jsonString)
         val modulesConfig = jsonObject["modules"]?.jsonObject
         modulesConfig?.let {
