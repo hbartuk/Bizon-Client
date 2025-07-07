@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/GameSession.kt
 package com.retrivedmods.wclient.game
 
 import com.retrivedmods.wclient.application.AppContext
@@ -7,8 +6,7 @@ import com.retrivedmods.wclient.game.world.Level
 import com.mucheng.mucute.relay.MuCuteRelaySession
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.Module
-// ModuleManager уже в этом же пакете, импорт не нужен
+import com.retrivedmods.wclient.game.Module // Ensure this import is present if Module is referenced directly
 
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
@@ -24,8 +22,8 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
     }
 
     init {
-        // <-- ВАЖНО: Вызываем инициализацию ModuleManager здесь!
-        // Это гарантирует, что ModuleManager настроен, и его модули получают session.
+        // IMPORTANT: Initialize ModuleManager with the current GameSession here.
+        // This ensures all modules have access to the session from the start.
         ModuleManager.initialize(this)
     }
 
@@ -43,16 +41,19 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
 
         val interceptablePacket = InterceptablePacket(packet)
 
+        // --- Packet processing by modules ---
         for (module in ModuleManager.modules) {
-            // Module.session уже инициализирована в ModuleManager.initialize(this)
-            // ИЛИ: Если ModuleManager.initialize(this) вызывается только один раз,
-            // и GameSession может быть пересоздана, то `if (!module.isSessionCreated)` может быть полезным.
-            // Но в большинстве случаев, при создании новой GameSession, вы будете очищать и переинициализировать модули.
+            // The session is already set for modules during ModuleManager.initialize(this).
+            // No need to set it again for each packet here.
             module.beforePacketBound(interceptablePacket)
             if (interceptablePacket.isIntercepted) {
                 return true
             }
         }
+
+        // --- Command processing logic has been moved to CommandHandlerModule.kt ---
+        // This entire block, which handles chat commands, should be removed from here.
+        // It's now handled by CommandHandlerModule as a regular module.
 
         return false
     }
@@ -72,6 +73,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         }
     }
 
+    // Your existing displayClientMessage method
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
         val textPacket = TextPacket()
         textPacket.type = type
@@ -84,7 +86,7 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         clientBound(textPacket)
     }
 
-    // Метод для получения модуля по его классу
+    // Method to get a module by its class
     fun <T : Module> getModule(moduleClass: Class<T>): T? {
         for (module in ModuleManager.modules) {
             if (moduleClass.isInstance(module)) {
