@@ -24,10 +24,11 @@ import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement // Added this import for JsonElement, might be needed
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.encodeToString // <-- Убедиться, что этот импорт есть
+import kotlinx.serialization.decodeFromString // <-- Убедиться, что этот импорт есть
 import java.io.File
 
 object ModuleManager {
@@ -44,16 +45,15 @@ object ModuleManager {
     }
 
     fun initialize(session: GameSession) {
-        _modules.clear() // Очистить, чтобы избежать дубликатов при повторной инициализации
+        _modules.clear()
 
-        // Вспомогательная функция для упрощения регистрации модулей и присвоения сессии
         fun <T : Module> addAndInitModule(module: T) {
-            module.session = session // Присвоить сессию lateinit var модуля
+            module.session = session
             _modules.add(module)
         }
 
         // --- Регистрация модулей ---
-        addAndInitModule(CommandHandlerModule()) // CommandHandlerModule должен быть зарегистрирован первым
+        addAndInitModule(CommandHandlerModule())
         addAndInitModule(FlyModule())
         addAndInitModule(GravityControlModule())
         addAndInitModule(ZoomModule())
@@ -112,23 +112,21 @@ object ModuleManager {
         addAndInitModule(EnemyHunterModule())
 
         // --- Регистрация команд ---
-        _commands.clear() // Очистить, чтобы избежать дубликатов при повторной инициализации
+        _commands.clear()
         _commands.add(SkinStealerCommand())
         _commands.add(SoundCommand())
-        // Добавьте другие команды здесь
 
-        loadConfig() // Загрузить конфигурацию после инициализации всех модулей с их сессиями
+        loadConfig()
 
         _modules.forEach {
             if (it.isEnabled) {
-                it.onEnabled() // Вызвать onEnabled для модулей, которые включены по умолчанию или через конфиг
+                it.onEnabled()
             }
         }
     }
 
     fun getCommand(name: String): Command? {
-        // Fix for "No parameter with name 'ignoreCase' found."
-        // Using toLowerCase() on both strings for case-insensitive comparison in older Kotlin versions.
+        // ИСПРАВЛЕНИЕ: Используем метод toLowerCase() из Java String
         return _commands.firstOrNull { it.alias.toLowerCase() == name.toLowerCase() }
     }
 
@@ -148,7 +146,8 @@ object ModuleManager {
             })
         }
 
-        config.writeText(json.encodeToString(JsonObject.serializer(), jsonObject)) // Use serializer for older kotlinx.serialization
+        // ИСПРАВЛЕНИЕ: Используем более современный синтаксис encodeToString
+        config.writeText(json.encodeToString(jsonObject))
     }
 
     fun loadConfig() {
@@ -165,7 +164,8 @@ object ModuleManager {
             return
         }
 
-        val jsonObject = json.decodeFromString(JsonObject.serializer(), jsonString) // Use serializer for older kotlinx.serialization
+        // ИСПРАВЛЕНИЕ: Используем более современный синтаксис decodeFromString
+        val jsonObject = json.decodeFromString<JsonObject>(jsonString)
         val modulesConfig = jsonObject["modules"]?.jsonObject
         modulesConfig?.let {
             _modules.forEach { module ->
@@ -187,12 +187,12 @@ object ModuleManager {
                 }
             })
         }
-        return json.encodeToString(JsonObject.serializer(), jsonObject) // Use serializer for older kotlinx.serialization
+        return json.encodeToString(jsonObject)
     }
 
     fun importConfig(configStr: String) {
         try {
-            val jsonObject = json.decodeFromString(JsonObject.serializer(), configStr) // Use serializer for older kotlinx.serialization
+            val jsonObject = json.decodeFromString<JsonObject>(configStr)
             val modulesConfig = jsonObject["modules"]?.jsonObject ?: return
 
             _modules.forEach { module ->
