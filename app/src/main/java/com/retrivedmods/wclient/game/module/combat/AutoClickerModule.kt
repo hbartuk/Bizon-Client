@@ -1,15 +1,15 @@
-package com.retrivedmods.wclient.game.module.combat // Изменено на combat
+package com.retrivedmods.wclient.game.module.combat // Убедитесь, что это combat
 
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
+import com.retrivedmods.wclient.game.entity.* // Импортируем все сущности из твоего пакета
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.packet.InteractPacket
-import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket // Нужен для получения позиции игрока
-import org.cloudburstmc.protocol.bedrock.data.entity.InteractAction // ИСПРАВЛЕНО: Добавлен импорт для InteractAction
-
-// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.data.entity.EntityData (не используется)
-// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket (не используется)
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.data.entity.InteractAction (больше не нужен)
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.packet.InteractPacket (больше не нужен)
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket (если не используется напрямую)
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket (если не используется)
+// УДАЛЕНО: import org.cloudburstmc.protocol.bedrock.data.entity.EntityData (если не используется)
 
 class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
 
@@ -20,21 +20,20 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
 
     private var lastAttackTime: Long = 0L
 
-    // ИСПРАВЛЕНО: Убрано 'override', т.к. ваш базовый класс Module не помечает их как open/abstract
+    // onEnable и onDisable без 'override', как в твоем KillauraModule
     fun onEnable() {
-        session.displayClientMessage("§a[Bizon client] Авто-кликер включен. КПС: ${clicksPerSecond}") // ИСПРАВЛЕНО: убрано .value
+        session.displayClientMessage("§a[WClient] Авто-кликер включен. КПС: ${clicksPerSecond}")
     }
 
-    // ИСПРАВЛЕНО: Убрано 'override'
     fun onDisable() {
-        session.displayClientMessage("§c[Bizon client] Авто-кликер выключен.")
+        session.displayClientMessage("§c[WClient] Авто-кликер выключен.")
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
 
         // Вычисляем необходимую задержку между ударами
-        val minDelay = 1000L / clicksPerSecond // ИСПРАВЛЕНО: убрано .value
+        val minDelay = 1000L / clicksPerSecond
 
         val currentTime = System.currentTimeMillis()
 
@@ -43,7 +42,7 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
             return
         }
 
-        // Получаем позицию и ID нашего игрока
+        // Получаем позицию нашего игрока
         val localPlayerPos = session.localPlayer.vec3Position
         val localPlayerEntityId = session.localPlayer.runtimeEntityId
 
@@ -51,53 +50,36 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
             return
         }
 
-        // --- ВАЖНОЕ ЗАМЕЧАНИЕ: ЭТА ЧАСТЬ ТРЕБУЕТ АДАПТАЦИИ ПОД ТВОЙ КЛИЕНТ ---
-        // Ищем ближайшую сущность (пока не ограничиваемся игроками, это можно добавить)
-        // В реальном клиенте нужно итерироваться по списку сущностей, видимых клиенту.
-        // Здесь предполагается, что session.entities содержит мапу сущностей (ID к объекту сущности)
-        var targetEntityId: Long? = null
-        val maxAttackRangeSq = attackRange * attackRange // ИСПРАВЛЕНО: убрано .value
+        var targetEntity: Entity? = null
+        val maxAttackRangeSq = attackRange * attackRange
 
-        // **!!! ТУТ ТЕБЕ НУЖНО ЗАМЕНИТЬ session.entities НА РЕАЛЬНЫЙ СПОСОБ ПОЛУЧЕНИЯ СУЩНОСТЕЙ !!!**
-        // Если у тебя есть Map<Long, YourEntityClass> entities в session:
-        // session.entities.forEach { (entityId, entity) ->
-        //     if (entityId != localPlayerEntityId && entity.vec3Position != null) { // Не бьем себя
-        //         val distanceSq = localPlayerPos.distanceSquared(entity.vec3Position)
-        //         if (distanceSq < maxAttackRangeSq) {
-        //             // Можно добавить проверку, что это именно игрок, а не моб
-        //             // if (entity.isPlayer) { // Если у тебя есть такой метод/флаг
-        //                 targetEntityId = entityId
-        //                 return@forEach // Нашли ближайшего, выходим из цикла
-        //             // }
-        //         }
-        //     }
-        // }
-        // --- КОНЕЦ ВАЖНОГО ЗАМЕЧАНИЯ ---
-
-
-        // ВРЕМЕННЫЙ ПЛЕЙСХОЛДЕР ДЛЯ ТЕСТИРОВАНИЯ (УДАЛИ ПОСЛЕ РЕАЛИЗАЦИИ ПОИСКА СУЩНОСТЕЙ):
-        // Если у тебя нет списка сущностей, ты не сможешь автоматически выбирать цель.
-        // Этот модуль *требует* способа найти runtimeEntityId цели.
-        // Возможно, тебе нужно будет получить entityId из MovePlayerPacket, который ты обрабатывал ранее?
-        // Но для PvP-кликера нужна активная цель.
-        // Если у тебя есть способ получить ID сущности, на которую ты смотришь, используй его.
-        // Например, если ты хочешь просто бить "что-нибудь", ты можешь выбрать ID какого-то известного моба/игрока для теста.
-        // targetEntityId = 12345L // ЗАМЕНИ ЭТО НА РЕАЛЬНЫЙ ID ЦЕЛИ ИЛИ РЕАЛИЗУЙ ПОИСК ВЫШЕ
-
-
-        // Если нашли цель в радиусе действия
-        if (targetEntityId != null) {
-            // Создаем пакет удара InteractPacket
-            val attackPacket = InteractPacket().apply {
-                this.runtimeEntityId = targetEntityId!! // ID цели
-                this.action = InteractAction.ATTACK // ИСПРАВЛЕНО: Использование InteractAction
-                // Другие поля могут понадобиться в зависимости от версии протокола
-                // this.targetPosition = Vector3f.ZERO; // Не всегда нужно для атаки
-                // this.hitPosition = Vector3f.ZERO; // Не всегда нужно для атаки
+        // Ищем ближайшую цель (игрока или моба, в зависимости от твоих настроек и фильтров)
+        // Используем логику Killaura, предполагая, что session.level.entityMap доступна
+        // и Entity.distance работает
+        for (entity in session.level.entityMap.values) {
+            // Исключаем себя и сущности без позиции
+            if (entity.runtimeEntityId == localPlayerEntityId || entity.vec3Position == null) {
+                continue
             }
 
-            // Отправляем пакет на сервер
-            session.muCuteRelaySession?.server?.sendPacket(attackPacket)
+            // Проверяем дистанцию до цели
+            val distanceSq = localPlayerPos.distanceSquared(entity.vec3Position)
+            if (distanceSq < maxAttackRangeSq) {
+                // Здесь ты можешь добавить дополнительные фильтры, как в Killaura.isTarget()
+                // Например, только игроки, только мобы и т.д.
+                // Для простоты, пока бьем любую сущность в радиусе.
+                // Если нужна именно логика Killaura.isTarget(), добавь её сюда:
+                // if (entity.isTarget()) { // Если у тебя есть такой метод расширения для Entity
+                    targetEntity = entity
+                    break // Нашли ближайшую цель, выходим из цикла
+                // }
+            }
+        }
+
+        // Если нашли цель в радиусе действия
+        if (targetEntity != null) {
+            // Используем метод attack из LocalPlayer, как в твоей Killaura
+            session.localPlayer.attack(targetEntity!!)
             lastAttackTime = currentTime // Обновляем время последнего удара
         }
     }
