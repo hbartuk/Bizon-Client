@@ -24,6 +24,7 @@ import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement // Added this import for JsonElement, might be needed
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -126,9 +127,9 @@ object ModuleManager {
     }
 
     fun getCommand(name: String): Command? {
-        // Использование equals с явным boolean для ignoreCase для совместимости
-        // с различными версиями Kotlin и избежания "Too many arguments"
-        return _commands.firstOrNull { it.alias.equals(name, ignoreCase = true) }
+        // Fix for "No parameter with name 'ignoreCase' found."
+        // Using toLowerCase() on both strings for case-insensitive comparison in older Kotlin versions.
+        return _commands.firstOrNull { it.alias.toLowerCase() == name.toLowerCase() }
     }
 
     fun saveConfig() {
@@ -147,7 +148,7 @@ object ModuleManager {
             })
         }
 
-        config.writeText(json.encodeToString(jsonObject))
+        config.writeText(json.encodeToString(JsonObject.serializer(), jsonObject)) // Use serializer for older kotlinx.serialization
     }
 
     fun loadConfig() {
@@ -164,7 +165,7 @@ object ModuleManager {
             return
         }
 
-        val jsonObject = json.parseToJsonElement(jsonString).jsonObject
+        val jsonObject = json.decodeFromString(JsonObject.serializer(), jsonString) // Use serializer for older kotlinx.serialization
         val modulesConfig = jsonObject["modules"]?.jsonObject
         modulesConfig?.let {
             _modules.forEach { module ->
@@ -186,12 +187,12 @@ object ModuleManager {
                 }
             })
         }
-        return json.encodeToString(jsonObject)
+        return json.encodeToString(JsonObject.serializer(), jsonObject) // Use serializer for older kotlinx.serialization
     }
 
     fun importConfig(configStr: String) {
         try {
-            val jsonObject = json.parseToJsonElement(configStr).jsonObject
+            val jsonObject = json.decodeFromString(JsonObject.serializer(), configStr) // Use serializer for older kotlinx.serialization
             val modulesConfig = jsonObject["modules"]?.jsonObject ?: return
 
             _modules.forEach { module ->
