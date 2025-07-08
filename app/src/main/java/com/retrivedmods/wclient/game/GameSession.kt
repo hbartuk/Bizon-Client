@@ -1,98 +1,56 @@
+// File: com.retrivedmods.wclient.game.GameSession.kt (ПРИМЕР)
+
 package com.retrivedmods.wclient.game
 
-import com.retrivedmods.wclient.application.AppContext
-import com.retrivedmods.wclient.game.entity.LocalPlayer
-import com.retrivedmods.wclient.game.world.Level
 import com.mucheng.mucute.relay.MuCuteRelaySession
-import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
-import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import com.retrivedmods.wclient.game.Module // Ensure this import is present if Module is referenced directly
+import com.mucheng.mucute.relay.listener.PacketListener
+import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket // Пример импорта для обновления координат
+import org.cloudburstmc.protocol.bedrock.packet.RespawnPacket // Пример для обновления координат
 
-@Suppress("MemberVisibilityCanBePrivate")
-class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHandler {
+class GameSession(
+    val muCuteRelaySession: MuCuteRelaySession // Это свойство теперь обязательно!
+    // ... другие свойства, если есть
+) : PacketListener { // Если GameSession является PacketListener
 
-    val localPlayer = LocalPlayer(this)
+    // *** НУЖНО ДОБАВИТЬ ЭТИ СВОЙСТВА И ОБНОВЛЯТЬ ИХ ***
+    var playerX: Double = 0.0
+    var playerY: Double = 0.0
+    var playerZ: Double = 0.0
 
-    val level = Level(this)
+    // ... ваш существующий код GameSession ...
 
-    private val versionName by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        AppContext.instance.packageManager.getPackageInfo(
-            AppContext.instance.packageName, 0
-        ).versionName
+    // Пример метода для отображения сообщения клиенту
+    fun displayClientMessage(message: String) {
+        println("CLIENT MESSAGE: $message")
+        // Если вы отправляете это через сетевой пакет, то:
+        // val textPacket = TextPacket().apply {
+        //     type = TextPacket.Type.CHAT
+        //     message = message
+        // }
+        // muCuteRelaySession.clientBound(textPacket)
     }
 
-    init {
-        // IMPORTANT: Initialize ModuleManager with the current GameSession here.
-        // This ensures all modules have access to the session from the start.
-        ModuleManager.initialize(this)
-    }
-
-    fun clientBound(packet: BedrockPacket) {
-        muCuteRelaySession.clientBound(packet)
-    }
-
-    fun serverBound(packet: BedrockPacket) {
-        muCuteRelaySession.serverBound(packet)
-    }
-
-    override fun beforePacketBound(packet: BedrockPacket): Boolean {
-        localPlayer.onPacketBound(packet)
-        level.onPacketBound(packet)
-
-        val interceptablePacket = InterceptablePacket(packet)
-
-        // --- Packet processing by modules ---
-        for (module in ModuleManager.modules) {
-            // The session is already set for modules during ModuleManager.initialize(this).
-            // No need to set it again for each packet here.
-            module.beforePacketBound(interceptablePacket)
-            if (interceptablePacket.isIntercepted) {
-                return true
+    // Пример, как можно обновлять координаты игрока, если GameSession слушает пакеты
+    override fun onPacketIn(packet: Packet) {
+        when (packet) {
+            is MovePlayerPacket -> {
+                playerX = packet.position.x.toDouble()
+                playerY = packet.position.y.toDouble()
+                playerZ = packet.position.z.toDouble()
+                // println("DEBUG: Player position updated to ($playerX, $playerY, $playerZ)")
             }
-        }
-
-        // --- Command processing logic has been moved to CommandHandlerModule.kt ---
-        // This entire block, which handles chat commands, should be removed from here.
-        // It's now handled by CommandHandlerModule as a regular module.
-
-        return false
-    }
-
-    override fun afterPacketBound(packet: BedrockPacket) {
-        for (module in ModuleManager.modules) {
-            module.afterPacketBound(packet)
-        }
-    }
-
-    override fun onDisconnect(reason: String) {
-        localPlayer.onDisconnect()
-        level.onDisconnect()
-
-        for (module in ModuleManager.modules) {
-            module.onDisconnect(reason)
-        }
-    }
-
-    // Your existing displayClientMessage method
-    fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
-        val textPacket = TextPacket()
-        textPacket.type = type
-        textPacket.isNeedsTranslation = false
-        textPacket.sourceName = ""
-        textPacket.message = message
-        textPacket.xuid = ""
-        textPacket.platformChatId = ""
-        textPacket.filteredMessage = ""
-        clientBound(textPacket)
-    }
-
-    // Method to get a module by its class
-    fun <T : Module> getModule(moduleClass: Class<T>): T? {
-        for (module in ModuleManager.modules) {
-            if (moduleClass.isInstance(module)) {
-                return moduleClass.cast(module)
+            is RespawnPacket -> {
+                playerX = packet.position.x.toDouble()
+                playerY = packet.position.y.toDouble()
+                playerZ = packet.position.z.toDouble()
+                // println("DEBUG: Player position updated to ($playerX, $playerY, $playerZ) after respawn")
             }
+            // ... другие пакеты, которые могут обновлять положение игрока
         }
-        return null
+        // ... остальная логика обработки входящих пакетов
+    }
+
+    override fun onPacketOut(packet: Packet) {
+        // ... логика обработки исходящих пакетов
     }
 }
