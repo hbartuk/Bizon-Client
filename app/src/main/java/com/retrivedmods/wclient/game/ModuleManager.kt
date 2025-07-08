@@ -80,8 +80,7 @@ import java.io.File
 object ModuleManager {
 
     // Добавляем свойство для хранения текущей игровой сессии
-    var session: GameSession? = null
-        private set // Делаем сеттер приватным, чтобы устанавливать сессию только через initialize
+    var session: GameSession? = null// Делаем сеттер приватным, чтобы устанавливать сессию только через initialize
 
     private val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
