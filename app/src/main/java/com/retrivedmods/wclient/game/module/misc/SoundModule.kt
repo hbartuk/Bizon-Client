@@ -6,9 +6,7 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 
 import org.cloudburstmc.math.vector.Vector3f
-// import org.cloudburstmc.protocol.bedrock.data.SoundEvent // Это больше не нужно для PlaySoundPacket
-// import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket // Это больше не нужно
-import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket // <-- Импортируйте PlaySoundPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -19,8 +17,6 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
 
     private val scheduler = Executors.newSingleThreadScheduledExecutor()
     private val activeSounds = mutableMapOf<String, ScheduledFuture<*>>()
-
-    // private val allSoundEvents: Array<SoundEvent> = SoundEvent.values() // Это больше не нужно
 
     override fun onEnabled() {
         super.onEnabled()
@@ -37,53 +33,54 @@ class SoundModule() : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
+    // Изменена сигнатура функции: теперь принимает soundName (String)
     fun playSound(
-        soundId: Int, // Этот параметр теперь может быть не совсем актуален, если sound - это String
+        soundName: String, // <--- Имя звука (строка)
         volume: Float,
-        distance: Float, // Этот параметр тоже может быть не совсем актуален для PlaySoundPacket
+        // distance: Float, // Этот параметр не используется в PlaySoundPacket, его можно убрать
         soundsPerSecond: Int,
-        durationSeconds: Int,
-        soundNameForDisplay: String = soundId.toString()
+        durationSeconds: Int
     ) {
         if (!isSessionCreated) {
             return
         }
 
-        val stopKey = soundNameForDisplay.lowercase()
+        val stopKey = soundName.lowercase()
 
         stopSound(stopKey)
 
         val initialPosition = session.localPlayer.vec3Position
+        // Проверка на null для initialPosition
+        if (initialPosition == null) {
+            session.displayClientMessage("§c[SoundModule] Невозможно воспроизвести звук: позиция игрока неизвестна.")
+            return
+        }
 
-        session.displayClientMessage("§a[SoundModule] Воспроизведение звука: §b$soundNameForDisplay§a (громкость: §b$volume§a, дистанция: §b$distance§a, частота: §b$soundsPerSecond§a/с, длительность: §b$durationSeconds§a сек.)")
+
+        session.displayClientMessage("§a[SoundModule] Воспроизведение звука: §b$soundName§a (громкость: §b$volume§a, частота: §b$soundsPerSecond§a/с, длительность: §b$durationSeconds§a сек.)")
 
         val periodMillis = if (soundsPerSecond > 0) (1000L / soundsPerSecond) else 0L
-        // val extraDataValue = (distance * 1000).toInt() // Не нужно для PlaySoundPacket
-
-        // PlaySoundPacket использует String для имени звука, а не SoundEvent
-        // Вам нужно будет решить, как преобразовать soundId в String имя звука
-        val targetSoundName: String = soundNameForDisplay // Или как-то иначе получить имя звука
 
         val task = scheduler.scheduleAtFixedRate({
             if (isSessionCreated) {
-                // Создаем пакет PlaySoundPacket
                 val packet = PlaySoundPacket()
-                packet.sound = targetSoundName // Имя звука (String)
+                packet.sound = soundName // <--- Теперь это уже корректное строковое имя звука
                 packet.position = initialPosition
                 packet.volume = volume
-                packet.pitch = 1.0f // Установите желаемый pitch, например, по умолчанию 1.0f
+                packet.pitch = 1.0f // Можно сделать настраиваемым, если нужно
 
-                session.serverBound(packet)
-                session.clientBound(packet)
+                session.serverBound(packet) // Отправляем на сервер (если хотим, чтобы слышали другие)
+                session.clientBound(packet) // Отправляем себе (для локального воспроизведения)
             }
         }, 0, periodMillis, TimeUnit.MILLISECONDS)
 
         activeSounds[stopKey] = task
 
+        // Планируем остановку звука
         scheduler.schedule({
             stopSound(stopKey)
             if (isSessionCreated) {
-                session.displayClientMessage("§a[SoundModule] Воспроизведение звука '$soundNameForDisplay' завершено.")
+                session.displayClientMessage("§a[SoundModule] Воспроизведение звука '$soundName' завершено.")
             }
         }, durationSeconds.toLong(), TimeUnit.SECONDS)
     }
