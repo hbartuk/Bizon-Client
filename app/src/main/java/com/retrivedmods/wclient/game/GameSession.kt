@@ -3,32 +3,39 @@
 package com.retrivedmods.wclient.game
 
 import com.mucheng.mucute.relay.MuCuteRelaySession
-// --- ADD THESE IMPORTS ---
-import com.mucheng.mucute.relay.listener.PacketListener // Assuming this is the correct path for PacketListener
-import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket // This is typically the base class for all Bedrock packets
+// --- ДОБАВЬТЕ ЭТИ ИМПОРТЫ ИЛИ УБЕДИТЕСЬ В ИХ ПРАВИЛЬНОСТИ ---
+import com.mucheng.mucute.relay.listener.PacketListener // УБЕДИТЕСЬ, что это правильный путь
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket // Это базовый класс для всех Bedrock пакетов
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.RespawnPacket
-import org.cloudburstmc.protocol.bedrock.packet.TextPacket // For displayClientMessage
-// --- END ADD THESE IMPORTS ---
+import org.cloudburstmc.protocol.bedrock.packet.TextPacket
+import com.retrivedmods.wclient.game.entity.LocalPlayer // ИМПОРТ ДЛЯ LocalPlayer
+// --- КОНЕЦ ИМПОРТОВ ---
 
 class GameSession(
     val muCuteRelaySession: MuCuteRelaySession
-) : PacketListener { // Ensure PacketListener is properly imported
+) : PacketListener { // Теперь 'PacketListener' должен быть распознан
 
     var playerX: Double = 0.0
     var playerY: Double = 0.0
     var playerZ: Double = 0.0
 
+    // Инициализируем localPlayer как lateinit, но нужно УБЕДИТЬСЯ, что он будет
+    // инициализирован ГДЕ-ТО в GameSession после установки соединения,
+    // например, в onPacketIn при получении соответствующего пакета игрока.
+    lateinit var localPlayer: LocalPlayer
+
     fun displayClientMessage(message: String) {
         println("CLIENT MESSAGE: $message")
         val textPacket = TextPacket().apply {
-            type = TextPacket.Type.CHAT // Or TextPacket.Type.SYSTEM_MESSAGE, depending on desired display
+            type = TextPacket.Type.CHAT // Или TextPacket.Type.SYSTEM_MESSAGE
             this.message = message
         }
-        muCuteRelaySession.clientBound(textPacket) // Use muCuteRelaySession to send
+        muCuteRelaySession.clientBound(textPacket)
     }
 
-    override fun onPacketIn(packet: BedrockPacket) { // Change 'Packet' to 'BedrockPacket' (or whatever base class CloudburstMC uses)
+    // --- ИСПРАВЛЕНИЯ ЗДЕСЬ: используем BedrockPacket как тип параметра ---
+    override fun onPacketIn(packet: BedrockPacket) { // 'Packet' изменено на 'BedrockPacket'
         when (packet) {
             is MovePlayerPacket -> {
                 playerX = packet.position.x.toDouble()
@@ -40,11 +47,16 @@ class GameSession(
                 playerY = packet.position.y.toDouble()
                 playerZ = packet.position.z.toDouble()
             }
-            // ... other packets
+            // Здесь же, возможно, нужно инициализировать localPlayer. Например:
+            // if (packet is LoginPacket) { // Или какой-то другой пакет, указывающий на готовность игрока
+            //     if (!::localPlayer.isInitialized) {
+            //         localPlayer = LocalPlayer(this) // Передаем ссылку на текущую GameSession
+            //     }
+            // }
         }
     }
 
-    override fun onPacketOut(packet: BedrockPacket) { // Change 'Packet' to 'BedrockPacket'
-        // ... logic for outgoing packets
+    override fun onPacketOut(packet: BedrockPacket) { // 'Packet' изменено на 'BedrockPacket'
+        // ... логика обработки исходящих пакетов
     }
 }
