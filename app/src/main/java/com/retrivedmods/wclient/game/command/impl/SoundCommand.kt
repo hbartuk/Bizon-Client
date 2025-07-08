@@ -1,52 +1,33 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/command/impl/SoundCommand.kt
+// В ModuleManager.kt (УБЕДИТЕСЬ, ЧТО ЭТОТ МЕТОД ЕСТЬ!)
+// Если его нет, добавьте его:
+// inline fun <reified T : Module> getModule(): T? {
+//     return modules.firstOrNull { it is T } as? T
+// }
+
+// File: com.retrivedmods.wclient.game.command.impl.SoundCommand.kt
+
 package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.ModuleManager
+import com.retrivedmods.wclient.game.ModuleManager // УБЕДИТЕСЬ, что этот импорт есть
 import com.retrivedmods.wclient.game.module.misc.SoundModule
 
-class SoundCommand : Command("sound") { // Убедитесь, что ваш базовый Command инициализируется с алиасом/именем
+class SoundCommand : Command("sound") { // (ваши алиасы)
 
-    // Список популярных или часто используемых имен звуков для помощи пользователю.
-    private val popularSounds = listOf(
-        "block.chest.open",
-        "block.chest.close",
-        "random.explode",
-        "mob.cow.ambient",
-        "mob.sheep.say",
-        "item.trident.throw",
-        "ambient.weather.thunder",
-        "item.bottle.fill"
-    )
+    private val popularSounds = listOf( /* ... */ )
 
-    /**
-     * Выполняет команду .sound.
-     * Позволяет воспроизводить звуки Minecraft Bedrock по их строковому имени.
-     *
-     * Использование: .sound <имя_звука> [громкость] [частота] [длительность]
-     * Например: .sound block.chest.open 1.0 1 5
-     * Для остановки всех звуков: .sound stopall
-     */
-    // *** ИЗМЕНЕНИЕ ЗДЕСЬ: МЕТОД ДОЛЖЕН НАЗЫВАТЬСЯ exec И ПРИНИМАТЬ Array<String> И GameSession ***
-    override fun exec(args: Array<String>, session: GameSession) { // Вернули exec и Array<String>
-        println("DEBUG: SoundCommand.exec() called.") // Обновлено логирование
+    override fun exec(args: Array<String>, session: GameSession) {
+        println("DEBUG: SoundCommand.exec() called.")
 
-        // Если аргументы не предоставлены, показать справку по использованию
-        if (args.isEmpty()) {
-            session.displayClientMessage("§cИспользование: §7.sound <имя_звука> [громкость] [частота] [длительность]")
-            session.displayClientMessage("§eДля остановки всех звуков: §b.sound stopall")
-            session.displayClientMessage("§eПримеры имен звуков: §b${popularSounds.joinToString(", ")}")
-            session.displayClientMessage("§7Полный список имен звуков можно найти в ресурсах игры или на wiki Bedrock протокола.")
-            return
-        }
+        if (args.isEmpty()) { /* ... */ return }
 
-        // Обработка подкоманд, таких как "stopall"
         when (args[0].lowercase()) {
             "stopall" -> {
-                val soundModule = session.getModule(SoundModule::class.java) as? SoundModule // Используем session.getModule
+                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Используем ModuleManager.getModule() ---
+                val soundModule = ModuleManager.getModule<SoundModule>()
                 if (soundModule == null) {
-                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
+                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден.")
                     return
                 }
                 soundModule.stopAllSounds()
@@ -55,31 +36,26 @@ class SoundCommand : Command("sound") { // Убедитесь, что ваш б�
             else -> {
                 val soundName = args[0]
                 val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
-                // Частота и длительность, если ваш playSound принимает их.
-                // В SoundModule мы изменили playSound на volume, pitch.
-                // Возможно, вам нужно будет решить, как эти параметры будут маппиться.
-                // Пока оставим их как volume и pitch для простоты, если это то, что вы имели в виду.
-                // Или если SoundModule.playSound принимает только volume и pitch, то args[2] и args[3] могут быть pitch.
-                val pitch = args.getOrNull(2)?.toFloatOrNull() ?: 1.0f // Используем args[2] как pitch
+                val pitch = args.getOrNull(2)?.toFloatOrNull() ?: 1.0f
 
-                val soundModule = session.getModule(SoundModule::class.java) as? SoundModule // Используем session.getModule
+                // --- ИСПРАВЛЕНИЕ ЗДЕСЬ: Используем ModuleManager.getModule() ---
+                val soundModule = ModuleManager.getModule<SoundModule>()
 
                 if (soundModule == null) {
-                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден или неактивен.")
+                    session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден.")
                     println("DEBUG: SoundModule is null in SoundCommand.")
                     return
                 }
 
-                // Убедимся, что модуль включен
+                // Включаем модуль, если он выключен (логика, которую вы хотели)
                 if (!soundModule.isEnabled) {
-                    soundModule.isEnabled = true // Включаем модуль, если он выключен
+                    soundModule.isEnabled = true
                     session.displayClientMessage("Модуль SoundModule был автоматически включен.")
                     println("DEBUG: SoundModule was not enabled, enabling it now.")
                 }
 
                 println("DEBUG: Calling playSound on SoundModule.")
-                // *** ИЗМЕНЕНИЕ ЗДЕСЬ: Передача soundName, volume, pitch ***
-                soundModule.playSound(soundName, volume, pitch) // Передаем volume и pitch
+                soundModule.playSound(soundName, volume, pitch)
                 session.displayClientMessage("§aНачинаю воспроизведение звука: §b$soundName")
             }
         }
