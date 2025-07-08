@@ -1,3 +1,5 @@
+// File: com.retrivedmods.wclient.service.Services.kt
+
 package com.retrivedmods.wclient.service
 
 import android.content.Context
@@ -9,7 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.retrivedmods.wclient.game.AccountManager
-import com.retrivedmods.wclient.game.GameSession
+import com.retrivedmods.wclient.game.GameSession // Убедитесь, что этот импорт есть
 import com.retrivedmods.wclient.game.ModuleManager
 import com.retrivedmods.wclient.model.CaptureModeModel
 import com.retrivedmods.wclient.overlay.OverlayManager
@@ -94,8 +96,17 @@ object Services {
                         captureModeModel.serverPort
                     )
                 ) {
-                    initModules(this)
+                    // Создаем GameSession с текущей MuCuteRelaySession
+                    val session = GameSession(this) // 'this' здесь - это MuCuteRelaySession
 
+                    // Добавляем GameSession как слушатель для MuCuteRelaySession
+                    listeners.add(session)
+
+                    // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Инициализация ModuleManager с новой GameSession ***
+                    Log.d("Services", "Calling ModuleManager.initialize() with new GameSession.")
+                    ModuleManager.initialize(session) // <--- ВОТ РЕШЕНИЕ ПРОБЛЕМЫ
+
+                    // Добавляем остальные слушатели
                     listeners.add(AutoCodecPacketListener(this))
                     sessionEncryptor?.let {
                         it.muCuteRelaySession = this
@@ -107,13 +118,16 @@ object Services {
                 it.printStackTrace()
                 context.toast("Start MuCuteRelay error: ${it.stackTraceToString()}")
             }
-
         }
     }
 
     private fun off() {
         thread(name = "MuCuteRelayThread") {
             ModuleManager.saveConfig()
+            // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Сброс сессии в ModuleManager при отключении ***
+            Log.d("Services", "Setting ModuleManager.session to null on disconnect.")
+            ModuleManager.session = null
+
             isActive = false
             muCuteRelay?.disconnect()
             thread?.interrupt()
@@ -131,13 +145,7 @@ object Services {
         }
     }
 
-    private fun initModules(muCuteRelaySession: MuCuteRelaySession) {
-        val session = GameSession(muCuteRelaySession)
-        muCuteRelaySession.listeners.add(session)
-
-        for (module in ModuleManager.modules) {
-            module.session = session
-        }
-    }
-
+    // *** УДАЛЕННЫЙ МЕТОД: initModules больше не нужен ***
+    // Старый метод initModules был удален, так как его логика
+    // теперь интегрирована непосредственно в блок captureMuCuteRelay.
 }
