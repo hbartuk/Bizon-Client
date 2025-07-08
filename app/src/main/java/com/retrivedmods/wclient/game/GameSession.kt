@@ -1,56 +1,50 @@
-// File: com.retrivedmods.wclient.game.GameSession.kt (ПРИМЕР)
+// File: com.retrivedmods.wclient.game.GameSession.kt
 
 package com.retrivedmods.wclient.game
 
 import com.mucheng.mucute.relay.MuCuteRelaySession
-import com.mucheng.mucute.relay.listener.PacketListener
-import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket // Пример импорта для обновления координат
-import org.cloudburstmc.protocol.bedrock.packet.RespawnPacket // Пример для обновления координат
+// --- ADD THESE IMPORTS ---
+import com.mucheng.mucute.relay.listener.PacketListener // Assuming this is the correct path for PacketListener
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket // This is typically the base class for all Bedrock packets
+import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
+import org.cloudburstmc.protocol.bedrock.packet.RespawnPacket
+import org.cloudburstmc.protocol.bedrock.packet.TextPacket // For displayClientMessage
+// --- END ADD THESE IMPORTS ---
 
 class GameSession(
-    val muCuteRelaySession: MuCuteRelaySession // Это свойство теперь обязательно!
-    // ... другие свойства, если есть
-) : PacketListener { // Если GameSession является PacketListener
+    val muCuteRelaySession: MuCuteRelaySession
+) : PacketListener { // Ensure PacketListener is properly imported
 
-    // *** НУЖНО ДОБАВИТЬ ЭТИ СВОЙСТВА И ОБНОВЛЯТЬ ИХ ***
     var playerX: Double = 0.0
     var playerY: Double = 0.0
     var playerZ: Double = 0.0
 
-    // ... ваш существующий код GameSession ...
-
-    // Пример метода для отображения сообщения клиенту
     fun displayClientMessage(message: String) {
         println("CLIENT MESSAGE: $message")
-        // Если вы отправляете это через сетевой пакет, то:
-        // val textPacket = TextPacket().apply {
-        //     type = TextPacket.Type.CHAT
-        //     message = message
-        // }
-        // muCuteRelaySession.clientBound(textPacket)
+        val textPacket = TextPacket().apply {
+            type = TextPacket.Type.CHAT // Or TextPacket.Type.SYSTEM_MESSAGE, depending on desired display
+            this.message = message
+        }
+        muCuteRelaySession.clientBound(textPacket) // Use muCuteRelaySession to send
     }
 
-    // Пример, как можно обновлять координаты игрока, если GameSession слушает пакеты
-    override fun onPacketIn(packet: Packet) {
+    override fun onPacketIn(packet: BedrockPacket) { // Change 'Packet' to 'BedrockPacket' (or whatever base class CloudburstMC uses)
         when (packet) {
             is MovePlayerPacket -> {
                 playerX = packet.position.x.toDouble()
                 playerY = packet.position.y.toDouble()
                 playerZ = packet.position.z.toDouble()
-                // println("DEBUG: Player position updated to ($playerX, $playerY, $playerZ)")
             }
             is RespawnPacket -> {
                 playerX = packet.position.x.toDouble()
                 playerY = packet.position.y.toDouble()
                 playerZ = packet.position.z.toDouble()
-                // println("DEBUG: Player position updated to ($playerX, $playerY, $playerZ) after respawn")
             }
-            // ... другие пакеты, которые могут обновлять положение игрока
+            // ... other packets
         }
-        // ... остальная логика обработки входящих пакетов
     }
 
-    override fun onPacketOut(packet: Packet) {
-        // ... логика обработки исходящих пакетов
+    override fun onPacketOut(packet: BedrockPacket) { // Change 'Packet' to 'BedrockPacket'
+        // ... logic for outgoing packets
     }
 }
