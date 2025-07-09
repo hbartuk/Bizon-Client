@@ -15,10 +15,11 @@ import org.cloudburstmc.protocol.bedrock.packet.*
 import kotlin.random.Random
 
 class AntiKickModule : Module(
-    name = "АнтиКик",
+    name = "АнтиКик", // Название модуля на русском
     category = ModuleCategory.Misc
 ) {
 
+    // Опции на русском языке
     private var disconnectPacketValue by boolValue("Перехват отключения", true)
     private var transferPacketValue by boolValue("Перехват переноса", true)
     private var playStatusPacketValue by boolValue("Перехват статуса игры", true)
@@ -134,16 +135,13 @@ class AntiKickModule : Module(
             session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается вас отключить: §f$reason")
         }
 
-        // Мы всегда устанавливаем isIntercepted в true, поэтому можем считать, что перехват успешен.
-        interceptablePacket.isIntercepted = true
+        // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
+        interceptablePacket.intercept()
 
         if (showKickMessages) {
             session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды отключения.")
         }
 
-        // Если автопереподключение включено, то независимо от "успеха" перехвата
-        // (который мы теперь считаем успешным, если вызвали isIntercepted = true),
-        // мы запускаем attemptReconnect.
         if (autoReconnect) {
             session?.displayClientMessage("§8[§bАнтиКик§8] §eАвтопереподключение активно. Начинаю проверку соединения...")
             attemptReconnect()
@@ -155,8 +153,8 @@ class AntiKickModule : Module(
             session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается переместить вас на другой IP: §f${packet.address}:${packet.port}")
         }
 
-        // Мы всегда устанавливаем isIntercepted в true, поэтому можем считать, что перехват успешен.
-        interceptablePacket.isIntercepted = true
+        // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
+        interceptablePacket.intercept()
 
         if (showKickMessages) {
             session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды перемещения.")
@@ -185,8 +183,8 @@ class AntiKickModule : Module(
                 session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается отключить вас по статусу: §f$status")
             }
 
-            // Мы всегда устанавливаем isIntercepted в true, поэтому можем считать, что перехват успешен.
-            interceptablePacket.isIntercepted = true
+            // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
+            interceptablePacket.intercept()
 
             if (showKickMessages) {
                 session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды отключения по статусу.")
