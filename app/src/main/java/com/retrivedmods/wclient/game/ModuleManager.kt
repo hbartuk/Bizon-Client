@@ -4,70 +4,16 @@ package com.retrivedmods.wclient.game
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-// Импорты модулей (ваш список)
-import com.retrivedmods.wclient.game.module.combat.AdvanceCombatAuraModule
-import com.retrivedmods.wclient.game.module.combat.WAuraModule
-import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
-import com.retrivedmods.wclient.game.module.combat.HitboxModule
-import com.retrivedmods.wclient.game.module.combat.TrollerModule
-import com.retrivedmods.wclient.game.module.combat.AutoClickerModule
-import com.retrivedmods.wclient.game.module.combat.InfiniteAuraModule
-import com.retrivedmods.wclient.game.module.combat.AntiKnockbackModule
-import com.retrivedmods.wclient.game.module.combat.AutoHvHModule
-import com.retrivedmods.wclient.game.module.combat.TriggerBotModule
-import com.retrivedmods.wclient.game.module.combat.CriticalsModule
-import com.retrivedmods.wclient.game.module.combat.CrystalauraModule
-import com.retrivedmods.wclient.game.module.combat.EnemyHunterModule
-import com.retrivedmods.wclient.game.module.combat.KillauraModule
-import com.retrivedmods.wclient.game.module.combat.ReachModule
-import com.retrivedmods.wclient.game.module.combat.SmartAuraModule
-import com.retrivedmods.wclient.game.module.misc.AdvanceDisablerModule
-import com.retrivedmods.wclient.game.module.misc.AutoDisconnectModule
-import com.retrivedmods.wclient.game.module.misc.SkinStealerModule
-import com.retrivedmods.wclient.game.module.misc.SoundModule
-import com.retrivedmods.wclient.game.module.player.DesyncModule
-import com.retrivedmods.wclient.game.module.motion.NoClipModule
-import com.retrivedmods.wclient.game.module.misc.PlayerTracerModule
-import com.retrivedmods.wclient.game.module.misc.PositionLoggerModule
-import com.retrivedmods.wclient.game.module.world.TimeShiftModule
-import com.retrivedmods.wclient.game.module.player.BlinkModule
-import com.retrivedmods.wclient.game.module.player.RegenerationModule
-import com.retrivedmods.wclient.game.module.world.WeatherControllerModule
-import com.retrivedmods.wclient.game.module.motion.AirJumpModule
-import com.retrivedmods.wclient.game.module.motion.AntiAFKModule
-import com.retrivedmods.wclient.game.module.motion.AutoWalkModule
-import com.retrivedmods.wclient.game.module.motion.BhopModule
-import com.retrivedmods.wclient.game.module.motion.FastStopModule
-import com.retrivedmods.wclient.game.module.motion.FlyModule
-import com.retrivedmods.wclient.game.module.motion.GravityControlModule
-import com.retrivedmods.wclient.game.module.motion.GlideModule
-import com.retrivedmods.wclient.game.module.motion.HighJumpModule
-import com.retrivedmods.wclient.game.module.motion.JetPackModule
-import com.retrivedmods.wclient.game.module.motion.JitterFlyModule
-import com.retrivedmods.wclient.game.module.motion.MotionFlyModule
-import com.retrivedmods.wclient.game.module.motion.MotionVarModule
-import com.retrivedmods.wclient.game.module.motion.OpFightBotModule
-import com.retrivedmods.wclient.game.module.motion.SpeedModule
-import com.retrivedmods.wclient.game.module.motion.SprintModule
-import com.retrivedmods.wclient.game.module.player.FreeCameraModule
-import com.retrivedmods.wclient.game.module.visual.NoHurtCameraModule
-import com.retrivedmods.wclient.game.module.visual.ZoomModule
-import com.retrivedmods.wclient.game.module.visual.DamageTextModule
-import com.retrivedmods.wclient.game.module.motion.PlayerTPModule
-import com.retrivedmods.wclient.game.module.motion.SpiderModule
-import com.retrivedmods.wclient.game.module.player.FastBreakModule
-import com.retrivedmods.wclient.game.module.player.JesusModule
-import com.retrivedmods.wclient.game.module.visual.NightVisionModule
-import com.retrivedmods.wclient.game.module.visual.FakeProxyModule
-import com.retrivedmods.wclient.game.module.visual.PlayerJoinNotifierModule
-import com.retrivedmods.wclient.game.module.world.FakeLagModule
+// Импорты модулей
+import com.retrivedmods.wclient.game.module.combat.*
+import com.retrivedmods.wclient.game.module.misc.*
+import com.retrivedmods.wclient.game.module.player.*
+import com.retrivedmods.wclient.game.module.motion.*
+import com.retrivedmods.wclient.game.module.visual.*
+import com.retrivedmods.wclient.game.module.world.*
 
-// Импорт нового CommandHandlerModule
-import com.retrivedmods.wclient.game.module.misc.CommandHandlerModule
-
-// Импорты для системы команд
-import com.retrivedmods.wclient.game.command.Command // Базовый класс команды
-import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand // Твоя команда SkinStealerCommand
+import com.retrivedmods.wclient.game.command.Command
+import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
 
 import kotlinx.serialization.encodeToString
@@ -80,12 +26,10 @@ import java.io.File
 
 object ModuleManager {
 
-    // Добавляем свойство для хранения текущей игровой сессии
-    // Убираем 'private set', так как set уже публичный.
-    // '?' означает, что оно может быть null, до инициализации
     var session: GameSession? = null
 
-    private val _modules: MutableList<Module> = ArrayList()
+    // *** ИСПРАВЛЕНИЕ: Изменяем доступ с private на internal ***
+    internal val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
     private val _commands: MutableList<Command> = ArrayList()
@@ -96,14 +40,10 @@ object ModuleManager {
         ignoreUnknownKeys = true
     }
 
-    // Блок init будет использоваться только для регистрации модулей и команд
     init {
         // --- Регистрация модулей ---
         with(_modules) {
-            // CommandHandlerModule должен быть зарегистрирован, чтобы обрабатывать команды
             add(CommandHandlerModule())
-
-            // Все остальные модули
             add(FlyModule())
             add(GravityControlModule())
             add(ZoomModule())
@@ -127,7 +67,6 @@ object ModuleManager {
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
-            // ЗДЕСЬ ДОБАВЛЯЕТСЯ SoundModule
             add(SkinStealerModule())
             add(SoundModule()) // SoundModule регистрируется здесь
             add(PlayerJoinNotifierModule())
@@ -168,32 +107,23 @@ object ModuleManager {
         with(_commands) {
             add(SkinStealerCommand())
             add(SoundCommand())
-            // Добавляй другие команды здесь, например:
-            // add(HelpCommand())
         }
     }
 
-    // НОВЫЙ МЕТОД: Инициализация ModuleManager с GameSession
-    // ЭТОТ МЕТОД ДОЛЖЕН БЫТЬ ВЫЗВАН ОДИН РАЗ, КОГДА GameSession СТАНОВИТСЯ ДОСТУПНОЙ
     fun initialize(session: GameSession) {
-        this.session = session // Сохраняем ссылку на текущую сессию
+        this.session = session
         _modules.forEach { module ->
-            module.session = session // Передаем сессию каждому модулю
-            // Вызов initialize() и установка isEnabled теперь безопасны,
-            // потому что 'session' уже была присвоена.
-            module.initialize()
-            // Если модули должны быть включены по умолчанию, установите isEnabled здесь
-            // module.isEnabled = true // Это вызовет onEnabled()
+            module.session = session 
+            module.initialize() 
         }
     }
 
-    // Метод для получения модуля по типу, используемый SoundCommand
     inline fun <reified T : Module> getModule(): T? {
+        // Теперь доступ к _modules разрешен, так как он internal
         return _modules.firstOrNull { it is T } as? T
     }
 
     fun getCommand(name: String): Command? {
-        // Ищем команду по её алиасу (имени), игнорируя регистр
         return _commands.firstOrNull { it.alias.contains(name.lowercase()) }
     }
 
@@ -234,7 +164,7 @@ object ModuleManager {
         val modules = jsonObject["modules"]!!.jsonObject
         _modules.forEach { module ->
             (modules[module.name] as? JsonObject)?.let {
-                module.fromJson(it)
+                module.fromJson(it) 
             }
         }
     }
