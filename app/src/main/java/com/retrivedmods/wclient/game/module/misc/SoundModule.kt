@@ -7,38 +7,34 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession 
 
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
-import org.cloudburstmc.math.vector.Vector3f // Для координат игрока
+import org.cloudburstmc.math.vector.Vector3f 
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
-    // Вспомогательный метод для безопасного доступа к сессии
-    private fun runOnSession(action: (GameSession) -> Unit) {
-        if (this::session.isInitialized) {
-            action(session)
-        } else {
-            // Только для отладки, не спамить в чат клиента, если сессия недоступна.
-            println("DEBUG: Session not initialized for SoundModule yet.")
-        }
-    }
+    // runOnSession теперь определён в базовом классе Module
 
     override fun initialize() {
-        super.initialize()
-        runOnSession {
-            it.displayClientMessage("§a[SoundModule] Модуль Sound проинициализирован. Сессия доступна.")
+        super.initialize() // Это вызовет initialize() из Module, которая уже отправляет сообщение
+        // Дополнительная логика инициализации для SoundModule, если требуется
+        runOnSession { 
+            // Это сообщение будет показано только после инициализации сессии
+            it.displayClientMessage("§a[SoundModule] Модуль Sound специфически проинициализирован.")
         }
     }
 
     override fun onEnabled() {
-        super.onEnabled()
-        runOnSession {
-            it.displayClientMessage("§a[SoundModule] Модуль Sound активирован. Сессия доступна.")
+        super.onEnabled() // Это вызовет sendToggleMessage из Module
+        // Дополнительная логика или сообщения при включении SoundModule
+        runOnSession { 
+            it.displayClientMessage("§a[SoundModule] Дополнительная логика при активации.") 
         }
     }
 
     override fun onDisabled() {
-        super.onDisabled()
-        runOnSession {
-            it.displayClientMessage("§c[SoundModule] Модуль Sound деактивирован.")
+        super.onDisabled() // Это вызовет sendToggleMessage из Module
+        // Дополнительная логика или сообщения при выключении SoundModule
+        runOnSession { 
+            it.displayClientMessage("§c[SoundModule] Дополнительная логика при деактивации.") 
         }
     }
 
@@ -49,11 +45,15 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             if (currentSession.muCuteRelaySession == null) {
                 currentSession.displayClientMessage("§c[SoundModule] MuCuteRelaySession недоступна для воспроизведения звука.")
                 println("ERROR: currentSession.muCuteRelaySession is null in playSound(). Cannot play sound: $soundName")
-                return@runOnSession // Выходим из лямбды, а не из функции
+                return@runOnSession 
             }
 
-            // Пытаемся получить позицию игрока безопасно
-            val playerPos: Vector3f? = currentSession.localPlayer?.position
+            // Проверяем localPlayer на null
+            val localPlayer = currentSession.localPlayer 
+            // Убедитесь, что у localPlayer есть свойство 'position' типа Vector3f.
+            // Если нет, проверьте исходники LocalPlayer для правильного имени.
+            val playerPos: Vector3f? = localPlayer?.position 
+
             if (playerPos == null) {
                 currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук.")
                 println("ERROR: Player position is null in playSound(). Cannot play sound: $soundName")
@@ -61,18 +61,17 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             }
 
             val playSoundPacket = PlaySoundPacket().apply {
-                // Использование сеттеров вместо прямых свойств
-                // Если 'setSoundIdentifier' не существует, попробуйте 'setSoundId'
-                setSoundIdentifier(soundName) 
-                
-                // Использование сеттеров для координат.
-                // Если это не работает, PlaySoundPacket может иметь метод setPosition(Vector3f)
-                setX(playerPos.getX()) // Используем getX(), getY(), getZ()
-                setY(playerPos.getY())
-                setZ(playerPos.getZ())
-
-                setVolume(volume)
-                setPitch(pitch)
+                // Если компилятор по-прежнему ругается на soundIdentifier, x, y, z,
+                // это означает, что в вашей версии CloudburstMC у PlaySoundPacket
+                // другие названия публичных полей.
+                // В этом случае вам нужно будет открыть определение PlaySoundPacket (Ctrl+Click на PlaySoundPacket)
+                // и использовать ТОЧНЫЕ имена полей, которые там указаны.
+                this.soundIdentifier = soundName 
+                this.x = playerPos.x 
+                this.y = playerPos.y
+                this.z = playerPos.z
+                this.volume = volume
+                this.pitch = pitch
             }
 
             currentSession.clientBound(playSoundPacket)
