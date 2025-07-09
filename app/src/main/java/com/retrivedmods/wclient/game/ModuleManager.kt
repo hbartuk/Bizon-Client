@@ -1,9 +1,10 @@
+// File: com.retrivedmods.wclient.game.ModuleManager.kt
 package com.retrivedmods.wclient.game
 
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-// Импорты модулей
+// Импорты модулей (ваш список)
 import com.retrivedmods.wclient.game.module.combat.AdvanceCombatAuraModule
 import com.retrivedmods.wclient.game.module.combat.WAuraModule
 import com.retrivedmods.wclient.game.module.combat.AntiCrystalModule
@@ -80,7 +81,9 @@ import java.io.File
 object ModuleManager {
 
     // Добавляем свойство для хранения текущей игровой сессии
-    var session: GameSession? = null// Делаем сеттер приватным, чтобы устанавливать сессию только через initialize
+    // Убираем 'private set', так как set уже публичный.
+    // '?' означает, что оно может быть null, до инициализации
+    var session: GameSession? = null
 
     private val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
@@ -124,8 +127,9 @@ object ModuleManager {
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
+            // ЗДЕСЬ ДОБАВЛЯЕТСЯ SoundModule
             add(SkinStealerModule())
-            add(SoundModule())
+            add(SoundModule()) // SoundModule регистрируется здесь
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
             add(InfiniteAuraModule())
@@ -170,12 +174,22 @@ object ModuleManager {
     }
 
     // НОВЫЙ МЕТОД: Инициализация ModuleManager с GameSession
+    // ЭТОТ МЕТОД ДОЛЖЕН БЫТЬ ВЫЗВАН ОДИН РАЗ, КОГДА GameSession СТАНОВИТСЯ ДОСТУПНОЙ
     fun initialize(session: GameSession) {
         this.session = session // Сохраняем ссылку на текущую сессию
         _modules.forEach { module ->
             module.session = session // Передаем сессию каждому модулю
-            module.initialize() // Вызываем метод инициализации модуля
+            // Вызов initialize() и установка isEnabled теперь безопасны,
+            // потому что 'session' уже была присвоена.
+            module.initialize()
+            // Если модули должны быть включены по умолчанию, установите isEnabled здесь
+            // module.isEnabled = true // Это вызовет onEnabled()
         }
+    }
+
+    // Метод для получения модуля по типу, используемый SoundCommand
+    inline fun <reified T : Module> getModule(): T? {
+        return _modules.firstOrNull { it is T } as? T
     }
 
     fun getCommand(name: String): Command? {
