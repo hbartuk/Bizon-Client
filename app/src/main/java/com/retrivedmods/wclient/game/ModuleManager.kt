@@ -4,21 +4,20 @@ package com.retrivedmods.wclient.game
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-// Module Imports - Keep these broad for categories
+// Импорты модулей
 import com.retrivedmods.wclient.game.module.combat.*
 import com.retrivedmods.wclient.game.module.misc.*
-import com.retrivedmods.wclient.game.module.player.* // This imports modules directly in 'player'
+import com.retrivedmods.wclient.game.module.player.*
 import com.retrivedmods.wclient.game.module.motion.*
 import com.retrivedmods.wclient.game.module.visual.*
 import com.retrivedmods.wclient.game.module.world.*
 
-// *** CRITICAL: Explicitly import DesyncModule and FreeCameraModule. ***
-// *** YOU MUST VERIFY THESE PATHS IN YOUR PROJECT! ***
-// For example, if DesyncModule is in 'com.retrivedmods.wclient.game.module.player.misc.DesyncModule',
-// you would change this import accordingly.
-import com.retrivedmods.wclient.game.module.player.DesyncModule // <- CHECK THIS PATH CAREFULLY
-import com.retrivedmods.wclient.game.module.player.FreeCameraModule // <- CHECK THIS PATH CAREFULLY
-
+// Если DesyncModule и FreeCameraModule находятся в других подпакетах, 
+// эти явные импорты нужны. Убедитесь, что пути правильные.
+// Если они в том же пакете, что и com.retrivedmods.wclient.game.module.player.*,
+// то эти строки не нужны, но и вреда от них не будет, если они дублируют.
+import com.retrivedmods.wclient.game.module.player.DesyncModule
+import com.retrivedmods.wclient.game.module.player.FreeCameraModule
 
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
@@ -36,7 +35,7 @@ object ModuleManager {
 
     var session: GameSession? = null
 
-    // *** FIX: Changed from private to internal ***
+    // *** ВОТ ОНО! ЭТО ДОЛЖНО БЫТЬ "internal val _modules" ***
     internal val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
@@ -97,10 +96,10 @@ object ModuleManager {
             add(NoHurtCameraModule())
             add(AutoWalkModule())
             add(AntiAFKModule())
-            add(DesyncModule()) // Should be found now if import path is correct
+            add(DesyncModule())
             add(PositionLoggerModule())
             add(MotionFlyModule())
-            add(FreeCameraModule()) // Should be found now if import path is correct
+            add(FreeCameraModule())
             add(KillauraModule())
             add(AntiCrystalModule())
             add(TimeShiftModule())
@@ -119,12 +118,13 @@ object ModuleManager {
     fun initialize(session: GameSession) {
         this.session = session
         _modules.forEach { module ->
-            module.session = session
-            module.initialize()
+            module.session = session 
+            module.initialize() 
         }
     }
 
     inline fun <reified T : Module> getModule(): T? {
+        // Доступ к _modules теперь разрешен, потому что он internal
         return _modules.firstOrNull { it is T } as? T
     }
 
@@ -169,7 +169,7 @@ object ModuleManager {
         val modules = jsonObject["modules"]!!.jsonObject
         _modules.forEach { module ->
             (modules[module.name] as? JsonObject)?.let {
-                module.fromJson(it)
+                module.fromJson(it) 
             }
         }
     }
