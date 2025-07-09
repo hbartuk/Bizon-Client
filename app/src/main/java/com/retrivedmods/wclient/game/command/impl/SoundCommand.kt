@@ -1,13 +1,15 @@
+// File: com.retrivedmods.wclient.game.command.impl.SoundCommand.kt
 package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.ModuleManager // УБЕДИТЕСЬ, что этот импорт есть
+import com.retrivedmods.wclient.game.ModuleManager // Импорт ModuleManager
+
 import com.retrivedmods.wclient.game.module.misc.SoundModule
 
 class SoundCommand : Command("sound", "s") { // Добавил пример алиаса "s"
 
-    // Пример популярных звуков (пока пустой)
+    // Здесь может быть список популярных звуков, если он нужен
     private val popularSounds = listOf<String>()
 
     override fun exec(args: Array<String>, session: GameSession) {
@@ -20,12 +22,14 @@ class SoundCommand : Command("sound", "s") { // Добавил пример ал
 
         when (args[0].lowercase()) {
             "stopall" -> {
+                // Получаем SoundModule через ModuleManager
                 val soundModule = ModuleManager.getModule<SoundModule>()
                 if (soundModule == null) {
                     session.displayClientMessage("§c[SoundCommand] Модуль SoundModule не найден. Невозможно остановить все звуки.")
                     println("DEBUG: SoundModule is null when trying to stop all sounds.")
                     return
                 }
+                // Вызываем метод stopAllSounds() на полученном экземпляре SoundModule
                 soundModule.stopAllSounds()
                 session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку всех звуков.")
                 println("DEBUG: stopAllSounds() called on SoundModule.")
@@ -35,6 +39,7 @@ class SoundCommand : Command("sound", "s") { // Добавил пример ал
                 val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
                 val pitch = args.getOrNull(2)?.toFloatOrNull() ?: 1.0f
 
+                // Получаем SoundModule через ModuleManager
                 val soundModule = ModuleManager.getModule<SoundModule>()
 
                 if (soundModule == null) {
@@ -43,13 +48,14 @@ class SoundCommand : Command("sound", "s") { // Добавил пример ал
                     return
                 }
 
-                // Включаем модуль, если он выключен
+                // Проверяем и включаем модуль, если он выключен, используя свойство isEnabled SoundModule
                 if (!soundModule.isEnabled) {
                     soundModule.isEnabled = true
                     session.displayClientMessage("§a[SoundCommand] Модуль SoundModule был автоматически включен.")
                     println("DEBUG: SoundModule was not enabled, enabling it now.")
                 }
 
+                // Вызываем метод playSound() на полученном экземпляре SoundModule
                 println("DEBUG: Calling playSound on SoundModule for sound: $soundName.")
                 soundModule.playSound(soundName, volume, pitch)
                 session.displayClientMessage("§aНачинаю воспроизведение звука: §b$soundName §7(Громкость: ${volume}, Питч: ${pitch})")
