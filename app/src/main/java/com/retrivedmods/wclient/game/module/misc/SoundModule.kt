@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/module/misc/SoundModule.kt
+// File: /home/runner/work/WClient-/WClient-/app/src/main/java/com/retrivedmods/wclient/game/module/misc/SoundModule.kt
 package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.InterceptablePacket
@@ -43,8 +43,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             }
 
             val localPlayer = currentSession.localPlayer
-            // *** ВОТ ОНО! Используем прямое свойство 'position' ***
-            val playerPos: Vector3f? = localPlayer?.position
+            // *** ВОТ ОНО! Используем ПРАВИЛЬНОЕ свойство 'vec3Position' ***
+            val playerPos: Vector3f? = localPlayer?.vec3Position
 
             if (playerPos == null) {
                 currentSession.displayClientMessage("§c[SoundModule] Player position is unavailable. Cannot play sound.")
