@@ -1,104 +1,113 @@
-// File: com.retrivedmods.wclient.game.module.misc.SoundModule.kt
-
 package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-// Убедитесь, что этот импорт правильный для PlaySoundPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
-import org.cloudburstmc.math.vector.Vector3f // Для координат звука, возможно, вам понадобится
-import org.cloudburstmc.math.vector.Vector3i // Для координат звука, возможно, вам понадобится
-
-// Добавьте этот импорт, если его нет (для ::session.isInitialized)
-import kotlin.reflect.KProperty0
+import org.cloudburstmc.math.vector.Vector3f // Для координат звука
+// org.cloudburstmc.math.vector.Vector3i // Если вам нужны целочисленные координаты
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
     // ВАЖНО: Мы больше не будем использовать ::session.isInitialized в initialize() и onEnabled()
-    // так как ModuleManager.initialize() ГАРАНТИРУЕТ, что session будет установлена до вызова initialize() модуля.
+    // так как ModuleManager.initialize() (или ваш механизм регистрации модулей)
+    // ГАРАНТИРУЕТ, что session будет установлена до вызова initialize() модуля.
     // Если она не установлена, это фундаментальная ошибка, и проверять её здесь не имеет смысла.
 
     override fun initialize() {
         super.initialize()
         // На этом этапе session ГАРАНТИРОВАННО инициализирована благодаря ModuleManager.initialize()
-        println("DEBUG: SoundModule.initialize() called. Session should be initialized.")
-        session.displayClientMessage("§a[SoundModule] Модуль Sound проинициализирован. Сессия доступна.")
+        println("DEBUG: SoundModule.initialize() called. Session should be initialized: ${this::session.isInitialized}.")
+        // Проверка на инициализацию session перед использованием displayClientMessage
+        if (this::session.isInitialized) {
+            session.displayClientMessage("§a[SoundModule] Модуль Sound проинициализирован. Сессия доступна.")
+        } else {
+            println("ERROR: Session is not initialized in SoundModule.initialize()! This should not happen.")
+        }
     }
 
     override fun onEnabled() {
         super.onEnabled()
         // На этом этапе session ГАРАНТИРОВАННО инициализирована.
-        println("DEBUG: SoundModule.onEnabled() called. Session should be initialized.")
-        session.displayClientMessage("§a[SoundModule] Модуль Sound активирован. Сессия доступна.")
+        println("DEBUG: SoundModule.onEnabled() called. Session should be initialized: ${this::session.isInitialized}.")
+        if (this::session.isInitialized) {
+            session.displayClientMessage("§a[SoundModule] Модуль Sound активирован. Сессия доступна.")
+        }
     }
 
     override fun onDisabled() {
         super.onDisabled()
         // Здесь session также должна быть инициализирована, если модуль был активен
-        // Проверка на null для session.displayClientMessage, чтобы избежать краша при попытке логирования
-        // после полного уничтожения сессии (хотя ModuleManager.session = null должно быть раньше)
-        session.displayClientMessage("§c[SoundModule] Модуль Sound деактивирован.")
         println("DEBUG: SoundModule.onDisabled() called.")
+        if (this::session.isInitialized) { // Проверка на null для session.displayClientMessage
+            session.displayClientMessage("§c[SoundModule] Модуль Sound деактивирован.")
+        }
     }
 
-    fun playSound(soundName: String, volume: Float, pitch: Float) {
-        println("DEBUG: SoundModule.playSound() called for sound: $soundName")
-        println("DEBUG: Inside playSound(), session.muCuteRelaySession is null? ${session.muCuteRelaySession == null}")
+    // Если SoundModule обрабатывает пакеты, раскомментируйте и реализуйте:
+    // override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
+    //     // Ваш код обработки пакетов для SoundModule
+    // }
+    //
+    // override fun afterPacketBound(packet: BedrockPacket) {
+    //     // Ваш код после обработки пакетов для SoundModule
+    // }
+    //
+    // override fun onDisconnect(reason: String) {
+    //     // Ваш код при отключении
+    // }
 
-        // Проверяем, инициализирована ли session и доступна ли muCuteRelaySession
-        // Здесь уже НЕ НУЖНО проверять ::session.isInitialized, так как до этого места
-        // мы дойдем только если session уже была присвоена модулю.
-        // Главное, чтобы session.muCuteRelaySession была не null.
-        if (session.muCuteRelaySession == null) {
-            session.displayClientMessage("§c[SoundModule] MuCuteRelaySession недоступна для воспроизведения звука.")
-            println("ERROR: session.muCuteRelaySession is null in playSound(). Cannot play sound.")
+    fun playSound(soundName: String, volume: Float, pitch: Float) {
+        println("DEBUG: SoundModule.playSound() called for sound: $soundName (Volume: $volume, Pitch: $pitch)")
+
+        // Важная проверка: убедитесь, что session инициализирована и muCuteRelaySession доступна.
+        // Если session не инициализирована, значит, что-то пошло не так на более ранних этапах.
+        if (!this::session.isInitialized || session.muCuteRelaySession == null) {
+            session.displayClientMessage("§c[SoundModule] Сессия или MuCuteRelaySession недоступна для воспроизведения звука.")
+            println("ERROR: session or session.muCuteRelaySession is not available in playSound(). Cannot play sound.")
             return
         }
 
-        // --- ИСПРАВЛЕНИЯ ДЛЯ PlaySoundPacket ---
-        // PlaySoundPacket обычно имеет методы setSoundId, setX, setY, setZ, setVolume, setPitch
-        // или принимает эти значения в конструкторе, или через property setters.
-        // Проверьте документацию CloudburstMC или сам класс PlaySoundPacket.
-        // Скорее всего, это выглядит так:
-
         val playSoundPacket = PlaySoundPacket().apply {
-            // Имя звука
-            // Обычно, это setSoundId() или просто .soundId = "minecraft:sound_name"
-            // Я использую .soundIdentifier, это типичное имя в CloudburstMC для версии 1.16+
-            // Если у вас более старая версия, это может быть .soundId.
-            // Если .soundIdentifier не работает, попробуйте .soundId или поищите в документации.
-            soundIdentifier = soundName // <--- ИСПРАВЛЕНО
+            // Установка имени звука. 'soundIdentifier' - это правильное поле для CloudburstMC
+            soundIdentifier = soundName
             
-            // Координаты звука. PlaySoundPacket обычно принимает Vector3f или Vector3i.
-            // Предполагаем, что у вашей GameSession есть актуальные координаты игрока.
-            // Если playerX, playerY, playerZ в GameSession Double, их нужно преобразовать.
-            // Используйте Vector3f для float координат или Vector3i для int координат.
-            x = session.playerX.toFloat() // <--- ИСПРАВЛЕНО: конвертация в Float, если playerX Double
-            y = session.playerY.toFloat() // <--- ИСПРАВЛЕНО
-            z = session.playerZ.toFloat() // <--- ИСПРАВЛЕНО
+            // Получение текущих координат игрока из GameSession.localPlayer
+            // GameSession.localPlayer.position - это Vector3f, поэтому преобразования в Float не нужны,
+            // если PlaySoundPacket принимает float напрямую.
+            // Если PlaySoundPacket принимает int, используйте .toInt()
+            x = session.localPlayer.position.x
+            y = session.localPlayer.position.y
+            z = session.localPlayer.position.z
 
-            // Громкость и высота тона
-            this.volume = volume // <--- ИСПРАВЛЕНО
-            this.pitch = pitch   // <--- ИСПРАВЛЕНО
+            // Установка громкости и питча
+            this.volume = volume
+            this.pitch = pitch
         }
 
-        // Отправляем пакеты через muCuteRelaySession
-        session.muCuteRelaySession.serverBound(playSoundPacket)
-        session.muCuteRelaySession.clientBound(playSoundPacket)
+        // Отправляем пакет на клиент (чтобы игрок услышал звук)
+        session.clientBound(playSoundPacket)
+        // Возможно, вам также нужно отправить его на сервер, если это часть геймплея.
+        // session.serverBound(playSoundPacket)
 
-        session.displayClientMessage("§a[SoundModule] Попытка воспроизвести звук: $soundName")
+        session.displayClientMessage("§a[SoundModule] Попытка воспроизвести звук: §b$soundName §7на координатах §e(${x.toInt()}, ${y.toInt()}, ${z.toInt()})")
+        println("DEBUG: PlaySoundPacket sent for sound: $soundName at (${x}, ${y}, ${z}) with volume $volume and pitch $pitch.")
     }
 
     fun stopAllSounds() {
-        // Мы можем безопасно обращаться к session здесь, если модуль активен.
-        if (session.muCuteRelaySession == null) {
-            println("DEBUG: Cannot stop all sounds, MuCuteRelaySession not initialized.")
+        // Заглушка: В Bedrock Edition нет прямого пакета "stop all sounds".
+        // Обычно это достигается путем отправки множества пакетов StopSoundEvent (если у вас есть список активных звуков)
+        // или изменением громкости игрока, или просто прекращением отправки PlaySoundPacket'ов.
+        // Если вы хотите *остановить* воспроизведение звуков на клиенте, вам нужно будет реализовать более сложную логику,
+        // возможно, отслеживая все активные звуки и отправляя пакеты для их остановки, если CloudburstMC поддерживает это.
+
+        if (!this::session.isInitialized || session.muCuteRelaySession == null) {
+            println("DEBUG: Cannot stop all sounds, session or MuCuteRelaySession not initialized.")
             session.displayClientMessage("§c[SoundModule] Сессия или релей-сессия не активны для остановки звуков.")
             return
         }
         
-        session.displayClientMessage("§e[SoundModule] Заглушка для остановки всех звуков. Реализация отсутствует.")
-        println("DEBUG: stopAllSounds() called. No specific implementation for MCBE.")
+        session.displayClientMessage("§e[SoundModule] Заглушка: Функция 'stopAllSounds' не имеет прямой реализации в MCBE. Необходима пользовательская логика.")
+        println("DEBUG: stopAllSounds() called. No direct MCBE packet. Custom implementation needed.")
     }
 }
