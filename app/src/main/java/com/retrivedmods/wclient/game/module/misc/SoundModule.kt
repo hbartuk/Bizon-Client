@@ -4,31 +4,31 @@ package com.retrivedmods.wclient.game.module.misc
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.GameSession 
+import com.retrivedmods.wclient.game.GameSession
 
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
-import org.cloudburstmc.math.vector.Vector3f 
+import org.cloudburstmc.math.vector.Vector3f
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
     override fun initialize() {
-        super.initialize() 
-        runOnSession { 
-            it.displayClientMessage("§a[SoundModule] Модуль Sound специфически проинициализирован.")
+        super.initialize()
+        runOnSession {
+            it.displayClientMessage("§a[SoundModule] Sound module specifically initialized.")
         }
     }
 
     override fun onEnabled() {
-        super.onEnabled() 
-        runOnSession { 
-            it.displayClientMessage("§a[SoundModule] Дополнительная логика при активации.") 
+        super.onEnabled()
+        runOnSession {
+            it.displayClientMessage("§a[SoundModule] Additional logic on activation.")
         }
     }
 
     override fun onDisabled() {
-        super.onDisabled() 
-        runOnSession { 
-            it.displayClientMessage("§c[SoundModule] Дополнительная логика при деактивации.") 
+        super.onDisabled()
+        runOnSession {
+            it.displayClientMessage("§c[SoundModule] Additional logic on deactivation.")
         }
     }
 
@@ -37,24 +37,23 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
         runOnSession { currentSession ->
             if (currentSession.muCuteRelaySession == null) {
-                currentSession.displayClientMessage("§c[SoundModule] MuCuteRelaySession недоступна для воспроизведения звука.")
+                currentSession.displayClientMessage("§c[SoundModule] MuCuteRelaySession is unavailable for sound playback.")
                 println("ERROR: currentSession.muCuteRelaySession is null in playSound(). Cannot play sound: $soundName")
-                return@runOnSession 
+                return@runOnSession
             }
 
-            val localPlayer = currentSession.localPlayer 
-            // *** ИСПРАВЛЕНИЕ #1: Теперь мы знаем, что у LocalPlayer, вероятно, есть метод getPosition(),
-            // который возвращает Vector3f. Если нет, вам нужно будет это проверить.
-            val playerPos: Vector3f? = localPlayer?.getPosition() 
+            val localPlayer = currentSession.localPlayer
+            // *** ВОТ ОНО! Используем прямое свойство 'position' ***
+            val playerPos: Vector3f? = localPlayer?.position
 
             if (playerPos == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук.")
+                currentSession.displayClientMessage("§c[SoundModule] Player position is unavailable. Cannot play sound.")
                 println("ERROR: Player position is null in playSound(). Cannot play sound: $soundName")
                 return@runOnSession
             }
 
             val playSoundPacket = PlaySoundPacket().apply {
-                // *** ИСПРАВЛЕНИЕ #2: Используем ТОЧНЫЕ сеттеры, сгенерированные Lombok.
+                // Используем ТОЧНЫЕ сеттеры, подтвержденные из PlaySoundPacket.java
                 this.setSound(soundName)
                 this.setPosition(playerPos) // Vector3f устанавливается целиком
                 this.setVolume(volume)
@@ -63,7 +62,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
             currentSession.clientBound(playSoundPacket)
 
-            currentSession.displayClientMessage("§a[SoundModule] Попытка воспроизвести звук: §b$soundName")
+            currentSession.displayClientMessage("§a[SoundModule] Attempting to play sound: §b$soundName")
             println("DEBUG: PlaySoundPacket sent for sound: $soundName with volume $volume and pitch $pitch.")
         }
     }
@@ -71,12 +70,12 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     fun stopAllSounds() {
         runOnSession { currentSession ->
             if (currentSession.muCuteRelaySession == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Сессия или релей-сессия не активны для остановки звуков.")
+                currentSession.displayClientMessage("§c[SoundModule] Session or relay session is not active to stop sounds.")
                 println("DEBUG: Cannot stop all sounds, currentSession.muCuteRelaySession not initialized.")
                 return@runOnSession
             }
-            
-            currentSession.displayClientMessage("§e[SoundModule] Заглушка: Функция 'stopAllSounds' не имеет прямой реализации в MCBE. Необходима пользовательская логика.")
+
+            currentSession.displayClientMessage("§e[SoundModule] Placeholder: 'stopAllSounds' function has no direct MCBE implementation. Custom logic is needed.")
             println("DEBUG: stopAllSounds() called. No direct MCBE packet. Custom implementation needed.")
         }
     }
