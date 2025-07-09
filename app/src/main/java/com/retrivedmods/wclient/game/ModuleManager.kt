@@ -12,8 +12,7 @@ import com.retrivedmods.wclient.game.module.motion.*
 import com.retrivedmods.wclient.game.module.visual.*
 import com.retrivedmods.wclient.game.module.world.*
 
-// Если DesyncModule и FreeCameraModule находятся в других подпакетах, 
-// эти явные импорты нужны. Убедитесь, что пути правильные.
+// Эти явные импорты нужны, если DesyncModule и FreeCameraModule находятся в других подпакетах.
 // Если они в том же пакете, что и com.retrivedmods.wclient.game.module.player.*,
 // то эти строки не нужны, но и вреда от них не будет, если они дублируют.
 import com.retrivedmods.wclient.game.module.player.DesyncModule
@@ -35,8 +34,8 @@ object ModuleManager {
 
     var session: GameSession? = null
 
-    // *** ВОТ ОНО! ЭТО ДОЛЖНО БЫТЬ "internal val _modules" ***
-    internal val _modules: MutableList<Module> = ArrayList()
+    // *** ИСПРАВЛЕНИЕ: МЕНЯЕМ НА "public val _modules" ДЛЯ НАДЕЖНОСТИ ***
+    public val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
     private val _commands: MutableList<Command> = ArrayList()
@@ -118,13 +117,13 @@ object ModuleManager {
     fun initialize(session: GameSession) {
         this.session = session
         _modules.forEach { module ->
-            module.session = session 
-            module.initialize() 
+            module.session = session
+            module.initialize()
         }
     }
 
     inline fun <reified T : Module> getModule(): T? {
-        // Доступ к _modules теперь разрешен, потому что он internal
+        // Доступ к _modules теперь разрешен, потому что он public
         return _modules.firstOrNull { it is T } as? T
     }
 
@@ -169,7 +168,7 @@ object ModuleManager {
         val modules = jsonObject["modules"]!!.jsonObject
         _modules.forEach { module ->
             (modules[module.name] as? JsonObject)?.let {
-                module.fromJson(it) 
+                module.fromJson(it)
             }
         }
     }
