@@ -4,13 +4,21 @@ package com.retrivedmods.wclient.game
 import android.content.Context
 import android.net.Uri
 import com.retrivedmods.wclient.application.AppContext
-// Импорты модулей
+// Module Imports - Keep these broad for categories
 import com.retrivedmods.wclient.game.module.combat.*
 import com.retrivedmods.wclient.game.module.misc.*
-import com.retrivedmods.wclient.game.module.player.*
+import com.retrivedmods.wclient.game.module.player.* // This imports modules directly in 'player'
 import com.retrivedmods.wclient.game.module.motion.*
 import com.retrivedmods.wclient.game.module.visual.*
 import com.retrivedmods.wclient.game.module.world.*
+
+// *** CRITICAL: Explicitly import DesyncModule and FreeCameraModule. ***
+// *** YOU MUST VERIFY THESE PATHS IN YOUR PROJECT! ***
+// For example, if DesyncModule is in 'com.retrivedmods.wclient.game.module.player.misc.DesyncModule',
+// you would change this import accordingly.
+import com.retrivedmods.wclient.game.module.player.DesyncModule // <- CHECK THIS PATH CAREFULLY
+import com.retrivedmods.wclient.game.module.player.FreeCameraModule // <- CHECK THIS PATH CAREFULLY
+
 
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
@@ -28,7 +36,7 @@ object ModuleManager {
 
     var session: GameSession? = null
 
-    // *** ИСПРАВЛЕНИЕ: Изменяем доступ с private на internal ***
+    // *** FIX: Changed from private to internal ***
     internal val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
@@ -41,7 +49,6 @@ object ModuleManager {
     }
 
     init {
-        // --- Регистрация модулей ---
         with(_modules) {
             add(CommandHandlerModule())
             add(FlyModule())
@@ -68,7 +75,7 @@ object ModuleManager {
             add(RegenerationModule())
             add(AutoDisconnectModule())
             add(SkinStealerModule())
-            add(SoundModule()) // SoundModule регистрируется здесь
+            add(SoundModule()) // SoundModule is registered here
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
             add(InfiniteAuraModule())
@@ -90,10 +97,10 @@ object ModuleManager {
             add(NoHurtCameraModule())
             add(AutoWalkModule())
             add(AntiAFKModule())
-            add(DesyncModule())
+            add(DesyncModule()) // Should be found now if import path is correct
             add(PositionLoggerModule())
             add(MotionFlyModule())
-            add(FreeCameraModule())
+            add(FreeCameraModule()) // Should be found now if import path is correct
             add(KillauraModule())
             add(AntiCrystalModule())
             add(TimeShiftModule())
@@ -103,7 +110,6 @@ object ModuleManager {
             add(EnemyHunterModule())
         }
 
-        // --- Регистрация команд ---
         with(_commands) {
             add(SkinStealerCommand())
             add(SoundCommand())
@@ -113,13 +119,12 @@ object ModuleManager {
     fun initialize(session: GameSession) {
         this.session = session
         _modules.forEach { module ->
-            module.session = session 
-            module.initialize() 
+            module.session = session
+            module.initialize()
         }
     }
 
     inline fun <reified T : Module> getModule(): T? {
-        // Теперь доступ к _modules разрешен, так как он internal
         return _modules.firstOrNull { it is T } as? T
     }
 
@@ -164,7 +169,7 @@ object ModuleManager {
         val modules = jsonObject["modules"]!!.jsonObject
         _modules.forEach { module ->
             (modules[module.name] as? JsonObject)?.let {
-                module.fromJson(it) 
+                module.fromJson(it)
             }
         }
     }
