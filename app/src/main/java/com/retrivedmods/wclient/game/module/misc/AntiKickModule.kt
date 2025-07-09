@@ -4,7 +4,7 @@ import android.util.Log
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.application.AppContext // Для доступа к ресурсам (AssetManager не используется напрямую, но AppContext может быть полезен)
+import com.retrivedmods.wclient.application.AppContext
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -14,33 +14,32 @@ import org.cloudburstmc.protocol.bedrock.data.DisconnectFailReason
 import org.cloudburstmc.protocol.bedrock.packet.*
 import kotlin.random.Random
 
-// Класс Element заменён на Module, так как это соответствует вашему проекту
-class AntiKickModule : Module( // Имя класса изменено на AntiKickModule
-    name = "AntiKick",
+class AntiKickModule : Module(
+    name = "АнтиКик", // Название модуля на русском
     category = ModuleCategory.Misc
 ) {
 
-    // Предполагаем, что boolValue и intValue — это функции-расширения из вашего базового Module
-    private var disconnectPacketValue by boolValue("Disconnect Packet", true)
-    private var transferPacketValue by boolValue("Transfer Packet", true)
-    private var playStatusPacketValue by boolValue("Play Status Packet", true)
-    private var networkSettingsPacketValue by boolValue("Network Settings", true)
+    // Опции на русском языке
+    private var disconnectPacketValue by boolValue("Перехват отключения", true)
+    private var transferPacketValue by boolValue("Перехват переноса", true)
+    private var playStatusPacketValue by boolValue("Перехват статуса игры", true)
+    private var networkSettingsPacketValue by boolValue("Перехват настроек сети", true)
 
 
-    private var showKickMessages by boolValue("Show Kick Messages", true)
-    private var intelligentBypass by boolValue("Smart Bypass", true)
-    private var autoReconnect by boolValue("Auto Reconnect", false)
-    private var antiAfkSimulation by boolValue("Anti-AFK", true)
-    private var useRandomMovement by boolValue("Random Movement", true)
-    private var preventTimeout by boolValue("Prevent Timeout", true)
+    private var showKickMessages by boolValue("Показывать сообщения о киках", true)
+    private var intelligentBypass by boolValue("Умный обход", true)
+    private var autoReconnect by boolValue("Автопереподключение", false)
+    private var antiAfkSimulation by boolValue("Анти-АФК", true)
+    private var useRandomMovement by boolValue("Случайное движение", true)
+    private var preventTimeout by boolValue("Предотвращать таймаут", true)
 
 
-    private var movementInterval by intValue("Movement Interval", 8000, 500..15000)
-    private var movementDuration by intValue("Movement Duration", 500, 100..3000)
+    private var movementInterval by intValue("Интервал движения (мс)", 8000, 500..15000)
+    private var movementDuration by intValue("Длительность движения (мс)", 500, 100..3000)
 
 
-    private var reconnectDelay by intValue("Reconnect Delay (ms)", 3000, 1000..10000)
-    private var maxReconnectAttempts by intValue("Max Reconnect Attempts", 3, 1..10)
+    private var reconnectDelay by intValue("Задержка переподключения (мс)", 3000, 1000..10000)
+    private var maxReconnectAttempts by intValue("Макс. попыток переподключения", 3, 1..10)
 
 
     private var lastMovementTime = 0L
@@ -116,7 +115,7 @@ class AntiKickModule : Module( // Имя класса изменено на Anti
         if (packet is NetworkSettingsPacket && networkSettingsPacketValue) {
             if (intelligentBypass) {
                 if (showKickMessages) {
-                    session?.displayClientMessage("§8[§bAntiKick§8] §7Настройки сети обновлены.")
+                    session?.displayClientMessage("§8[§bАнтиКик§8] §7Настройки сети обновлены.")
                 }
             }
         }
@@ -133,47 +132,47 @@ class AntiKickModule : Module( // Имя класса изменено на Anti
         val reason = getReadableKickReason(packet.reason, packet.kickMessage)
 
         if (showKickMessages) {
-            session?.displayClientMessage("§8[§bAntiKick§8] §eСервер пытается вас отключить: §f$reason")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается вас отключить: §f$reason")
         }
 
         interceptablePacket.isIntercepted = true
 
         if (interceptablePacket.isIntercepted) {
             if (showKickMessages) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §aОтказываю в выполнении команды отключения.")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды отключения.")
             }
         } else {
             if (showKickMessages) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §cОтказ не сработал. Принудительное отключение.§r")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §cОтказ не сработал. Принудительное отключение.§r")
             }
             if (autoReconnect) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
                 attemptReconnect()
             }
         }
         if (autoReconnect && interceptablePacket.isIntercepted) {
-             session?.displayClientMessage("§8[§bAntiKick§8] §eУспешно предотвращено, но автопереподключение активно. Начинаю проверку соединения...")
+             session?.displayClientMessage("§8[§bАнтиКик§8] §eУспешно предотвращено, но автопереподключение активно. Начинаю проверку соединения...")
              attemptReconnect()
         }
     }
 
     private fun handleTransferPacket(interceptablePacket: InterceptablePacket, packet: TransferPacket) {
         if (showKickMessages) {
-            session?.displayClientMessage("§8[§bAntiKick§8] §eСервер пытается переместить вас на другой IP: §f${packet.address}:${packet.port}")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается переместить вас на другой IP: §f${packet.address}:${packet.port}")
         }
 
         interceptablePacket.isIntercepted = true
 
         if (interceptablePacket.isIntercepted) {
             if (showKickMessages) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §aОтказываю в выполнении команды перемещения.")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды перемещения.")
             }
         } else {
             if (showKickMessages) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §cОтказ не сработал. Принудительное перемещение.§r")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §cОтказ не сработал. Принудительное перемещение.§r")
             }
             if (autoReconnect) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
                 attemptReconnect()
             }
         }
@@ -193,21 +192,21 @@ class AntiKickModule : Module( // Имя класса изменено на Anti
 
         if (isKickStatus) {
             if (showKickMessages) {
-                session?.displayClientMessage("§8[§bAntiKick§8] §eСервер пытается отключить вас по статусу: §f$status")
+                session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается отключить вас по статусу: §f$status")
             }
 
             interceptablePacket.isIntercepted = true
 
             if (interceptablePacket.isIntercepted) {
                 if (showKickMessages) {
-                    session?.displayClientMessage("§8[§bAntiKick§8] §aОтказываю в выполнении команды отключения по статусу.")
+                    session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды отключения по статусу.")
                 }
             } else {
                 if (showKickMessages) {
-                    session?.displayClientMessage("§8[§bAntiKick§8] §cОтказ не сработал. Принудительное отключение по статусу.§r")
+                    session?.displayClientMessage("§8[§bАнтиКик§8] §cОтказ не сработал. Принудительное отключение по статусу.§r")
                 }
                 if (autoReconnect) {
-                    session?.displayClientMessage("§8[§bAntiKick§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
+                    session?.displayClientMessage("§8[§bАнтиКик§8] §eПытаюсь восстановить соединение. Применяю метод быстрого переподключения...")
                     attemptReconnect()
                 }
             }
@@ -255,13 +254,13 @@ class AntiKickModule : Module( // Имя класса изменено на Anti
     @OptIn(DelicateCoroutinesApi::class)
     private fun attemptReconnect() {
         if (reconnectAttempts >= maxReconnectAttempts) {
-            session?.displayClientMessage("§8[§bAntiKick§8] §cДостигнуто максимальное количество попыток переподключения (§f$maxReconnectAttempts§c).")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §cДостигнуто максимальное количество попыток переподключения (§f$maxReconnectAttempts§c).")
             return
         }
 
         reconnectAttempts++
 
-        session?.displayClientMessage("§8[§bAntiKick§8] §eПопытка переподключения (§f$reconnectAttempts§7/§f$maxReconnectAttempts§7)...")
+        session?.displayClientMessage("§8[§bАнтиКик§8] §eПопытка переподключения (§f$reconnectAttempts§7/§f$maxReconnectAttempts§7)...")
 
         GlobalScope.launch {
             delay(reconnectDelay.toLong())
@@ -273,7 +272,7 @@ class AntiKickModule : Module( // Имя класса изменено на Anti
             // Если такого метода нет, его нужно добавить в ваш GameSession.
             // Без этого, автопереподключение будет только выводить сообщения, но не действовать.
 
-            session?.displayClientMessage("§8[§bAntiKick§8] §aПереподключение завершено. Проверяю статус.")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §aПереподключение завершено. Проверяю статус.")
         }
     }
 
