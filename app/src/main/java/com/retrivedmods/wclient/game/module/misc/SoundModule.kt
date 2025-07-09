@@ -1,4 +1,4 @@
-// File: com.retrivedmods.wclient.game.module.misc.SoundModule.kt
+// File: app/src/main/java/com/retrivedmods/wclient/game/module/misc/SoundModule.kt
 package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.InterceptablePacket
@@ -11,28 +11,22 @@ import org.cloudburstmc.math.vector.Vector3f
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
-    // runOnSession теперь определён в базовом классе Module
-
     override fun initialize() {
-        super.initialize() // Это вызовет initialize() из Module, которая уже отправляет сообщение
-        // Дополнительная логика инициализации для SoundModule, если требуется
+        super.initialize() 
         runOnSession { 
-            // Это сообщение будет показано только после инициализации сессии
             it.displayClientMessage("§a[SoundModule] Модуль Sound специфически проинициализирован.")
         }
     }
 
     override fun onEnabled() {
-        super.onEnabled() // Это вызовет sendToggleMessage из Module
-        // Дополнительная логика или сообщения при включении SoundModule
+        super.onEnabled() 
         runOnSession { 
             it.displayClientMessage("§a[SoundModule] Дополнительная логика при активации.") 
         }
     }
 
     override fun onDisabled() {
-        super.onDisabled() // Это вызовет sendToggleMessage из Module
-        // Дополнительная логика или сообщения при выключении SoundModule
+        super.onDisabled() 
         runOnSession { 
             it.displayClientMessage("§c[SoundModule] Дополнительная логика при деактивации.") 
         }
@@ -48,11 +42,10 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 return@runOnSession 
             }
 
-            // Проверяем localPlayer на null
             val localPlayer = currentSession.localPlayer 
-            // Убедитесь, что у localPlayer есть свойство 'position' типа Vector3f.
-            // Если нет, проверьте исходники LocalPlayer для правильного имени.
-            val playerPos: Vector3f? = localPlayer?.position 
+            // *** ИСПРАВЛЕНИЕ #1: Теперь мы знаем, что у LocalPlayer, вероятно, есть метод getPosition(),
+            // который возвращает Vector3f. Если нет, вам нужно будет это проверить.
+            val playerPos: Vector3f? = localPlayer?.getPosition() 
 
             if (playerPos == null) {
                 currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук.")
@@ -61,17 +54,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             }
 
             val playSoundPacket = PlaySoundPacket().apply {
-                // Если компилятор по-прежнему ругается на soundIdentifier, x, y, z,
-                // это означает, что в вашей версии CloudburstMC у PlaySoundPacket
-                // другие названия публичных полей.
-                // В этом случае вам нужно будет открыть определение PlaySoundPacket (Ctrl+Click на PlaySoundPacket)
-                // и использовать ТОЧНЫЕ имена полей, которые там указаны.
-                this.soundIdentifier = soundName 
-                this.x = playerPos.x 
-                this.y = playerPos.y
-                this.z = playerPos.z
-                this.volume = volume
-                this.pitch = pitch
+                // *** ИСПРАВЛЕНИЕ #2: Используем ТОЧНЫЕ сеттеры, сгенерированные Lombok.
+                this.setSound(soundName)
+                this.setPosition(playerPos) // Vector3f устанавливается целиком
+                this.setVolume(volume)
+                this.setPitch(pitch)
             }
 
             currentSession.clientBound(playSoundPacket)
