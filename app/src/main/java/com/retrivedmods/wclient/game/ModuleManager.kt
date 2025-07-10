@@ -106,6 +106,7 @@ object ModuleManager {
             add(WeatherControllerModule())
             add(MotionVarModule())
             add(PlayerTracerModule())
+            add(ChestFinderModule())
             add(EnemyHunterModule())
         }
 
