@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
+import org.gradle.api.artifacts.dsl.DependencyHandler // Добавлен этот импорт
 
 plugins {
     alias(libs.plugins.android.application)
@@ -139,4 +140,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // *** ДОБАВЛЕНЫ НОВЫЕ ЗАВИСИМОСТИ ДЛЯ JWT И JSON ***
+    implementation("com.auth0:java-jwt:4.4.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 }
