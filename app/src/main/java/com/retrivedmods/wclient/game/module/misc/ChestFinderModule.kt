@@ -4,26 +4,20 @@ import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.math.vector.Vector3f
-// --- ДОБАВЛЕННЫЕ ИМПОРТЫ ---
-import org.cloudburstmc.protocol.bedrock.packet.BlockActorDataPacket
+// --- ИМПОРТЫ ДЛЯ BlockEntityDataPacket ---
+import org.cloudburstmc.protocol.bedrock.packet.BlockEntityDataPacket // <-- ИСПОЛЬЗУЕМ BlockEntityDataPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-// Если вы используете NBTMap, убедитесь, что NbtMap импортирован, если он не из того же пакета:
 import org.cloudburstmc.nbt.NbtMap // Убедитесь, что эта зависимость добавлена в build.gradle
-// --- КОНЕЦ ДОБАВЛЕННЫХ ИМПОРТОВ ---
-
+// --- КОНЕЦ ИМПОРТОВ ---
 import kotlin.math.ceil
 import kotlin.math.sqrt
-
 import java.util.concurrent.ConcurrentHashMap
 
 class ChestFinderModule : Module("Поиск сундуков", ModuleCategory.Misc) {
 
     private var playerPosition: Vector3f = Vector3f.ZERO
-
     private val discoveredChests = ConcurrentHashMap.newKeySet<Vector3f>()
-
-    // Убран .value из intValue/boolValue в объявлении
     private var scanRadius by intValue("Радиус сканирования", 128, 16..500)
     private var notifyInChat by boolValue("Оповещать в чат", true)
     private var resetOnDisable by boolValue("Сброс при отключении", true)
@@ -53,34 +47,34 @@ class ChestFinderModule : Module("Поиск сундуков", ModuleCategory.M
             playerPosition = packet.position
         }
 
-        if (packet is BlockActorDataPacket) {
-            handleBlockActorDataPacket(packet)
+        // Используем BlockEntityDataPacket вместо BlockActorDataPacket
+        if (packet is BlockEntityDataPacket) {
+            handleBlockEntityDataPacket(packet)
         }
     }
 
-    private fun handleBlockActorDataPacket(packet: BlockActorDataPacket) {
-        // Убедимся, что packet.nbt имеет тип NbtMap, иначе это может вызвать ошибку.
-        // Если nbt может быть null, используйте safe call ?.
-        val blockActorData: NbtMap? = packet.nbt // Явно указываем тип NbtMap?
-        val blockActorId = blockActorData?.getString("id")
+    // Обработчик для BlockEntityDataPacket
+    private fun handleBlockEntityDataPacket(packet: BlockEntityDataPacket) {
+        // Данные блочной сущности находятся в packet.data
+        val blockEntityData: NbtMap? = packet.data // Используем packet.data
+        val blockEntityId = blockEntityData?.getString("id")
 
-        val isChest = when (blockActorId) {
+        val isChest = when (blockEntityId) {
             "Chest", "TrappedChest", "EnderChest" -> true
             else -> false
         }
 
         if (isChest) {
-            // blockPosition - это BlockPos, его координаты нужно получить как Int, затем преобразовать в Float для Vector3f
+            // Позиция блока находится в packet.blockPosition
             val chestPosition = Vector3f.from(
-                packet.blockPosition.x.toFloat(),
+                packet.blockPosition.x.toFloat(), // Используем packet.blockPosition
                 packet.blockPosition.y.toFloat(),
                 packet.blockPosition.z.toFloat()
             )
 
-            // Убран .value из scanRadius.value
             val distance = calculateDistance(playerPosition, chestPosition)
 
-            if (distance <= scanRadius.toFloat()) { // Здесь тоже убран .value
+            if (distance <= scanRadius.toFloat()) {
                 if (discoveredChests.add(chestPosition)) {
                     if (notifyInChat) {
                         val roundedDistance = ceil(distance).toInt()
