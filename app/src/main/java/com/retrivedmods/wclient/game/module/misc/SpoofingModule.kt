@@ -13,13 +13,11 @@ import java.util.Base64
 import java.util.UUID
 import java.nio.charset.StandardCharsets
 
-// Убедитесь, что у вас импортированы функции enumValue, boolValue, intValue
-// Они должны быть определены в Module.kt или в пакете, который Module.kt импортирует.
-// Если ошибки 'enumValue' продолжатся, вам нужно будет предоставить код Module.kt.
+// *** ВНИМАНИЕ: Если ошибка 'Unresolved reference: enumValue' останется,
+// *** то обязательно пришлите содержимое файла com.retrivedmods.wclient.game.Module.kt!
 
 class SpoofingModule : Module("Spoofing", ModuleCategory.Misc) {
 
-    // Расширенное перечисление для выбора операционной системы устройства
     enum class DeviceOS(val id: Int, val displayName: String) {
         // Мобильные платформы
         ANDROID(1, "Android"),
@@ -81,8 +79,8 @@ class SpoofingModule : Module("Spoofing", ModuleCategory.Misc) {
         if (packet is LoginPacket) {
             if (spoofDeviceOS != DeviceOS.ORIGINAL_OS) {
                 try {
-                    // *** ИСПРАВЛЕНИЕ ЗДЕСЬ: Используем getClientData() ***
-                    val originalClientDataJwt = packet.getClientData()
+                    // *** ИСПРАВЛЕНО: Используем getClientJwt() ***
+                    val originalClientDataJwt = packet.getClientJwt()
 
                     val decodedJwt: DecodedJWT = JWT.decode(originalClientDataJwt)
 
@@ -104,11 +102,9 @@ class SpoofingModule : Module("Spoofing", ModuleCategory.Misc) {
                         .sign(Algorithm.none()) // ВНИМАНИЕ: Подписываем "никаким" алгоритмом.
                                                 // Это может не работать на серверах, строго проверяющих подпись.
 
-                    // *** ИСПРАВЛЕНИЕ ЗДЕСЬ: Создаем новый LoginPacket и устанавливаем его ***
-                    // Для этого нам нужны protocolVersion и chainData из оригинального пакета.
-                    // Предполагается, что конструктор LoginPacket выглядит как-то так:
-                    // LoginPacket(int protocolVersion, String clientDataJwt, String chainDataJwt)
-                    val newLoginPacket = LoginPacket(packet.protocolVersion, newClientDataJwt, packet.chainData)
+                    // *** ИСПРАВЛЕНО: Создаем новый LoginPacket с помощью его конструктора
+                    //                  и правильных геттеров (getAuthPayload()) ***
+                    val newLoginPacket = LoginPacket(packet.getProtocolVersion(), packet.getAuthPayload(), newClientDataJwt)
                     interceptablePacket.setPacket(newLoginPacket) // Заменяем оригинальный пакет модифицированным
 
                     session?.displayClientMessage("§8[Spoofing] §aОС подделана на: §f${spoofDeviceOS.displayName}")
