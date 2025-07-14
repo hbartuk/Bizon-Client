@@ -12,92 +12,37 @@ import kotlin.math.ceil
 import kotlin.math.sqrt
 import java.util.concurrent.ConcurrentHashMap // Для потокобезопасного хранения
 
-// Для работы с корутинами
-import kotlinx.coroutines.* // Убедитесь, что эта зависимость добавлена: org.jetbrains.kotlinx:kotlinx-coroutines-core
+// Убираем все импорты, связанные с корутинами (kotlinx.coroutines.*)
 
 class ChestFinderModule : Module("Поиск сундуков", ModuleCategory.Misc) {
 
     private var playerPosition: Vector3f = Vector3f.ZERO
 
-    // Храним позицию сундука и время последнего отправленного уведомления для КАЖДОГО сундука
-    private val discoveredChests = ConcurrentHashMap<Vector3f, Long>()
+    // Используем Set для отслеживания УЖЕ обнаруженных сундуков (чтобы не отправлять сообщения повторно)
+    private val discoveredChests = ConcurrentHashMap.newKeySet<Vector3f>()
 
     // Настраиваемые опции для модуля
     private var scanRadius by intValue("Радиус сканирования", 128, 16..500)
     private var notifyInChat by boolValue("Оповещать в чат", true)
     private var resetOnDisable by boolValue("Сброс при отключении", true)
 
-    // --- ОПЦИИ ДЛЯ ПОВТОРНОЙ ОТПРАВКИ ЧЕРЕЗ КОРУТИНУ ---
-    private var resendEnabled by boolValue("Повторная отправка", false)
-    private var resendIntervalSeconds by intValue("Интервал повтора (сек)", 5, 1..60)
-    // --- КОНЕЦ ОПЦИЙ ---
-
-    private var resendJob: Job? = null // Для управления фоновой корутиной
+    // Удалены все параметры и переменные, связанные с повторной отправкой (resendEnabled, resendIntervalSeconds, chatMessageCooldownMs, lastChatMessageTime)
+    // Удалены все переменные и функции, связанные с корутинами (resendJob, startResendJob)
 
     override fun onEnabled() {
         super.onEnabled()
         session?.displayClientMessage("§8[§6ПоискСундуков§8] §aМодуль активирован. Сканирую область.")
         discoveredChests.clear() // Очищаем список при включении
-
-        // Запускаем фоновую задачу для повторной отправки, если опция включена
-        if (resendEnabled) {
-            startResendJob()
-        }
     }
 
     override fun onDisabled() {
         super.onDisabled()
         session?.displayClientMessage("§8[§6ПоискСундуков§8] §cМодуль деактивирован.")
-        resendJob?.cancel() // Отменяем фоновую задачу при отключении модуля
-        resendJob = null
         if (resetOnDisable) {
             discoveredChests.clear()
         }
+        // Здесь нет корутины для отмены, и глобальных таймеров тоже нет
     }
-
-    // --- ФОНОВАЯ ЗАДАЧА ДЛЯ ПОВТОРНОЙ ОТПРАВКИ И УДАЛЕНИЯ ВЫШЕДШИХ СУНДУКОВ ---
-    @OptIn(DelicateCoroutinesApi::class) // Используем GlobalScope для простоты примера
-    private fun startResendJob() {
-        resendJob?.cancel() // Отменяем любую существующую задачу перед запуском новой
-        resendJob = GlobalScope.launch(Dispatchers.Default) {
-            while (isActive) { // Пока корутина активна
-                val currentTime = System.currentTimeMillis()
-                val intervalMs = resendIntervalSeconds * 1000L
-
-                // Создаем копию ключей, чтобы избежать ConcurrentModificationException
-                // при изменении map во время итерации
-                val chestsToProcess = discoveredChests.keys.toList()
-                val chestsToRemove = mutableListOf<Vector3f>()
-
-                for (chestPos in chestsToProcess) {
-                    val lastSent = discoveredChests[chestPos] ?: continue // Время последнего уведомления для этого сундука
-
-                    val distance = calculateDistance(playerPosition, chestPos)
-
-                    // Если сундук вышел за радиус сканирования, помечаем его для удаления
-                    if (distance > scanRadius.toFloat()) {
-                        chestsToRemove.add(chestPos)
-                        continue // Переходим к следующему сундуку
-                    }
-
-                    // Если повторная отправка включена И прошло достаточно времени с последнего уведомления этого сундука
-                    if (resendEnabled && currentTime - lastSent >= intervalMs) {
-                        if (notifyInChat) {
-                            val roundedDistance = ceil(distance).toInt()
-                            val roundedCoords = chestPos.roundUpCoordinates()
-                            session?.displayClientMessage("§8[§6Сундук§8] §aПовторно обнаружен сундук на координатах: §f$roundedCoords §aДистанция: §c$roundedDistance")
-                        }
-                        discoveredChests[chestPos] = currentTime // Обновляем время последнего уведомления для этого сундука
-                    }
-                }
-                // Удаляем сундуки, вышедшие за радиус
-                chestsToRemove.forEach { discoveredChests.remove(it) }
-
-                delay(1000L) // Проверяем состояние каждую секунду (это не интервал повтора, а частота проверки)
-            }
-        }
-    }
-    // --- КОНЕЦ ФОНОВОЙ ЗАДАЧИ ---
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled || session?.localPlayer == null) {
@@ -134,30 +79,21 @@ class ChestFinderModule : Module("Поиск сундуков", ModuleCategory.M
             )
 
             val distance = calculateDistance(playerPosition, chestPosition)
-            val currentTime = System.currentTimeMillis()
 
             // Если сундук находится в радиусе сканирования
             if (distance <= scanRadius.toFloat()) {
-                // Если этот сундук обнаружен впервые (его нет в списке discoveredChests)
-                if (!discoveredChests.containsKey(chestPosition)) {
-                    if (notifyInChat) {
-                        val roundedDistance = ceil(distance).toInt()
-                        val roundedCoords = chestPosition.roundUpCoordinates()
-                        session?.displayClientMessage("§8[§6Сундук§8] §aОбнаружен сундук на координатах: §f$roundedCoords §aДистанция: §c$roundedDistance")
-                    }
-                    // Добавляем сундук в список с текущим временем (это время первого обнаружения/уведомления)
-                    discoveredChests[chestPosition] = currentTime
-                } else {
-                    // Если сундук уже есть в списке, просто обновляем его lastSentTime.
-                    // Это нужно, чтобы фоновая корутина не отправляла сообщение сразу,
-                    // если сервер сам прислал пакет об этом сундуке.
-                    // Иначе, если resendIntervalSeconds очень большой, а packet приходит часто,
-                    // мы могли бы его пропустить.
-                    discoveredChests[chestPosition] = currentTime
+                // Отправляем сообщение только если сундук обнаружен впервые в текущей сессии "в радиусе".
+                // Метод add() возвращает true, если элемент успешно добавлен (т.е. его не было в Set).
+                if (notifyInChat && discoveredChests.add(chestPosition)) {
+                    val roundedDistance = ceil(distance).toInt()
+                    val roundedCoords = chestPosition.roundUpCoordinates()
+                    session?.displayClientMessage("§8[§6Сундук§8] §aОбнаружен сундук на координатах: §f$roundedCoords §aДистанция: §c$roundedDistance")
                 }
+                // Если сундук уже есть в discoveredChests (т.е. add() вернул false), то сообщение не отправляется.
+                // Это и есть "нет повторения".
             } else {
-                // Если сундук, о котором пришел пакет, находится за пределами радиуса,
-                // удаляем его из списка (если он там был).
+                // Если сундук вышел из радиуса сканирования, удаляем его из списка "обнаруженных".
+                // Это позволяет снова обнаружить его как "новый", если он вернется в радиус.
                 discoveredChests.remove(chestPosition)
             }
         }
