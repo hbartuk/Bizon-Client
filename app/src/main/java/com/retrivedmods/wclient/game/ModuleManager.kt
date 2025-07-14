@@ -18,6 +18,9 @@ import com.retrivedmods.wclient.game.module.world.*
 import com.retrivedmods.wclient.game.module.player.DesyncModule
 import com.retrivedmods.wclient.game.module.player.FreeCameraModule
 
+// *** НОВЫЙ ИМПОРТ ДЛЯ SPOOFINGMODULE ***
+import com.retrivedmods.wclient.game.module.misc.SpoofingModule // Убедитесь, что путь правильный, если SpoofingModule находится в другом месте
+
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
@@ -68,7 +71,7 @@ object ModuleManager {
             add(JetPackModule())
             add(BlinkModule())
             add(AdvanceDisablerModule())
-            add(BlinkModule())
+            add(BlinkModule()) // Дублирование, возможно, следует удалить одну
             add(NightVisionModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
@@ -108,6 +111,8 @@ object ModuleManager {
             add(PlayerTracerModule())
             add(ChestFinderModule())
             add(EnemyHunterModule())
+            // *** ДОБАВЛЯЕМ НОВЫЙ МОДУЛЬ SPOOFINGMODULE ***
+            add(SpoofingModule())
         }
 
         with(_commands) {
