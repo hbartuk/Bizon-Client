@@ -1,5 +1,4 @@
 // File: app/build.gradle.kts
-
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
 import org.gradle.api.artifacts.dsl.DependencyHandler
 
@@ -8,11 +7,9 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.lombok)
-    // --- FIX FOR KOTLIN SERIALIZATION PLUGIN ---
-    // Explicitly define the version for kotlin-serialization and kotlin-kapt
-    // using the 'version' keyword if not implicitly picked up by 'alias' or similar
-    id("org.jetbrains.kotlin.plugin.serialization") version libs.versions.kotlin.get() // <--- MODIFIED
-    id("org.jetbrains.kotlin.kapt") version libs.versions.kotlin.get() // <--- MODIFIED (ensure this is here and matches your Kotlin version)
+    // ОБЯЗАТЕЛЬНО УКАЗЫВАЕМ ПОЛНЫЙ ID И ВЕРСИЮ ДЛЯ ЭТИХ ПЛАГИНОВ
+    id("org.jetbrains.kotlin.plugin.serialization") version libs.versions.kotlin.get()
+    id("org.jetbrains.kotlin.kapt") version libs.versions.kotlin.get() // Этот плагин нужен для Lombok
 }
 
 android {
@@ -107,7 +104,7 @@ fun DependencyHandler.implementationRelay() {
     implementation(files("libs/MuCuteRelay.jar"))
     implementation(libs.bundles.netty)
     implementation(libs.expiringmap)
-    implementation(libs.bundles.network.common) // Corrected alias assuming bundles.network.common
+    implementation(libs.network.common) // Возможно, здесь должно быть libs.bundles.network.common, проверьте ваш libs.versions.toml
     implementation(platform(libs.fastutil.bom))
     implementation(libs.fastutil.long.common)
     implementation(libs.fastutil.long.obj.maps)
@@ -152,5 +149,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 
-    kapt("org.projectlombok:lombok:1.18.30") // Ensure this version matches your Lombok plugin version
+    // Зависимость для KAPT, которая обеспечивает работу Lombok с Kotlin
+    kapt("org.projectlombok:lombok:1.18.30") // *** УБЕДИТЕСЬ, ЧТО ЭТА ВЕРСИЯ LOMBOK СОВПАДАЕТ С ВАШЕЙ! ***
 }
