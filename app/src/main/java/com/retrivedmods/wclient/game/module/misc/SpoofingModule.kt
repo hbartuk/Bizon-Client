@@ -1,5 +1,6 @@
 package com.retrivedmods.wclient.game.module.misc
 
+import com.retrivedmods.wclient.game.module.delegates.* // Импорт всех делегатов
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
