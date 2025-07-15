@@ -1,12 +1,15 @@
+// File: app/build.gradle.kts
+
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeFeatureFlag
-import org.gradle.api.artifacts.dsl.DependencyHandler // Добавлен этот импорт
+import org.gradle.api.artifacts.dsl.DependencyHandler
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.lombok)
-    kotlin("plugin.serialization") version libs.versions.kotlin
+    kotlin("plugin.serialization")
+    kotlin("kapt") // <--- УБЕДИТЕСЬ, ЧТО ЭТОТ ПЛАГИН ЗДЕСЬ
 }
 
 android {
@@ -141,9 +144,12 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // *** ДОБАВЛЕНЫ НОВЫЕ ЗАВИСИМОСТИ ДЛЯ JWT И JSON ***
+    // Добавлены зависимости для JWT и JSON
     implementation("com.auth0:java-jwt:4.4.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
+
+    // <--- ЭТА ЗАВИСИМОСТЬ ДЛЯ LOMBOK KAPT ДОЛЖНА БЫТЬ ЗДЕСЬ --->
+    kapt("org.projectlombok:lombok:1.18.30") // *** ВАЖНО: Укажите здесь ту же версию Lombok, которую использует ваш 'libs.plugins.lombok' ***
 }
