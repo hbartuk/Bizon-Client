@@ -8,8 +8,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.lombok)
-    kotlin("plugin.serialization")
-    kotlin("kapt") // <--- УБЕДИТЕСЬ, ЧТО ЭТОТ ПЛАГИН ЗДЕСЬ
+    // --- FIX FOR KOTLIN SERIALIZATION PLUGIN ---
+    // Explicitly define the version for kotlin-serialization and kotlin-kapt
+    // using the 'version' keyword if not implicitly picked up by 'alias' or similar
+    id("org.jetbrains.kotlin.plugin.serialization") version libs.versions.kotlin.get() // <--- MODIFIED
+    id("org.jetbrains.kotlin.kapt") version libs.versions.kotlin.get() // <--- MODIFIED (ensure this is here and matches your Kotlin version)
 }
 
 android {
@@ -104,7 +107,7 @@ fun DependencyHandler.implementationRelay() {
     implementation(files("libs/MuCuteRelay.jar"))
     implementation(libs.bundles.netty)
     implementation(libs.expiringmap)
-    implementation(libs.network.common)
+    implementation(libs.bundles.network.common) // Corrected alias assuming bundles.network.common
     implementation(platform(libs.fastutil.bom))
     implementation(libs.fastutil.long.common)
     implementation(libs.fastutil.long.obj.maps)
@@ -144,12 +147,10 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Добавлены зависимости для JWT и JSON
     implementation("com.auth0:java-jwt:4.4.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
     implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 
-    // <--- ЭТА ЗАВИСИМОСТЬ ДЛЯ LOMBOK KAPT ДОЛЖНА БЫТЬ ЗДЕСЬ --->
-    kapt("org.projectlombok:lombok:1.18.30") // *** ВАЖНО: Укажите здесь ту же версию Lombok, которую использует ваш 'libs.plugins.lombok' ***
+    kapt("org.projectlombok:lombok:1.18.30") // Ensure this version matches your Lombok plugin version
 }
