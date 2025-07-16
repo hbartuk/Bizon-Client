@@ -1,3 +1,5 @@
+# File: libs.versions.toml
+
 [versions]
 agp = "8.8.1"
 kotlin = "2.1.10"
@@ -80,3 +82,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 lombok = { id = "io.freefair.lombok", version.ref = "lombok" }
+# --- ADD THIS LINE FOR KOTLIN SERIALIZATION PLUGIN ---
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# --- AND THIS LINE FOR KAPT, IF NOT ALREADY THERE ---
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
