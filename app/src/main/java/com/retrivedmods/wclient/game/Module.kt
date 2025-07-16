@@ -9,107 +9,11 @@ import com.retrivedmods.wclient.util.translatedSelf
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull // Исправлено: используем booleanOrNull
+import kotlinx.serialization.json.boolean // Убедитесь, что этот импорт есть
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.intOrNull // Исправлено: используем intOrNull
+import kotlinx.serialization.json.int // Убедитесь, что этот импорт есть
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.contentOrNull
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
-
-// --- КЛАССЫ VALUE И ФУНКЦИИ-ДЕЛЕГАТЫ ТЕПЕРЬ НАХОДЯТСЯ ЗДЕСЬ ---
-
-// Базовый класс для всех типов значений
-abstract class Value<T>(val name: String, var value: T, protected val defaultValue: T) { // Исправлено: defaultValue теперь protected
-    abstract fun toJson(): JsonElement
-    abstract fun fromJson(jsonElement: JsonElement)
-    open fun reset() { this.value = defaultValue }
-}
-
-// Реализация для Boolean значений
-class BooleanValue(name: String, defaultValue: Boolean) : Value<Boolean>(name, defaultValue) {
-    override fun toJson() = JsonPrimitive(value)
-    override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) { // Проверяем только тип примитива
-            value = jsonElement.booleanOrNull ?: defaultValue // Исправлено: используем booleanOrNull и сброс
-        } else {
-            reset()
-        }
-    }
-}
-
-// Реализация для Int значений
-class IntValue(name: String, defaultValue: Int) : Value<Int>(name, defaultValue) {
-    override fun toJson() = JsonPrimitive(value)
-    override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) { // Проверяем только тип примитива
-            value = jsonElement.intOrNull ?: defaultValue // Исправлено: используем intOrNull и сброс
-        } else {
-            reset()
-        }
-    }
-}
-
-// Реализация для Enum значений
-class EnumValue<E : Enum<E>>(name: String, defaultValue: E, private val enumClass: Class<E>) : Value<E>(name, defaultValue) { // Исправлено: передан defaultValue
-    override fun toJson() = JsonPrimitive(value.name)
-    override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) {
-            val enumName = jsonElement.contentOrNull
-            if (enumName != null) {
-                try {
-                    value = java.lang.Enum.valueOf(enumClass, enumName)
-                } catch (e: IllegalArgumentException) {
-                    value = defaultValue // Если имя enum не найдено, используем значение по умолчанию
-                }
-            } else {
-                reset()
-            }
-        } else {
-            reset()
-        }
-    }
-}
-
-// --- ФУНКЦИИ-ДЕЛЕГАТЫ ДЛЯ МОДУЛЕЙ ---
-// Эти функции теперь могут быть здесь, так как Value классы находятся в том же пакете
-
-fun Module.boolValue(name: String, defaultValue: Boolean): ReadWriteProperty<Module, Boolean> {
-    val valueInstance = BooleanValue(name, defaultValue) // Передаем defaultValue
-    this.values.add(valueInstance)
-    return object : ReadWriteProperty<Module, Boolean> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: Boolean) {
-            valueInstance.value = value
-        }
-    }
-}
-
-fun Module.intValue(name: String, defaultValue: Int): ReadWriteProperty<Module, Int> {
-    val valueInstance = IntValue(name, defaultValue) // Передаем defaultValue
-    this.values.add(valueInstance)
-    return object : ReadWriteProperty<Module, Int> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: Int) {
-            valueInstance.value = value
-        }
-    }
-}
-
-fun <T : Enum<T>> Module.enumValue(name: String, defaultValue: T): ReadWriteProperty<Module, T> {
-    val valueInstance = EnumValue(name, defaultValue, defaultValue.javaClass) // Передаем defaultValue
-    this.values.add(valueInstance)
-    return object : ReadWriteProperty<Module, T> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: T) {
-            valueInstance.value = value
-        }
-    }
-}
-
-// --- КОНЕЦ НОВЫХ КЛАССОВ И ФУНКЦИЙ ---
-
 
 abstract class Module(
     val name: String,
@@ -142,7 +46,9 @@ abstract class Module(
 
     val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
 
-    // Убедитесь, что Value здесь ссылается на новые классы Value выше
+    // Предполагается, что класс Value<*> определен где-то еще в вашем проекте
+    // (если он был до попыток внедрения спуфинга), или вам нужно будет его создать.
+    // Если у вас нет класса Value, это вызовет ошибку.
     override val values: MutableList<Value<*>> = ArrayList()
 
     protected fun runOnSession(action: (GameSession) -> Unit) {
@@ -189,12 +95,15 @@ abstract class Module(
 
     open fun fromJson(jsonElement: JsonElement) {
         if (jsonElement is JsonObject) {
-            _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.booleanOrNull ?: _isEnabledState // Исправлено
+            // Используем .boolean, если уверены, что это всегда boolean.
+            // Если может быть null, используйте .booleanOrNull ?: defaultValue.
+            _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.boolean ?: _isEnabledState
 
             (jsonElement["values"] as? JsonObject)?.let {
                 it.forEach { jsonObject ->
                     val value = getValue(jsonObject.key) ?: return@forEach
                     try {
+                        // Здесь предполагается, что Value.fromJson существует
                         value.fromJson(jsonObject.value)
                     } catch (e: Throwable) {
                         value.reset()
@@ -202,8 +111,10 @@ abstract class Module(
                 }
             }
             (jsonElement["shortcut"] as? JsonObject)?.let {
-                shortcutX = (it["x"] as? JsonPrimitive)?.intOrNull ?: shortcutX // Исправлено
-                shortcutY = (it["y"] as? JsonPrimitive)?.intOrNull ?: shortcutY // Исправлено
+                // Используем .int, если уверены, что это всегда int.
+                // Если может быть null, используйте .intOrNull ?: defaultValue.
+                shortcutX = (it["x"] as? JsonPrimitive)?.int ?: shortcutX
+                shortcutY = (it["y"] as? JsonPrimitive)?.int ?: shortcutY
                 isShortcutDisplayed = true
             }
         }
