@@ -111,8 +111,6 @@ object ModuleManager {
             add(PlayerTracerModule())
             add(ChestFinderModule())
             add(EnemyHunterModule())
-            // *** ДОБАВЛЯЕМ НОВЫЙ МОДУЛЬ SPOOFINGMODULE ***
-            add(SpoofingModule())
         }
 
         with(_commands) {
