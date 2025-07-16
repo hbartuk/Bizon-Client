@@ -5,5 +5,5 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 
 interface InterceptablePacket {
     val packet: BedrockPacket
-    // Метод fun setPacket(newPacket: BedrockPacket) должен быть УДАЛЕН отсюда
+    var isIntercepted: Boolean // <<<<<<<<<< ИСПРАВЛЕНО: Теперь это свойство интерфейса
 }
