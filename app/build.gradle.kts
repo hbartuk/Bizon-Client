@@ -7,9 +7,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.lombok)
-    // ОБЯЗАТЕЛЬНО УКАЗЫВАЕМ ПОЛНЫЙ ID И ВЕРСИЮ ДЛЯ ЭТИХ ПЛАГИНОВ
-    id("org.jetbrains.kotlin.plugin.serialization") version libs.versions.kotlin.get()
-    id("org.jetbrains.kotlin.kapt") version libs.versions.kotlin.get() // Этот плагин нужен для Lombok
+    // Эти строки возвращены к стандартному виду (через alias),
+    // предполагая, что они уже определены в libs.versions.toml
+    alias(libs.plugins.kotlin.serialization)
+    // Если вам нужен kapt для других частей проекта, оставьте: alias(libs.plugins.kotlin.kapt)
+    // Если он был добавлен ТОЛЬКО для спуфинга, то его здесь не должно быть.
 }
 
 android {
@@ -104,7 +106,7 @@ fun DependencyHandler.implementationRelay() {
     implementation(files("libs/MuCuteRelay.jar"))
     implementation(libs.bundles.netty)
     implementation(libs.expiringmap)
-    implementation(libs.network.common) // Возможно, здесь должно быть libs.bundles.network.common, проверьте ваш libs.versions.toml
+    implementation(libs.network.common) // Или libs.bundles.network.common, в зависимости от вашего файла libs.versions.toml
     implementation(platform(libs.fastutil.bom))
     implementation(libs.fastutil.long.common)
     implementation(libs.fastutil.long.obj.maps)
@@ -144,11 +146,12 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("com.auth0:java-jwt:4.4.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
+    // УДАЛИТЕ ЭТИ ЗАВИСИМОСТИ, если они были добавлены ТОЛЬКО для модуля спуфинга:
+    // implementation("com.auth0:java-jwt:4.4.0")
+    // implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
+    // implementation("com.fasterxml.jackson.core:jackson-core:2.16.1")
+    // implementation("com.fasterxml.jackson.core:jackson-annotations:2.16.1")
 
-    // Зависимость для KAPT, которая обеспечивает работу Lombok с Kotlin
-    kapt("org.projectlombok:lombok:1.18.30") // *** УБЕДИТЕСЬ, ЧТО ЭТА ВЕРСИЯ LOMBOK СОВПАДАЕТ С ВАШЕЙ! ***
+    // УДАЛИТЕ ЭТУ ЗАВИСИМОСТЬ, если Lombok был добавлен ТОЛЬКО для модуля спуфинга:
+    // kapt("org.projectlombok:lombok:1.18.30")
 }
