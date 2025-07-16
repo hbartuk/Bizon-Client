@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/retrivedmods/wclient/game/GameSession.kt
 package com.retrivedmods.wclient.game
 
 import com.retrivedmods.wclient.application.AppContext
@@ -38,7 +39,8 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         localPlayer.onPacketBound(packet)
         level.onPacketBound(packet)
 
-        val interceptablePacket = InterceptablePacket(packet)
+        // ИСПРАВЛЕНИЕ: Используем InterceptablePacketImpl вместо InterceptablePacket
+        val interceptablePacket = InterceptablePacketImpl(packet) // <--- ВОТ ЗДЕСЬ ИСПРАВЛЕНО
 
         // Используйте ModuleManager.modules напрямую, если ModuleManager - object
         for (module in ModuleManager.modules) {
