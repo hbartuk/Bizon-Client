@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/Module.kt
 package com.retrivedmods.wclient.game
 
 import androidx.compose.runtime.getValue
@@ -6,112 +5,74 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.retrivedmods.wclient.overlay.OverlayShortcutButton
 import com.retrivedmods.wclient.util.translatedSelf
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.contentOrNull // Для EnumValue
-import kotlinx.serialization.json.booleanOrNull // Для безопасного парсинга
-import kotlinx.serialization.json.intOrNull // Для безопасного парсинга
+import kotlinx.serialization.json.*
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-// --- БАЗОВЫЕ КЛАССЫ VALUE И ФУНКЦИИ-ДЕЛЕГАТЫ (упрощенные, без Lombok-специфики) ---
-// Эти классы нужны, так как они используются в Module.kt (override val values)
-// и в ваших модулях, если они конфигурируются через такие значения.
+// --- БАЗОВЫЕ КЛАССЫ VALUE И ДЕЛЕГАТЫ ---
 
-// Базовый класс для всех типов значений
+// Абстрактный базовый класс для всех Value
 abstract class Value<T>(val name: String, var value: T, protected val defaultValue: T) {
     abstract fun toJson(): JsonElement
     abstract fun fromJson(jsonElement: JsonElement)
     open fun reset() { this.value = defaultValue }
 }
 
-// Пример Boolean значения (для BoolValue из старых уроков)
+// Boolean значение
 class BooleanValue(name: String, defaultValue: Boolean) : Value<Boolean>(name, defaultValue) {
     override fun toJson() = JsonPrimitive(value)
     override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) {
-            value = jsonElement.booleanOrNull ?: defaultValue // Используем booleanOrNull для безопасности
-        } else {
-            reset()
-        }
+        value = (jsonElement as? JsonPrimitive)?.booleanOrNull ?: defaultValue
     }
 }
 
-// Пример Int значения
+// Int значение
 class IntValue(name: String, defaultValue: Int) : Value<Int>(name, defaultValue) {
     override fun toJson() = JsonPrimitive(value)
     override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) {
-            value = jsonElement.intOrNull ?: defaultValue // Используем intOrNull для безопасности
-        } else {
-            reset()
-        }
+        value = (jsonElement as? JsonPrimitive)?.intOrNull ?: defaultValue
     }
 }
 
-// Пример Enum значения
+// Enum значение
 class EnumValue<E : Enum<E>>(name: String, defaultValue: E, private val enumClass: Class<E>) : Value<E>(name, defaultValue) {
     override fun toJson() = JsonPrimitive(value.name)
     override fun fromJson(jsonElement: JsonElement) {
-        if (jsonElement is JsonPrimitive) {
-            val enumName = jsonElement.contentOrNull
-            if (enumName != null) {
-                try {
-                    value = java.lang.Enum.valueOf(enumClass, enumName)
-                } catch (e: IllegalArgumentException) {
-                    value = defaultValue
-                }
-            } else {
-                reset()
-            }
-        } else {
-            reset()
-        }
+        val enumName = (jsonElement as? JsonPrimitive)?.contentOrNull
+        value = enumName?.let {
+            try { java.lang.Enum.valueOf(enumClass, it) } catch (_: Exception) { defaultValue }
+        } ?: defaultValue
     }
 }
 
-// Функции-делегаты для удобства создания значений в модулях
+// Делегаты для Value
 fun Module.boolValue(name: String, defaultValue: Boolean): ReadWriteProperty<Module, Boolean> {
-    val valueInstance = BooleanValue(name, defaultValue)
-    this.values.add(valueInstance)
+    val v = BooleanValue(name, defaultValue)
+    values.add(v)
     return object : ReadWriteProperty<Module, Boolean> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: Boolean) {
-            valueInstance.value = value
-        }
+        override fun getValue(thisRef: Module, property: KProperty<*>) = v.value
+        override fun setValue(thisRef: Module, property: KProperty<*>, value: Boolean) { v.value = value }
     }
 }
-
 fun Module.intValue(name: String, defaultValue: Int): ReadWriteProperty<Module, Int> {
-    val valueInstance = IntValue(name, defaultValue)
-    this.values.add(valueInstance)
+    val v = IntValue(name, defaultValue)
+    values.add(v)
     return object : ReadWriteProperty<Module, Int> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: Int) {
-            valueInstance.value = value
-        }
+        override fun getValue(thisRef: Module, property: KProperty<*>) = v.value
+        override fun setValue(thisRef: Module, property: KProperty<*>, value: Int) { v.value = value }
     }
 }
-
 fun <T : Enum<T>> Module.enumValue(name: String, defaultValue: T): ReadWriteProperty<Module, T> {
-    val valueInstance = EnumValue(name, defaultValue, defaultValue.javaClass)
-    this.values.add(valueInstance)
+    val v = EnumValue(name, defaultValue, defaultValue.javaClass)
+    values.add(v)
     return object : ReadWriteProperty<Module, T> {
-        override fun getValue(thisRef: Module, property: KProperty<*>) = valueInstance.value
-        override fun setValue(thisRef: Module, property: KProperty<*>, value: T) {
-            valueInstance.value = value
-        }
+        override fun getValue(thisRef: Module, property: KProperty<*>) = v.value
+        override fun setValue(thisRef: Module, property: KProperty<*>, value: T) { v.value = value }
     }
 }
 
-// --- КОНЕЦ БАЗОВЫХ КЛАССОВ VALUE И ДЕЛЕГАТОВ ---
-
+// --- КОНЕЦ КЛАССОВ VALUE И ДЕЛЕГАТОВ ---
 
 abstract class Module(
     val name: String,
@@ -123,70 +84,45 @@ abstract class Module(
     open lateinit var session: GameSession
 
     private var _isEnabledState by mutableStateOf(defaultEnabled)
-
     open var isEnabled: Boolean
         get() = _isEnabledState
-        set(value) {
-            if (_isEnabledState == value) return
-            _isEnabledState = value
-        }
+        set(value) { if (_isEnabledState != value) _isEnabledState = value }
 
     val isSessionCreated: Boolean
         get() = ::session.isInitialized
 
     var isExpanded by mutableStateOf(false)
-
     var isShortcutDisplayed by mutableStateOf(false)
-
     var shortcutX = 0
-
     var shortcutY = 100
-
     val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
 
-    // Убедитесь, что Value здесь ссылается на классы Value выше в этом файле
     override val values: MutableList<Value<*>> = ArrayList()
 
-    // ИСПРАВЛЕНИЕ: Добавлен override к getValue.
-    // Этот метод теперь должен быть здесь, если Configurable имеет getValue
-    override fun getValue(name: String): Value<*>? { // <<<<<<<<<< ИСПРАВЛЕНО ЗДЕСЬ
+    override fun getValue(name: String): Value<*>? {
         return values.firstOrNull { it.name == name }
     }
 
-
     protected fun runOnSession(action: (GameSession) -> Unit) {
-        if (isSessionCreated) {
-            action(session)
-        } else {
-            println("DEBUG: Session not initialized for module ${this.name} during runOnSession.")
-        }
+        if (isSessionCreated) action(session)
+        else println("DEBUG: Session not initialized for module ${this.name} during runOnSession.")
     }
 
     open fun initialize() {
         runOnSession { it.displayClientMessage("DEBUG: Модуль ${this.name} проинициализирован.") }
-        if (isEnabled) {
-            onEnabled()
-        }
+        if (isEnabled) onEnabled()
     }
 
-    open fun onEnabled() {
-        sendToggleMessage(true)
-    }
-
-    open fun onDisabled() {
-        sendToggleMessage(false)
-    }
-
-    override fun beforePacketBound(interceptablePacket: InterceptablePacket) { /* реализация */ }
-    override fun afterPacketBound(packet: BedrockPacket) { /* реализация */ }
-    override fun onDisconnect(reason: String) { /* реализация */ }
+    open fun onEnabled() { sendToggleMessage(true) }
+    open fun onDisabled() { sendToggleMessage(false) }
+    override fun beforePacketBound(interceptablePacket: InterceptablePacket) {}
+    override fun afterPacketBound(packet: BedrockPacket) {}
+    override fun onDisconnect(reason: String) {}
 
     open fun toJson() = buildJsonObject {
         put("state", isEnabled)
         put("values", buildJsonObject {
-            values.forEach { value ->
-                put(value.name, value.toJson())
-            }
+            values.forEach { value -> put(value.name, value.toJson()) }
         })
         if (isShortcutDisplayed) {
             put("shortcut", buildJsonObject {
@@ -199,16 +135,8 @@ abstract class Module(
     open fun fromJson(jsonElement: JsonElement) {
         if (jsonElement is JsonObject) {
             _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.booleanOrNull ?: _isEnabledState
-
-            (jsonElement["values"] as? JsonObject)?.let {
-                it.forEach { jsonObject ->
-                    val value = getValue(jsonObject.key) ?: return@forEach
-                    try {
-                        value.fromJson(jsonObject.value)
-                    } catch (e: Throwable) {
-                        value.reset()
-                    }
-                }
+            (jsonElement["values"] as? JsonObject)?.forEach { (key, elem) ->
+                getValue(key)?.runCatching { fromJson(elem) } ?: reset()
             }
             (jsonElement["shortcut"] as? JsonObject)?.let {
                 shortcutX = (it["x"] as? JsonPrimitive)?.intOrNull ?: shortcutX
