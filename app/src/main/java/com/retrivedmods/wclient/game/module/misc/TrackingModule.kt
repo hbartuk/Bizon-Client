@@ -1,4 +1,4 @@
-// File: com.retrivedmods.wclient.game.module.visual.TrackingModule.kt (или в другом подходящем месте)
+// File: com.retrivedmods.wclient.game.module.visual.TrackingModule.kt (или другое подходящее расположение)
 package com.retrivedmods.wclient.game.module.visual
 
 import com.retrivedmods.wclient.game.GameSession
@@ -12,20 +12,19 @@ import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import org.cloudburstmc.protocol.bedrock.packet.AddPlayerPacket // Для скрытия скина при появлении
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket // Для скрытия скина/брони при обновлении
-import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap // Возможно, потребуется для метаданных
+import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap // <--- ИСПРАВЛЕНИЕ: Убедитесь, что этот импорт есть
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes // Для типов метаданных
-import java.util.UUID
+import java.util.UUID // Может быть, уже импортировано
 
 class TrackingModule : Module("tracking", ModuleCategory.Visual) {
 
     private var targetPlayerName: String? = null
     private var targetPlayerRuntimeId: Long = -1L
     private var originalPlayerPos: Vector3f? = null
+    private var originalPlayerRotation: Vector3f? = null // Для сохранения исходного поворота
 
     // Метод для установки цели из команды .sled <ник>
     fun setTarget(session: GameSession, playerName: String) {
-        // Находим игрока по нику. Вам нужно будет добавить метод в GameSession.level
-        // для поиска игрока по имени, например: session.level.findPlayerByName(playerName)
         val foundPlayer = session.level.entityMap.values.firstOrNull { it is Player && it.username.equals(playerName, ignoreCase = true) } as? Player
 
         if (foundPlayer == null) {
@@ -37,6 +36,7 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
         targetPlayerName = playerName
         targetPlayerRuntimeId = foundPlayer.runtimeEntityId
         originalPlayerPos = session.localPlayer.vec3Position // Сохраняем позицию нашего игрока
+        originalPlayerRotation = session.localPlayer.vec3Rotation // Сохраняем поворот нашего игрока
 
         session.displayClientMessage("§a[Слежка] Начата слежка за игроком: §b$playerName")
         isEnabled = true // Включаем модуль
@@ -44,18 +44,19 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
 
     override fun onDisabled() {
         super.onDisabled()
-        // Возвращаем нашего игрока на исходную позицию
-        if (session.isSessionCreated && originalPlayerPos != null) {
+        // ИСПРАВЛЕНИЕ: Удалили 'isSessionCreated' и полагаемся на originalPlayerPos != null
+        if (originalPlayerPos != null) {
             val movePlayerPacket = MovePlayerPacket().apply {
                 runtimeEntityId = session.localPlayer.runtimeEntityId
                 position = originalPlayerPos!!
-                rotation = session.localPlayer.vec3Rotation // Или сохраните исходный поворот
+                rotation = originalPlayerRotation ?: Vector3f.ZERO // Восстанавливаем исходный поворот
                 mode = MovePlayerPacket.Mode.NORMAL
                 isOnGround = false
                 tick = session.localPlayer.tickExists
             }
             session.clientBound(movePlayerPacket)
             originalPlayerPos = null
+            originalPlayerRotation = null
         }
         targetPlayerName = null
         targetPlayerRuntimeId = -1L
@@ -74,8 +75,8 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
         }
 
         // 2. Синхронизация камеры (движение и поворот)
+        // Перехватываем MovePlayerPacket, предназначенный для ЦЕЛЕВОГО игрока
         if (packet is MovePlayerPacket && packet.runtimeEntityId == targetPlayerRuntimeId) {
-            // Мы перехватили пакет движения целевого игрока
             // Теперь создаем точно такой же пакет для НАШЕГО LocalPlayer
             val newMovePacketForLocalPlayer = MovePlayerPacket().apply {
                 runtimeEntityId = session.localPlayer.runtimeEntityId // ID нашего игрока
@@ -91,48 +92,51 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
         }
 
         // 3. Скрытие скина и брони целевого игрока для нашего клиента
+        // Мы модифицируем пакет, чтобы наш клиент видел его измененным.
+        // Не перехватываем пакет, чтобы он все равно обновил данные о сущности.
         if (packet is AddPlayerPacket && packet.runtimeEntityId == targetPlayerRuntimeId) {
             modifyPlayerAppearanceMetadata(packet.metadata)
-            // Важно: не перехватываем пакет, чтобы игрок всё равно добавился в мир, но с измененным внешним видом
         } else if (packet is SetEntityDataPacket && packet.runtimeEntityId == targetPlayerRuntimeId) {
-            modifyPlayerAppearanceMetadata(packet.entityData)
-            // Важно: не перехватываем пакет
+            modifyPlayerAppearanceMetadata(packet.entityData) // <--- ИСПРАВЛЕНИЕ: Теперь 'entityData' должно быть доступно
         }
     }
 
+    /**
+     * Эта функция модифицирует метаданные сущности, чтобы скрыть её броню и скин.
+     * ЭТО НАИБОЛЕЕ СЛОЖНАЯ ЧАСТЬ, ТРЕБУЮЩАЯ ТОЧНОГО ЗНАНИЯ ПРОТОКОЛА BEDROCK.
+     * Вам нужно будет найти точные EntityDataTypes и их значения для вашей версии протокола.
+     */
     private fun modifyPlayerAppearanceMetadata(metadata: EntityDataMap) {
         // --- Логика для скрытия брони ---
-        // Эти ключи могут меняться между версиями Bedrock Protocol.
-        // Нужно найти точные EntityDataTypes для слотов брони.
-        // Например, EntityDataTypes.ARMOR_STAND_POSE_INDEX (если используется для игроков)
-        // или прямые ID для слотов. Предположим, что они есть и могут быть обнулены.
-        // Возможно, есть EntityDataTypes.ARMOR_CONTENTS или похожие.
-        // Пример (псевдокод, нужно найти актуальные типы):
-        // metadata.remove(EntityDataTypes.HELMET)
-        // metadata.remove(EntityDataTypes.CHESTPLATE)
-        // metadata.remove(EntityDataTypes.LEGGINGS)
-        // metadata.remove(EntityDataTypes.BOOTS)
-        // Или установка их в Item.EMPTY_ITEM
+        // Пример (псевдокод, точные EntityDataTypes и их использование могут отличаться):
+        // Протокол Bedrock использует EntityDataTypes.ARMOR для хранения массива данных о броне.
+        // Или отдельные EntityDataTypes для каждого слота.
+        // Нужно обнулить или удалить значения, связанные с броней.
+        // Например:
+        // metadata.put(EntityDataTypes.ARMOR, EntityDataMap.EMPTY_ARRAY_BYTE); // Если это массив байтов
+        // Или если это отдельные слоты (примерно):
+        // metadata.put(EntityDataTypes.HELMET, null); // Установить в null или Item.EMPTY_ITEM
+        // metadata.put(EntityDataTypes.CHESTPLATE, null);
+        // metadata.put(EntityDataTypes.LEGGINGS, null);
+        // metadata.put(EntityDataTypes.BOOTS, null);
 
         // --- Логика для скрытия скина ---
         // Это более сложная часть. Нет прямого "скрыть скин" флага.
         // Возможные варианты (требуется эксперимент и знание протокола):
-        // 1. Установка флага невидимости (если применимо к игрокам через метаданные, что редко).
-        //    Например: metadata.setByte(EntityDataTypes.FLAGS, (metadata.getByte(EntityDataTypes.FLAGS) ?: 0).or(EntityFlag.INVISIBLE.ordinal.toByte()))
-        // 2. Изменение флагов отображения частей скина (рубашка, рукава и т.д.):
-        //    metadata.setByte(EntityDataTypes.PLAYER_FLAGS, 0) // Отключить все флаги кастомизации
-        // 3. Более радикальный вариант - манипуляция с UUID или именем, чтобы клиент не ассоциировал его со скином,
-        //    но это может вызвать проблемы с отображением имени или другие баги.
-        // 4. Наиболее вероятный способ: изменение флага видимости сущности или её компонента рендеринга.
-        //    В некоторых версиях протокола может быть что-то вроде EntityDataTypes.SCALE для уменьшения до нуля,
-        //    или специфический флаг для "невидимости" сущности.
-        // Пример:
-        // metadata.setByte(EntityDataTypes.AFFECTED_BY_GRAVITY, 0) // Может помочь с некоторыми визуальными багами, но не скрывает
-        // metadata.setBoolean(EntityDataTypes.NO_AI, true) // Невидимсоть, но может быть не применимо к игрокам
+        // 1. Манипуляция EntityDataTypes.FLAGS: некоторые флаги могут влиять на видимость.
+        //    Например, EntityFlag.INVISIBLE.ordinal.toByte() может быть флагом, но обычно это для эффектов.
+        //    metadata.putByte(EntityDataTypes.FLAGS, (metadata.getByte(EntityDataTypes.FLAGS) ?: 0).or( /* ваш бит невидимости */ ))
+        // 2. Изменение EntityDataTypes.PLAYER_FLAGS: управляет отображением частей скина (рукавов, плащей и т.д.).
+        //    Установка этого флага в 0x00 может скрыть все части кастомизации.
+        //    metadata.setByte(EntityDataTypes.PLAYER_FLAGS, 0x00)
+        // 3. Изменение EntityDataTypes.SCALE: установка scale в 0.0f может сделать сущность невидимой.
+        //    metadata.putFloat(EntityDataTypes.SCALE, 0.0f) // Это может сработать, но игрок будет как бы "существовать"
+        // 4. Если есть, удаление или изменение EntityDataTypes.SKIN_ID / EntityDataTypes.TEXTURE_ARRAY / EntityDataTypes.TEXTURE_DATA
+        //    на пустые или дефолтные значения.
 
-        // Поскольку у меня нет точных EntityDataTypes и их эффектов для скрытия скина/брони в Bedrock,
-        // вам потребуется обратиться к документации CloudburstMC Protocol Bedrock
-        // или к реверс-инжинирингу для нахождения точных полей и их значений.
-        // Например, ищите флаги в EntityDataTypes.FLAGS или EntityDataTypes.PLAYER_FLAGS.
+        // Без точной документации для вашей версии Bedrock Protocol и EntityDataTypes,
+        // эта часть остается местом для ваших экспериментов и исследований.
+        // Начните с EntityDataTypes.PLAYER_FLAGS (попробуйте установить в 0)
+        // и поиска флагов, связанных с броней, в EntityDataTypes.ARMOR или отдельных слотах.
     }
 }
