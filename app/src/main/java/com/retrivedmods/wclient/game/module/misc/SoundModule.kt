@@ -1,6 +1,5 @@
 package com.retrivedmods.wclient.game.module.misc
 
-import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession
@@ -37,19 +36,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
      * Воспроизведение обычного пользовательского звука по названию.
      * Используется для ambient, музыки, стандартных звуков блоков и мобов.
      */
-    fun playSound(soundName: String, volume: Float, pitch: Float) {
+    fun playSound(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
         println("DEBUG: SoundModule.playSound() вызван для звука: $soundName (Громкость: $volume, Тональность: $pitch)")
 
         runOnSession { currentSession ->
-            if (currentSession.muCuteRelaySession == null) {
-                currentSession.displayClientMessage("§c[SoundModule] MuCuteRelaySession недоступна для воспроизведения звука.")
-                println("ERROR: currentSession.muCuteRelaySession равна null в playSound(). Невозможно воспроизвести звук: $soundName")
-                return@runOnSession
-            }
-
-            val localPlayer = currentSession.localPlayer
-            val playerPos: Vector3f? = localPlayer?.vec3Position
-
+            val playerPos: Vector3f? = currentSession.localPlayer?.vec3Position
             if (playerPos == null) {
                 currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук.")
                 println("ERROR: Позиция игрока равна null в playSound(). Невозможно воспроизвести звук: $soundName")
@@ -76,23 +67,12 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     fun playLevelSound(
         soundEvent: SoundEvent,
         identifier: String = "",
-        extraData: Int = -1,
-        babySound: Boolean = false,
-        relativeVolumeDisabled: Boolean = false,
-        entityUniqueId: Long = 0L
+        extraData: Int = -1
     ) {
         println("DEBUG: SoundModule.playLevelSound() вызван для события: $soundEvent")
 
         runOnSession { currentSession ->
-            if (currentSession.muCuteRelaySession == null) {
-                currentSession.displayClientMessage("§c[SoundModule] MuCuteRelaySession недоступна для воспроизведения событийного звука.")
-                println("ERROR: currentSession.muCuteRelaySession равна null в playLevelSound(). Невозможно воспроизвести событие: $soundEvent")
-                return@runOnSession
-            }
-
-            val localPlayer = currentSession.localPlayer
-            val playerPos: Vector3f? = localPlayer?.vec3Position
-
+            val playerPos: Vector3f? = currentSession.localPlayer?.vec3Position
             if (playerPos == null) {
                 currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести событийный звук.")
                 println("ERROR: Позиция игрока равна null в playLevelSound(). Невозможно воспроизвести событие: $soundEvent")
@@ -104,9 +84,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 position = playerPos
                 this.extraData = extraData
                 this.identifier = identifier
-                this.babySound = babySound
-                this.relativeVolumeDisabled = relativeVolumeDisabled
-                this.entityUniqueId = entityUniqueId
+                // babySound, relativeVolumeDisabled, entityUniqueId НЕ ТРОГАТЬ! (приватные)
             }
 
             currentSession.clientBound(packet)
@@ -120,12 +98,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
      */
     fun stopAllSounds() {
         runOnSession { currentSession ->
-            if (currentSession.muCuteRelaySession == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Сессия или прокси не активны для остановки звуков.")
-                println("DEBUG: Невозможно остановить все звуки, currentSession.muCuteRelaySession не инициализирована.")
-                return@runOnSession
-            }
-
             currentSession.displayClientMessage("§e[SoundModule] Заглушка: функция 'stopAllSounds' не имеет прямой реализации в MCBE. Нужна кастомная логика.")
             println("DEBUG: stopAllSounds() вызвана. Нет прямого пакета MCBE. Требуется кастомная реализация.")
         }
