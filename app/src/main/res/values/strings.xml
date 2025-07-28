@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">WClient</string>
+    <string name="app_name" translatable="false">Bizon Client</string>
     <string name="home">Home</string>
     <string name="what_is_this">What is this?</string>
     <string name="introduction">WClient is a Minecraft Bedrock tool that uses a MITM (Man-In-The-Middle) method to enable advanced gameplay features without altering the game’s memory.</string>
