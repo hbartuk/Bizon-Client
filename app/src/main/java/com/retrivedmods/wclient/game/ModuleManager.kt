@@ -67,6 +67,7 @@ object ModuleManager {
             add(AutoClickerModule())
             add(DamageTextModule())
             add(WAuraModule())
+            add(TrackingModule())
             add(SpeedModule())
             add(JetPackModule())
             add(AdvanceDisablerModule())
