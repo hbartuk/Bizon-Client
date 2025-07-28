@@ -5,5 +5,9 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 
 interface InterceptablePacket {
     val packet: BedrockPacket
-    var isIntercepted: Boolean // <<<<<<<<<< ИСПРАВЛЕНО: Теперь это свойство интерфейса
+    var isIntercepted: Boolean
+
+    fun intercept() {
+        isIntercepted = true
+    }
 }
