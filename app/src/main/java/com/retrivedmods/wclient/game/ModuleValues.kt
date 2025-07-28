@@ -11,7 +11,6 @@ import kotlinx.serialization.json.int
 import kotlin.reflect.KProperty
 
 interface Configurable {
-
     val values: MutableList<Value<*>>
 
     fun getValue(name: String) = values.find { it.name == name }
@@ -26,83 +25,59 @@ interface Configurable {
 
     fun listValue(name: String, value: ListItem, choices: Set<ListItem>) =
         ListValue(name, value, choices).also { values.add(it) }
-
 }
 
 @Suppress("MemberVisibilityCanBePrivate")
 sealed class Value<T>(val name: String, val defaultValue: T) {
-
     var value: T by mutableStateOf(defaultValue)
 
     open fun reset() {
         value = defaultValue
     }
 
-    operator fun getValue(from: Any, property: KProperty<*>): T {
-        return value
-    }
+    operator fun getValue(from: Any, property: KProperty<*>): T = value
 
     operator fun setValue(from: Any, property: KProperty<*>, newValue: T) {
         value = newValue
     }
 
     abstract fun toJson(): JsonElement
-
     abstract fun fromJson(element: JsonElement)
-
 }
 
 class BoolValue(name: String, defaultValue: Boolean) : Value<Boolean>(name, defaultValue) {
-
     override fun toJson() = JsonPrimitive(value)
-
     override fun fromJson(element: JsonElement) {
-        if (element is JsonPrimitive) {
-            value = element.boolean
-        }
+        if (element is JsonPrimitive) value = element.boolean
     }
-
 }
 
 class FloatValue(name: String, defaultValue: Float, val range: ClosedFloatingPointRange<Float>) :
     Value<Float>(name, defaultValue) {
-
     override fun toJson() = JsonPrimitive(value)
-
     override fun fromJson(element: JsonElement) {
-        if (element is JsonPrimitive) {
-            value = element.float
-        }
+        if (element is JsonPrimitive) value = element.float.coerceIn(range)
     }
-
 }
 
 class IntValue(name: String, defaultValue: Int, val range: IntRange) :
     Value<Int>(name, defaultValue) {
-
     override fun toJson() = JsonPrimitive(value)
-
     override fun fromJson(element: JsonElement) {
-        if (element is JsonPrimitive) {
-            value = element.int
-        }
+        if (element is JsonPrimitive) value = element.int.coerceIn(range)
     }
-
 }
 
 @Suppress("MemberVisibilityCanBePrivate")
 class ListValue(name: String, defaultValue: ListItem, val listItems: Set<ListItem>) :
     Value<ListItem>(name, defaultValue) {
-
     override fun toJson() = JsonPrimitive(value.name)
-
     override fun fromJson(element: JsonElement) {
         if (element is JsonPrimitive) {
             val content = element.content
-            value = listItems.find { it.name == content } ?: return
+            value = listItems.find { it.name == content } ?: defaultValue
         }
     }
-
 }
 
 interface ListItem {
