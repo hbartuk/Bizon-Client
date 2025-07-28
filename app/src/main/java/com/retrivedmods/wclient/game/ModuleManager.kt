@@ -116,7 +116,7 @@ object ModuleManager {
         with(_commands) {
             add(SkinStealerCommand())
             add(SoundCommand())
-            add(SledCommamd())
+            add(SledCommand())
         }
     }
 
