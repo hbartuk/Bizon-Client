@@ -4,7 +4,7 @@ package com.retrivedmods.wclient.game.command.impl
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.ModuleManager
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.module.visual.TrackingModule // Импортируйте ваш новый модуль
+import com.retrivedmods.wclient.game.module.visual.TrackingModule // <--- Убедитесь, что это правильный путь к вашему TrackingModule
 
 class SledCommand : Command("sled", "sl") { // Команда ".sled" или ".sl"
 
