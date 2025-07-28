@@ -8,11 +8,11 @@ import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAbilitiesPacket
 
-// this module is intended to be used to save packets which are used across the motion modules, and should NOT be displayed in the module list.
+// This module is intended to be used to save packets which are used across the motion modules, and should NOT be displayed in the module list.
 // e.g. UpdateAbilitiesPacket is used by speed and fly, we can use this module to intercept it and save a copy of the packet for later use.
-//      this ensures the modules don't collide with each other and rather operate independently, if we don't do this speed would disable fly and fly would disable speed.. ( abilities shouldn't collide )
+//      This ensures the modules don't collide with each other and rather operate independently, if we don't do this speed would disable fly and fly would disable speed.. ( abilities shouldn't collide )
 class MotionVarModule :
-    Module("_var_", ModuleCategory.Motion, defaultEnabled = true, private = true) {
+    Module("_var_", ModuleCategory.MOVEMENT, defaultEnabled = true, private = true) {
 
     companion object {
         var lastUpdateAbilitiesPacket: UpdateAbilitiesPacket? by mutableStateOf(null)
@@ -20,8 +20,7 @@ class MotionVarModule :
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (interceptablePacket.packet is UpdateAbilitiesPacket) {
-            lastUpdateAbilitiesPacket = interceptablePacket.packet
+            lastUpdateAbilitiesPacket = interceptablePacket.packet as UpdateAbilitiesPacket // Fixed: Safe cast
         }
     }
-
-}
+    }
