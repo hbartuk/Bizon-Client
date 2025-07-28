@@ -2,7 +2,7 @@ package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.GameSession
+import com.retrivedmods.wclient.game.GameSession // Убедитесь, что GameSession импортирован правильно
 
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
@@ -34,7 +34,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
     /**
      * Воспроизведение обычного пользовательского звука по названию.
-     * Используется для ambient, музыки, стандартных звуков блоков и мобов.
+     * Отправляется на сервер, чтобы другие игроки тоже слышали.
      */
     fun playSound(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
         println("DEBUG: SoundModule.playSound() вызван для звука: $soundName (Громкость: $volume, Тональность: $pitch)")
@@ -42,8 +42,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         runOnSession { currentSession ->
             val playerPos: Vector3f? = currentSession.localPlayer?.vec3Position
             if (playerPos == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук.")
-                println("ERROR: Позиция игрока равна null в playSound(). Невозможно воспроизвести звук: $soundName")
+                currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести звук для сервера.")
+                println("ERROR: Позиция игрока равна null в playSound(). Невозможно отправить запрос звука на сервер: $soundName")
                 return@runOnSession
             }
 
@@ -54,15 +54,17 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 setPitch(pitch)
             }
 
-            currentSession.clientBound(playSoundPacket)
-            currentSession.displayClientMessage("§a[SoundModule] Попытка воспроизвести звук: §b$soundName")
-            println("DEBUG: PlaySoundPacket отправлен для звука: $soundName с громкостью $volume и тональностью $pitch.")
+            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: Используем serverBound() для отправки на сервер ***
+            currentSession.serverBound(playSoundPacket)
+
+            currentSession.displayClientMessage("§a[SoundModule] Попытка отправить запрос звука серверу: §b$soundName")
+            println("DEBUG: PlaySoundPacket отправлен на сервер для звука: $soundName с громкостью $volume и тональностью $pitch.")
         }
     }
 
     /**
      * Воспроизведение системного игрового звука через LevelSoundEventPacket.
-     * Используется для звуков, связанных с игровыми событиями (колокол, смерть дракона, удары, взрывы и др.).
+     * Отправляется на сервер, чтобы другие игроки тоже слышали.
      */
     fun playLevelSound(
         soundEvent: SoundEvent,
@@ -74,8 +76,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         runOnSession { currentSession ->
             val playerPos: Vector3f? = currentSession.localPlayer?.vec3Position
             if (playerPos == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести событийный звук.")
-                println("ERROR: Позиция игрока равна null в playLevelSound(). Невозможно воспроизвести событие: $soundEvent")
+                currentSession.displayClientMessage("§c[SoundModule] Позиция игрока недоступна. Невозможно воспроизвести событийный звук для сервера.")
+                println("ERROR: Позиция игрока равна null в playLevelSound(). Невозможно отправить запрос события на сервер: $soundEvent")
                 return@runOnSession
             }
 
@@ -87,9 +89,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 // babySound, relativeVolumeDisabled, entityUniqueId НЕ ТРОГАТЬ! (приватные)
             }
 
-            currentSession.clientBound(packet)
-            currentSession.displayClientMessage("§a[SoundModule] Попытка воспроизвести событийный звук: §b$soundEvent")
-            println("DEBUG: LevelSoundEventPacket отправлен для события: $soundEvent на позиции $playerPos.")
+            // *** ИЗМЕНЕНИЕ ЗДЕСЬ: Используем serverBound() для отправки на сервер ***
+            currentSession.serverBound(packet)
+
+            currentSession.displayClientMessage("§a[SoundModule] Попытка отправить событийный звук серверу: §b$soundEvent")
+            println("DEBUG: LevelSoundEventPacket отправлен на сервер для события: $soundEvent на позиции $playerPos.")
         }
     }
 
