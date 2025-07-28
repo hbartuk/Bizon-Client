@@ -69,7 +69,6 @@ object ModuleManager {
             add(WAuraModule())
             add(SpeedModule())
             add(JetPackModule())
-            add(BlinkModule())
             add(AdvanceDisablerModule())
             add(BlinkModule()) // Дублирование, возможно, следует удалить одну
             add(NightVisionModule())
