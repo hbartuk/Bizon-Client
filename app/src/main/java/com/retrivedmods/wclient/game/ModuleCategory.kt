@@ -9,31 +9,31 @@ enum class ModuleCategory(
     @StringRes val labelResId: Int
 ) {
 
-    Для пвп(
+    Combat(
         iconResId = R.drawable.swords_24px,
         labelResId = R.string.combat
     ),
-    Передвижение(
+    Motion(
         iconResId = R.drawable.sprint_24px,
         labelResId = R.string.motion
     ),
-    Визуалка(
+    Visual(
         iconResId = R.drawable.view_in_ar_24px,
         labelResId = R.string.visual
     ),
-    Игрок(
+    Player(
         iconResId = R.drawable.baseline_emoji_people_24,
         labelResId = R.string.player
     ),
-    Мир(
+    World(
         iconResId = R.drawable.baseline_cloudy_snowing_24,
         labelResId = R.string.world
     ),
-    Разное(
+    Misc(
         iconResId = R.drawable.toc_24px,
         labelResId = R.string.misc
     ),
-    Конфиг(
+    Config(
         iconResId = R.drawable.manufacturing_24px,
         labelResId = R.string.config
     )
