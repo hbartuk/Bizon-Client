@@ -12,7 +12,7 @@ import org.cloudburstmc.protocol.bedrock.packet.UpdateAbilitiesPacket
 // e.g. UpdateAbilitiesPacket is used by speed and fly, we can use this module to intercept it and save a copy of the packet for later use.
 //      This ensures the modules don't collide with each other and rather operate independently, if we don't do this speed would disable fly and fly would disable speed.. ( abilities shouldn't collide )
 class MotionVarModule :
-    Module("_var_", ModuleCategory.MOVEMENT, defaultEnabled = true, private = true) {
+    Module("_var_", ModuleCategory.movement, defaultEnabled = true, private = true) {
 
     companion object {
         var lastUpdateAbilitiesPacket: UpdateAbilitiesPacket? by mutableStateOf(null)
