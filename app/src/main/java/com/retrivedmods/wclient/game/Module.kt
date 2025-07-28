@@ -10,17 +10,18 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-// --- БАЗОВЫЕ КЛАССЫ VALUE И ДЕЛЕГАТЫ ---
+// --- БАЗОВЫЕ КЛАССЫ VALUE И ДЕЛЕГАТОРЫ ---
+// Базовый абстрактный класс для всех Value
+abstract class Value<T>(val name: String, protected val defaultValue: T) {
+    var value: T = defaultValue
 
-// Абстрактный базовый класс для всех Value
-abstract class Value<T>(val name: String, var value: T, protected val defaultValue: T) {
     abstract fun toJson(): JsonElement
     abstract fun fromJson(jsonElement: JsonElement)
-    open fun reset() { this.value = defaultValue }
+    open fun reset() { value = defaultValue }
 }
 
 // Boolean значение
-class BooleanValue(name: String, defaultValue: Boolean) : Value<Boolean>(name, defaultValue) {
+class BoolValue(name: String, defaultValue: Boolean) : Value<Boolean>(name, defaultValue) {
     override fun toJson() = JsonPrimitive(value)
     override fun fromJson(jsonElement: JsonElement) {
         value = (jsonElement as? JsonPrimitive)?.booleanOrNull ?: defaultValue
@@ -35,6 +36,14 @@ class IntValue(name: String, defaultValue: Int) : Value<Int>(name, defaultValue)
     }
 }
 
+// Float значение
+class FloatValue(name: String, defaultValue: Float) : Value<Float>(name, defaultValue) {
+    override fun toJson() = JsonPrimitive(value)
+    override fun fromJson(jsonElement: JsonElement) {
+        value = (jsonElement as? JsonPrimitive)?.floatOrNull ?: defaultValue
+    }
+}
+
 // Enum значение
 class EnumValue<E : Enum<E>>(name: String, defaultValue: E, private val enumClass: Class<E>) : Value<E>(name, defaultValue) {
     override fun toJson() = JsonPrimitive(value.name)
@@ -46,9 +55,9 @@ class EnumValue<E : Enum<E>>(name: String, defaultValue: E, private val enumClas
     }
 }
 
-// Делегаты для Value
+// Делегаты для Value (работают с var xxx by intValue(...))
 fun Module.boolValue(name: String, defaultValue: Boolean): ReadWriteProperty<Module, Boolean> {
-    val v = BooleanValue(name, defaultValue)
+    val v = BoolValue(name, defaultValue)
     values.add(v)
     return object : ReadWriteProperty<Module, Boolean> {
         override fun getValue(thisRef: Module, property: KProperty<*>) = v.value
@@ -63,6 +72,14 @@ fun Module.intValue(name: String, defaultValue: Int): ReadWriteProperty<Module, 
         override fun setValue(thisRef: Module, property: KProperty<*>, value: Int) { v.value = value }
     }
 }
+fun Module.floatValue(name: String, defaultValue: Float): ReadWriteProperty<Module, Float> {
+    val v = FloatValue(name, defaultValue)
+    values.add(v)
+    return object : ReadWriteProperty<Module, Float> {
+        override fun getValue(thisRef: Module, property: KProperty<*>) = v.value
+        override fun setValue(thisRef: Module, property: KProperty<*>, value: Float) { v.value = value }
+    }
+}
 fun <T : Enum<T>> Module.enumValue(name: String, defaultValue: T): ReadWriteProperty<Module, T> {
     val v = EnumValue(name, defaultValue, defaultValue.javaClass)
     values.add(v)
@@ -72,7 +89,8 @@ fun <T : Enum<T>> Module.enumValue(name: String, defaultValue: T): ReadWriteProp
     }
 }
 
-// --- КОНЕЦ КЛАССОВ VALUE И ДЕЛЕГАТОВ ---
+// --- КОНЕЦ БАЗОВЫХ КЛАССОВ VALUE И ДЕЛЕГАТОВ ---
+
 
 abstract class Module(
     val name: String,
@@ -136,7 +154,7 @@ abstract class Module(
         if (jsonElement is JsonObject) {
             _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.booleanOrNull ?: _isEnabledState
             (jsonElement["values"] as? JsonObject)?.forEach { (key, elem) ->
-                getValue(key)?.runCatching { fromJson(elem) } ?: reset()
+                getValue(key)?.runCatching { fromJson(elem) }?.onFailure { getValue(key)?.reset() }
             }
             (jsonElement["shortcut"] as? JsonObject)?.let {
                 shortcutX = (it["x"] as? JsonPrimitive)?.intOrNull ?: shortcutX
