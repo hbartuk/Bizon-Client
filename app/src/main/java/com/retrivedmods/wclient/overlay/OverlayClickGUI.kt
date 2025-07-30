@@ -83,15 +83,16 @@ class OverlayClickGUI : OverlayWindow() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.radialGradient(
+                    brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF1A1A2E),
-                            Color(0xFF16213E),
-                            Color(0xFF0F0F23)
+                            Color(0xFF1A1A2E).copy(alpha = 0.95f),
+                            Color(0xFF16213E).copy(alpha = 0.98f),
+                            Color(0xFF0F0F23).copy(alpha = 1.0f)
                         ),
-                        radius = 1200f
+                        radius = 1000f
                     )
                 )
+                .clickable { hide() }
         ) {
             // Главная панель
             Card(
@@ -216,7 +217,7 @@ class OverlayClickGUI : OverlayWindow() {
             color = animatedColor
         ) {
             Text(
-                text = category.displayName,
+                text = category.name,
                 color = animatedTextColor,
                 fontSize = 14.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -273,7 +274,7 @@ class OverlayClickGUI : OverlayWindow() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { module.toggle() },
+                .clickable { module.isEnabled = !module.isEnabled },
             colors = CardDefaults.cardColors(containerColor = animatedCardColor),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
@@ -292,18 +293,18 @@ class OverlayClickGUI : OverlayWindow() {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    if (module.description.isNotBlank()) {
-                        Text(
-                            text = module.description,
-                            color = Color(0xFFAAB2BD),
-                            fontSize = 12.sp
-                        )
+                    if (module.name.isNotBlank()) {
+                            Text(
+                                text = "Модуль: ${module.name}",
+                                color = Color(0xFFAAB2BD),
+                                fontSize = 12.sp
+                            )
                     }
                 }
 
                 Switch(
                     checked = isEnabled,
-                    onCheckedChange = { module.toggle() },
+                    onCheckedChange = { module.isEnabled = !module.isEnabled },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = Color(0xFF00D9FF),

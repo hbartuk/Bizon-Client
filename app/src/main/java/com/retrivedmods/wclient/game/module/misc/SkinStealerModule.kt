@@ -9,16 +9,13 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
 import org.cloudburstmc.protocol.bedrock.data.skin.SerializedSkin
 
 class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
-    
-    private var session: GameSession? = null
 
     init {
         // Убрали вызов sendClientMessage из блока init.
     }
     
-    override fun onEnable() {
-        super.onEnable()
-        this.session = gameSession
+    override fun onEnabled() {
+        super.onEnabled()
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {

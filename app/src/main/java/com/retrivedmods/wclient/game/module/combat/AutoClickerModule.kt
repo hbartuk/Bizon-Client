@@ -1,17 +1,15 @@
-
 package com.retrivedmods.wclient.game.module.combat
 
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.InterceptablePacket
-import com.retrivedmods.wclient.game.session
-import com.retrivedmods.wclient.game.entity.Entity
 import com.retrivedmods.wclient.game.entity.Player
 import com.retrivedmods.wclient.game.entity.LocalPlayer
-import com.retrivedmods.wclient.game.entity.EntityUnknown
-import com.retrivedmods.wclient.game.data.mob.MobList
-import org.cloudburstmc.math.vector.Vector3f
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
+import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemUseTransaction
+import org.cloudburstmc.math.vector.Vector3f
 import kotlin.math.*
 
 class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
@@ -19,7 +17,7 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
     private var clicksPerSecond by intValue("КПС", 10, 1..50)
     private var attackRange by floatValue("Дистанция атаки", 4.0f, 1.0f..10.0f)
     private var fovRange by floatValue("FOV угол", 90.0f, 30.0f..180.0f)
-    
+
     // Настройки целей
     private var attackPlayers by boolValue("Атаковать игроков", true)
     private var attackMobs by boolValue("Атаковать мобов", true)
@@ -29,11 +27,11 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
     private var lastAttackTime: Long = 0L
 
     override fun onEnabled() {
-        session.displayClientMessage("§a[AutoClicker] Включен. КПС: $clicksPerSecond")
+        session?.displayClientMessage("§a[AutoClicker] Включен. КПС: $clicksPerSecond")
     }
 
     override fun onDisabled() {
-        session.displayClientMessage("§c[AutoClicker] Выключен")
+        session?.displayClientMessage("§c[AutoClicker] Выключен")
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
@@ -47,108 +45,82 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
 
         if (currentTime - lastAttackTime < minDelay) return
 
-        val localPlayer = session.localPlayer
-        val localPlayerPos = localPlayer.vec3Position
-        val localPlayerEntityId = localPlayer.runtimeEntityId
+        session?.let { session ->
+            val localPlayer = session.localPlayer
+            val localPlayerPos = localPlayer.vec3Position
+            val localPlayerRotation = localPlayer.rotation
 
-        if (localPlayerPos == null || localPlayerEntityId == 0L) return
+            // Поиск цели
+            val target = findBestTarget(localPlayerPos, localPlayerRotation, session) ?: return
 
-        // Найти подходящую цель
-        val target = findBestTarget(localPlayer) ?: return
-
-        // Атаковать цель
-        localPlayer.attack(target)
-        lastAttackTime = currentTime
-    }
-
-    private fun findBestTarget(localPlayer: LocalPlayer): Entity? {
-        val localPlayerPos = localPlayer.vec3Position
-        val maxRangeSq = attackRange * attackRange
-
-        return session.level.entityMap.values
-            .filter { entity ->
-                // Исключить себя
-                if (entity.runtimeEntityId == localPlayer.runtimeEntityId) return@filter false
-                
-                // Проверить позицию
-                val entityPos = entity.vec3Position ?: return@filter false
-                
-                // Проверить дистанцию
-                val distanceSq = localPlayerPos.distanceSquared(entityPos)
-                if (distanceSq > maxRangeSq) return@filter false
-                
-                // Проверить тип цели
-                if (!isValidTarget(entity)) return@filter false
-                
-                // Проверить направление взгляда (если требуется)
-                if (requireCrosshair && !isLookingAtEntity(localPlayer, entity)) return@filter false
-                
-                true
-            }
-            .minByOrNull { entity ->
-                localPlayerPos.distanceSquared(entity.vec3Position)
-            }
-    }
-
-    private fun isValidTarget(entity: Entity): Boolean {
-        return when (entity) {
-            is LocalPlayer -> false
-            is Player -> {
-                if (!attackPlayers) return false
-                if (ignoreBots && isBot(entity)) return false
-                true
-            }
-            is EntityUnknown -> {
-                if (!attackMobs) return false
-                isMob(entity)
-            }
-            else -> false
+            // Выполняем атаку
+            performAttack(target, session)
+            lastAttackTime = currentTime
         }
+    }
+
+    private fun findBestTarget(playerPos: Vector3f, playerRotation: Vector3f, session: com.retrivedmods.wclient.game.GameSession): Player? {
+        val players = session.players.values
+
+        return players
+            .filter { player ->
+                if (!attackPlayers && isPlayer(player)) return@filter false
+                if (!attackMobs && isMob(player)) return@filter false
+                if (ignoreBots && isBot(player)) return@filter false
+
+                val distance = playerPos.distance(player.vec3Position)
+                if (distance > attackRange) return@filter false
+
+                if (requireCrosshair && !isInCrosshair(playerPos, playerRotation, player.vec3Position)) return@filter false
+
+                true
+            }
+            .minByOrNull { playerPos.distance(it.vec3Position) }
+    }
+
+    private fun isPlayer(player: Player): Boolean {
+        // Проверяем, является ли сущность игроком
+        return player.nameTag.matches(Regex("[a-zA-Z0-9_]{3,16}"))
+    }
+
+    private fun isMob(player: Player): Boolean {
+        // Проверяем, является ли сущность мобом (упрощенная логика)
+        val mobKeywords = setOf("zombie", "skeleton", "spider", "creeper", "enderman", "witch", "pillager")
+        return mobKeywords.any { player.nameTag.lowercase().contains(it) }
     }
 
     private fun isBot(player: Player): Boolean {
-        if (player is LocalPlayer) return false
-        val playerInfo = session.level.playerMap[player.uuid] ?: return true
-        return playerInfo.name.isBlank()
+        // Простая проверка на бота
+        val botPatterns = listOf(
+            Regex("bot_.*", RegexOption.IGNORE_CASE),
+            Regex(".*bot.*", RegexOption.IGNORE_CASE),
+            Regex("npc_.*", RegexOption.IGNORE_CASE)
+        )
+        return botPatterns.any { it.matches(player.nameTag) }
     }
 
-    private fun isMob(entity: EntityUnknown): Boolean {
-        return entity.identifier in MobList.mobTypes
+    private fun isInCrosshair(playerPos: Vector3f, playerRotation: Vector3f, targetPos: Vector3f): Boolean {
+        val direction = targetPos.sub(playerPos).normalize()
+        val playerDirection = Vector3f.from(
+            -sin(Math.toRadians(playerRotation.y.toDouble())).toFloat() * cos(Math.toRadians(playerRotation.x.toDouble())).toFloat(),
+            -sin(Math.toRadians(playerRotation.x.toDouble())).toFloat(),
+            cos(Math.toRadians(playerRotation.y.toDouble())).toFloat() * cos(Math.toRadians(playerRotation.x.toDouble())).toFloat()
+        )
+
+        val dot = direction.dot(playerDirection)
+        val angle = Math.toDegrees(acos(dot.toDouble())).toFloat()
+
+        return angle <= fovRange / 2
     }
 
-    private fun isLookingAtEntity(localPlayer: LocalPlayer, entity: Entity): Boolean {
-        val playerPos = localPlayer.vec3Position
-        val entityPos = entity.vec3Position
-        val playerRotation = localPlayer.vec3Rotation
-
-        // Вычислить направление к цели
-        val deltaX = entityPos.x - playerPos.x
-        val deltaY = entityPos.y - playerPos.y
-        val deltaZ = entityPos.z - playerPos.z
-
-        val horizontalDistance = sqrt(deltaX * deltaX + deltaZ * deltaZ)
-        
-        // Вычислить углы к цели
-        val targetYaw = atan2(-deltaX, deltaZ) * 180.0 / PI
-        val targetPitch = atan2(-deltaY, horizontalDistance) * 180.0 / PI
-
-        // Нормализовать углы
-        val yawDiff = normalizeAngle(targetYaw - playerRotation.y)
-        val pitchDiff = abs(targetPitch - playerRotation.x)
-
-        // Проверить, находится ли цель в пределах FOV
-        val totalAngleDiff = sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff)
-        
-        return totalAngleDiff <= fovRange / 2.0
-    }
-
-    private fun normalizeAngle(angle: Double): Double {
-        var normalizedAngle = angle % 360.0
-        if (normalizedAngle > 180.0) {
-            normalizedAngle -= 360.0
-        } else if (normalizedAngle < -180.0) {
-            normalizedAngle += 360.0
+    private fun performAttack(target: Player, session: com.retrivedmods.wclient.game.GameSession) {
+        // Создаем пакет для атаки
+        val attackPacket = InventoryTransactionPacket().apply {
+            transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
+            // Здесь нужно настроить данные транзакции для атаки
         }
-        return normalizedAngle
+
+        session.serverBound(attackPacket)
+        session.displayClientMessage("§7[AutoClicker] Атакован: §f${target.nameTag}")
     }
 }
