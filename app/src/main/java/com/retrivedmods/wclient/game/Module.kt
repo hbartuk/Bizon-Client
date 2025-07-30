@@ -1,4 +1,4 @@
-// Файл: /home/runner/work/Bizon-Client/Bizon-Client/app/src/main/java/com/retrivedmods/wclient/game/Module.kt
+// /home/runner/work/Bizon-Client/Bizon-Client/app/src/main/java/com/retrivedmods/wclient/game/Module.kt
 
 package com.retrivedmods.wclient.game
 
@@ -9,8 +9,8 @@ import com.retrivedmods.wclient.overlay.OverlayShortcutButton
 import com.retrivedmods.wclient.util.translatedSelf
 import kotlinx.serialization.json.*
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
+import kotlin.properties.ReadWriteProperty // This import might not be needed if not used elsewhere
+import kotlin.reflect.KProperty // This import might not be needed if not used elsewhere
 
 abstract class Module(
     val name: String,
@@ -46,9 +46,7 @@ abstract class Module(
     var shortcutY = 100
     val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
 
-    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ ОКНА НАСТРОЕК ---
     var isSettingsOpen by mutableStateOf(false)
-    // ----------------------------------------
 
     override val values: MutableList<Value<*>> = ArrayList()
 
@@ -71,12 +69,10 @@ abstract class Module(
 
     open fun onEnabled() {
         sendToggleMessage(true)
-        // Открываем окно настроек, если оно не было открыто
-        // isSettingsOpen = true // Раскомментируй, если хочешь, чтобы окно настроек открывалось сразу при включении
     }
     open fun onDisabled() {
         sendToggleMessage(false)
-        isSettingsOpen = false // Закрываем окно настроек при выключении
+        isSettingsOpen = false
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {}
@@ -94,7 +90,6 @@ abstract class Module(
                 put("y", shortcutY)
             })
         }
-        // Сохраняем состояние окна настроек, если нужно
         put("isSettingsOpen", isSettingsOpen)
     }
 
@@ -109,7 +104,6 @@ abstract class Module(
                 shortcutY = (it["y"] as? JsonPrimitive)?.intOrNull ?: shortcutY
                 isShortcutDisplayed = true
             }
-            // Загружаем состояние окна настроек
             isSettingsOpen = (jsonElement["isSettingsOpen"] as? JsonPrimitive)?.booleanOrNull ?: isSettingsOpen
         }
     }
@@ -122,5 +116,46 @@ abstract class Module(
             val message = "§l§c[WClient] §r§7${moduleName} §8» $status"
             currentSession.displayClientMessage(message)
         }
+    }
+}
+
+// --- ADD THESE CLASSES TO YOUR Module.kt FILE ---
+
+// Make sure ModuleCategory is also defined. Example:
+enum class ModuleCategory {
+    Combat, Movement, Player, Render, World, Misc
+}
+
+abstract class Value<T>(
+    val name: String,
+    val description: String = ""
+) {
+    abstract var value: T // Current value
+    abstract fun toJson(): JsonElement
+    abstract fun fromJson(jsonElement: JsonElement)
+    open fun reset() {} // For resetting the value
+}
+
+class BooleanValue(name: String, default: Boolean) : Value<Boolean>(name) {
+    override var value by mutableStateOf(default)
+    override fun toJson() = JsonPrimitive(value)
+    override fun fromJson(jsonElement: JsonElement) {
+        if (jsonElement is JsonPrimitive) value = jsonElement.booleanOrNull ?: value
+    }
+}
+
+class NumberValue(name: String, default: Number, val min: Number, val max: Number) : Value<Number>(name) {
+    override var value by mutableStateOf(default)
+    override fun toJson() = JsonPrimitive(value)
+    override fun fromJson(jsonElement: JsonElement) {
+        if (jsonElement is JsonPrimitive) value = jsonElement.intOrNull ?: jsonElement.doubleOrNull ?: value
+    }
+}
+
+class ModeValue(name: String, val modes: List<String>, default: String) : Value<String>(name) {
+    override var value by mutableStateOf(default)
+    override fun toJson() = JsonPrimitive(value)
+    override fun fromJson(jsonElement: JsonElement) {
+        if (jsonElement is JsonPrimitive) value = jsonElement.contentOrNull ?: value
     }
 }
