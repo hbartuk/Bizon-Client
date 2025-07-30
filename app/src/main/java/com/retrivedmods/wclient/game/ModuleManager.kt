@@ -23,7 +23,7 @@ import com.retrivedmods.wclient.game.module.player.FreeCameraModule
 
 // Импорт команд
 import com.retrivedmods.wclient.game.command.impl.SledCommand
-
+import com.retrivedmods.wclient.game.command.impl.SaveSkinCommand
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
