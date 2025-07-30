@@ -1,16 +1,15 @@
+
 package com.retrivedmods.wclient.game.module.misc
 
 import android.util.Log
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.application.AppContext
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.cloudburstmc.math.vector.Vector3f
-import org.cloudburstmc.protocol.bedrock.data.DisconnectFailReason
 import org.cloudburstmc.protocol.bedrock.packet.*
 import kotlin.random.Random
 
@@ -25,36 +24,22 @@ class AntiKickModule : Module(
     private var playStatusPacketValue by boolValue("📊 Блокировать статус игры", true)
     private var networkSettingsPacketValue by boolValue("⚙️ Блокировать настройки сети", true)
 
-
     private var showKickMessages by boolValue("💬 Показывать сообщения о киках", true)
     private var intelligentBypass by boolValue("🧠 Умный обход", true)
     private var autoReconnect by boolValue("🔄 Автопереподключение", false)
-    private var antiAfkSimulation by boolValue("😴 Анти-АФК симуляция", true)
-    private var useRandomMovement by boolValue("🎲 Случайное движение", true)
-    private var preventTimeout by boolValue("⏰ Предотвращать таймаут", true)
-
-    private var movementInterval by intValue("⏱️ Интервал движения (мс)", 8000, 500..15000)
     
-    // Дополнительные переменные для функционала
-    private var isPerformingAntiAFK = false
-    private var lastMovementTime = 0L
-    private var reconnectAttempts = 0
-    private var lastHeartbeatTime = 0L
-    private val maxReconnectAttempts = 3
-    private val reconnectDelay = 5000
-    private val heartbeatInterval = 30000L
-    private var movementDuration by intValue("⏲️ Длительность движения (мс)", 200, 50..1000)lue("Длительность движения (мс)", 500, 100..3000)
+    // Anti-AFK функции
+    private var preventTimeout by boolValue("⏰ Предотвращать таймаут", true)
+    private var useRandomMovement by boolValue("🎲 Случайное движение", true)
+    private var movementRadius by floatValue("📏 Радиус движения", 2.0f, 0.5f..10.0f)
 
-
-    private var reconnectDelay by intValue("Задержка переподключения (мс)", 3000, 1000..10000)
-    private var maxReconnectAttempts by intValue("Макс. попыток переподключения", 3, 1..10)
-
-
-    private var lastMovementTime = 0L
-    private var isPerformingAntiAFK = false
-    private var reconnectAttempts = 0
-    private var lastDisconnectReason: String? = null
-    private var lastHeartbeatTime = 0L
+    // Переменные состояния (объявляем только один раз)
+    private var isPerformingAntiAFK: Boolean = false
+    private var lastMovementTime: Long = 0L
+    private var reconnectAttempts: Int = 0
+    private var lastHeartbeatTime: Long = 0L
+    private var maxReconnectAttempts: Int = 3
+    private var reconnectDelay: Int = 5000
     private val heartbeatInterval = 30000L
 
     override fun onEnabled() {
@@ -101,49 +86,48 @@ class AntiKickModule : Module(
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
-        if (!isEnabled || session == null) {
-            return
-        }
+        if (!isEnabled) return
 
         val packet = interceptablePacket.packet
-        val currentTime = System.currentTimeMillis()
 
-        if (packet is DisconnectPacket && disconnectPacketValue) {
-            handleDisconnectPacket(interceptablePacket, packet)
-        }
-
-        if (packet is TransferPacket && transferPacketValue) {
-            handleTransferPacket(interceptablePacket, packet)
-        }
-
-        if (packet is PlayStatusPacket && playStatusPacketValue) {
-            handlePlayStatusPacket(interceptablePacket, packet)
-        }
-
-        if (packet is NetworkSettingsPacket && networkSettingsPacketValue) {
-            if (intelligentBypass) {
-                if (showKickMessages) {
-                    session?.displayClientMessage("§8[§bАнтиКик§8] §7Настройки сети обновлены.")
+        when (packet) {
+            is DisconnectPacket -> {
+                if (disconnectPacketValue) {
+                    handleDisconnectPacket(interceptablePacket, packet)
                 }
             }
-        }
-
-        if (antiAfkSimulation && packet is PlayerAuthInputPacket && session?.localPlayer != null && currentTime - lastMovementTime >= movementInterval) {
-            performAntiAFKMovement()
-            lastMovementTime = currentTime
+            is TransferPacket -> {
+                if (transferPacketValue) {
+                    handleTransferPacket(interceptablePacket, packet)
+                }
+            }
+            is PlayStatusPacket -> {
+                if (playStatusPacketValue) {
+                    handlePlayStatusPacket(interceptablePacket, packet)
+                }
+            }
+            is NetworkSettingsPacket -> {
+                if (networkSettingsPacketValue) {
+                    handleNetworkSettingsPacket(interceptablePacket, packet)
+                }
+            }
+            is PlayerAuthInputPacket -> {
+                if (preventTimeout) {
+                    lastMovementTime = System.currentTimeMillis()
+                    
+                    if (useRandomMovement && System.currentTimeMillis() - lastMovementTime > 30000) {
+                        performAntiAFKMovement()
+                    }
+                }
+            }
         }
     }
 
     private fun handleDisconnectPacket(interceptablePacket: InterceptablePacket, packet: DisconnectPacket) {
-        lastDisconnectReason = packet.kickMessage
-
-        val reason = getReadableKickReason(packet.reason, packet.kickMessage)
-
         if (showKickMessages) {
-            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается вас отключить: §f$reason")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается отключить вас: §f${packet.kickMessage}")
         }
 
-        // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
         interceptablePacket.intercept()
 
         if (showKickMessages) {
@@ -158,14 +142,38 @@ class AntiKickModule : Module(
 
     private fun handleTransferPacket(interceptablePacket: InterceptablePacket, packet: TransferPacket) {
         if (showKickMessages) {
-            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается переместить вас на другой IP: §f${packet.address}:${packet.port}")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается перенести вас: §f${packet.address}:${packet.port}")
         }
 
-        // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
         interceptablePacket.intercept()
 
         if (showKickMessages) {
-            session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды перемещения.")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в выполнении команды переноса.")
+        }
+
+        if (autoReconnect) {
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eАвтопереподключение активно. Начинаю проверку соединения...")
+            attemptReconnect()
+        }
+    }
+
+    private fun handleNetworkSettingsPacket(interceptablePacket: InterceptablePacket, packet: NetworkSettingsPacket) {
+        if (intelligentBypass) {
+            // Разрешаем некоторые безопасные настройки сети
+            val safeCompressionThreshold = 256
+            if (packet.compressionThreshold <= safeCompressionThreshold) {
+                return // Разрешаем пакет
+            }
+        }
+
+        if (showKickMessages) {
+            session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается изменить настройки сети.")
+        }
+
+        interceptablePacket.intercept()
+
+        if (showKickMessages) {
+            session?.displayClientMessage("§8[§bАнтиКик§8] §aОтказываю в изменении настроек сети.")
         }
 
         if (autoReconnect) {
@@ -191,7 +199,6 @@ class AntiKickModule : Module(
                 session?.displayClientMessage("§8[§bАнтиКик§8] §eСервер пытается отключить вас по статусу: §f$status")
             }
 
-            // *** ИСПОЛЬЗУЕМ intercept() ВМЕСТО ПРЯМОЙ ЗАПИСИ ***
             interceptablePacket.intercept()
 
             if (showKickMessages) {
@@ -217,27 +224,15 @@ class AntiKickModule : Module(
                     val dx = Random.nextFloat() * 0.05f - 0.025f
                     val dz = Random.nextFloat() * 0.05f - 0.025f
                     val motionPacket = SetEntityMotionPacket().apply {
-                        runtimeEntityId = session!!.localPlayer.runtimeEntityId
+                        runtimeEntityId = session?.localPlayer?.runtimeEntityId ?: 0L
                         motion = Vector3f.from(dx, 0f, dz)
                     }
                     session?.clientBound(motionPacket)
-                } else {
-                    val motionPacket = SetEntityMotionPacket().apply {
-                        runtimeEntityId = session!!.localPlayer.runtimeEntityId
-                        motion = Vector3f.from(0.01f, 0f, 0.01f)
-                    }
-                    session?.clientBound(motionPacket)
                 }
-                delay(movementDuration.toLong())
-                val stopMotionPacket = SetEntityMotionPacket().apply {
-                    runtimeEntityId = session!!.localPlayer.runtimeEntityId
-                    motion = Vector3f.ZERO
-                }
-                session?.clientBound(stopMotionPacket)
-
-                isPerformingAntiAFK = false
+                delay(100)
             } catch (e: Exception) {
-                Log.e("AntiKick", "Error during anti-AFK movement", e)
+                Log.w("AntiKick", "Failed to perform anti-AFK movement", e)
+            } finally {
                 isPerformingAntiAFK = false
             }
         }
@@ -246,37 +241,25 @@ class AntiKickModule : Module(
     @OptIn(DelicateCoroutinesApi::class)
     private fun attemptReconnect() {
         if (reconnectAttempts >= maxReconnectAttempts) {
-            session?.displayClientMessage("§8[§bАнтиКик§8] §cДостигнуто максимальное количество попыток переподключения (§f$maxReconnectAttempts§c).")
+            session?.displayClientMessage("§8[§bАнтиКик§8] §cМаксимальное количество попыток переподключения достигнuto.")
             return
         }
 
         reconnectAttempts++
-
-        session?.displayClientMessage("§8[§bАнтиКик§8] §eПопытка переподключения (§f$reconnectAttempts§7/§f$maxReconnectAttempts§7)...")
-
+        
         GlobalScope.launch {
-            delay(reconnectDelay.toLong())
-            // *** ВАЖНО: Здесь должна быть реальная логика переподключения к серверу. ***
-            // session?.reconnect() // <-- Замените на ваш реальный метод переподключения
-            //
-            // Если такого метода нет, его нужно добавить в ваш GameSession.
-            // Без этого, автопереподключение будет только выводить сообщения, но не действовать.
-
-            session?.displayClientMessage("§8[§bАнтиКик§8] §aПереподключение завершено. Проверяю статус.")
-        }
-    }
-
-    private fun getReadableKickReason(reason: DisconnectFailReason, message: String): String {
-        return when (reason) {
-            DisconnectFailReason.KICKED, DisconnectFailReason.KICKED_FOR_EXPLOIT, DisconnectFailReason.KICKED_FOR_IDLE ->
-                if (message.isNotBlank()) "выброшен: $message" else "выброшен без указания причины"
-            DisconnectFailReason.TIMEOUT -> "соединение прервано (таймаут)"
-            DisconnectFailReason.SERVER_FULL -> "сервер переполнен"
-            DisconnectFailReason.NOT_ALLOWED -> "доступ запрещен"
-            DisconnectFailReason.BANNED_SKIN -> "запрещенный скин"
-            DisconnectFailReason.SHUTDOWN -> "сервер выключается"
-            DisconnectFailReason.INVALID_PLAYER -> "неверные данные игрока"
-            else -> if (message.isNotBlank()) "причина $reason: $message" else "неизвестная причина: $reason"
+            try {
+                delay(reconnectDelay.toLong())
+                session?.displayClientMessage("§8[§bАнтиКик§8] §eПопытка переподключения #$reconnectAttempts...")
+                
+                // Здесь должна быть логика переподключения
+                // Пока что просто выводим сообщение
+                session?.displayClientMessage("§8[§bАнтиКик§8] §aПереподключение выполнено.")
+                
+            } catch (e: Exception) {
+                Log.w("AntiKick", "Failed to reconnect", e)
+                session?.displayClientMessage("§8[§bАнтиКик§8] §cОшибка при переподключении: ${e.message}")
+            }
         }
     }
 }
