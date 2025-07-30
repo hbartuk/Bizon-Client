@@ -19,7 +19,10 @@ import com.retrivedmods.wclient.game.module.player.DesyncModule
 import com.retrivedmods.wclient.game.module.player.FreeCameraModule
 
 // *** НОВЫЙ ИМПОРТ ДЛЯ SPOOFINGMODULE ***
-//import com.retrivedmods.wclient.game.module.misc.SpoofingModule // Убедитесь, что путь правильный, если SpoofingModule находится в другом месте
+//import com.retrivedmods.wclient.game.module.misc.SpoofingModule // Убедитесь, что путь правильный, если SpoofingModule находится в д
+
+// Импорт команд
+import com.retrivedmods.wclient.game.command.impl.SledCommandругом месте
 
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand

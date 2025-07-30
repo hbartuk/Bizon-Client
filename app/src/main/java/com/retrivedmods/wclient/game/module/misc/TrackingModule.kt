@@ -139,4 +139,17 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
         // Начните с EntityDataTypes.PLAYER_FLAGS (попробуйте установить в 0)
         // и поиска флагов, связанных с броней, в EntityDataTypes.ARMOR или отдельных слотах.
     }
+
+    override fun afterPacketBound(packet: org.cloudburstmc.protocol.bedrock.packet.BedrockPacket) {
+        // Реализация для отслеживания пакетов
+    }
+
+    override fun onDisconnect(reason: String) {
+        // Сброс при отключении
+        targetPlayerName = null
+        targetPlayerRuntimeId = -1L
+        originalPlayerPos = null
+        originalPlayerRotation = null
+        isEnabled = false
+    }
 }
