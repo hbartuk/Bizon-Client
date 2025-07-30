@@ -92,8 +92,14 @@ class SkinStealerCommand : Command("steal") {
     }
 
     private fun getSkinFromCache(username: String, session: GameSession): SerializedSkin? {
-        session.displayClientMessage("§6[DEBUG] Вызов заглушки getSkinFromCache. Вам нужно реализовать её!")
-        return createTestSkin()
+        val cachedSkin = com.retrivedmods.wclient.game.data.skin.SkinCache.getSkin(username)
+        if (cachedSkin != null) {
+            session.displayClientMessage("§a[DEBUG] Найден скин для игрока §b$username§a в кэше!")
+            return cachedSkin
+        } else {
+            session.displayClientMessage("§c[DEBUG] Скин для игрока §b$username§c не найден в кэше.")
+            return null
+        }
     }
 
     private fun createTestSkin(): SerializedSkin {
