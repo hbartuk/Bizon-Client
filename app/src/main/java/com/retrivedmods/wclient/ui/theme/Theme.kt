@@ -11,17 +11,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-// Define premium dark red color scheme
+// Современная тёмная цветовая схема с градиентами
 private val PremiumDarkColorScheme = darkColorScheme(
-    primary = Color(0xFFFF0000), // Bold premium red
+    primary = Color(0xFF00D4FF), // Яркий голубой
     onPrimary = Color.Black,
-    secondary = Color(0xFFB71C1C), // Darker red
+    secondary = Color(0xFF9C27B0), // Фиолетовый
     onSecondary = Color.White,
-    background = Color(0xFF121212), // Dark background
+    background = Color(0xFF0A0A0F), // Очень тёмный фон
     onBackground = Color.White,
-    surface = Color(0xFF1A1A1A), // Slightly lighter than background
+    surface = Color(0xFF1C1C25), // Тёмно-серый с оттенком синего
     onSurface = Color.White,
-    error = Color(0xFFD32F2F),
+    tertiary = Color(0xFFFF6B35), // Оранжевый акцент
+    error = Color(0xFFFF4444),
     onError = Color.White
 )
 

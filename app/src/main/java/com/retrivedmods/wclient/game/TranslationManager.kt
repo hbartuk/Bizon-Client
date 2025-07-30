@@ -214,13 +214,13 @@ object TranslationManager {
     private fun ru(): Map<String, String> {
         val map = HashMap<String, String>()
 
-        // Категории модулей
-        map["combat"] = "Бой"
-        map["motion"] = "Движение"
-        map["visual"] = "Визуал"
-        map["world"] = "Мир"
-        map["player"] = "Игрок"
-        map["misc"] = "Разное"
+        // Категории модулей с эмодзи
+        map["combat"] = "⚔️ Бой"
+        map["motion"] = "🏃 Движение"
+        map["visual"] = "👁️ Визуал"
+        map["world"] = "🌍 Мир"
+        map["player"] = "👤 Игрок"
+        map["misc"] = "🔧 Разное"
 
         // Модули боя
         map["killaura"] = "Килл Аура"

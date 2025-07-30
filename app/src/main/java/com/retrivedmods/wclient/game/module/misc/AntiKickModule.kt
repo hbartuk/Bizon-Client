@@ -15,27 +15,26 @@ import org.cloudburstmc.protocol.bedrock.packet.*
 import kotlin.random.Random
 
 class AntiKickModule : Module(
-    name = "АнтиКик", // Название модуля на русском
+    name = "🛡️ Анти-Кик", // Название модуля на русском с эмодзи
     category = ModuleCategory.Misc
 ) {
 
-    // Опции на русском языке
-    private var disconnectPacketValue by boolValue("Перехват отключения", true)
-    private var transferPacketValue by boolValue("Перехват переноса", true)
-    private var playStatusPacketValue by boolValue("Перехват статуса игры", true)
-    private var networkSettingsPacketValue by boolValue("Перехват настроек сети", true)
+    // Опции на русском языке с улучшенными названиями
+    private var disconnectPacketValue by boolValue("🔌 Блокировать отключение", true)
+    private var transferPacketValue by boolValue("📡 Блокировать перенос", true)
+    private var playStatusPacketValue by boolValue("📊 Блокировать статус игры", true)
+    private var networkSettingsPacketValue by boolValue("⚙️ Блокировать настройки сети", true)
 
 
-    private var showKickMessages by boolValue("Показывать сообщения о киках", true)
-    private var intelligentBypass by boolValue("Умный обход", true)
-    private var autoReconnect by boolValue("Автопереподключение", false)
-    private var antiAfkSimulation by boolValue("Анти-АФК", true)
-    private var useRandomMovement by boolValue("Случайное движение", true)
-    private var preventTimeout by boolValue("Предотвращать таймаут", true)
+    private var showKickMessages by boolValue("💬 Показывать сообщения о киках", true)
+    private var intelligentBypass by boolValue("🧠 Умный обход", true)
+    private var autoReconnect by boolValue("🔄 Автопереподключение", false)
+    private var antiAfkSimulation by boolValue("😴 Анти-АФК симуляция", true)
+    private var useRandomMovement by boolValue("🎲 Случайное движение", true)
+    private var preventTimeout by boolValue("⏰ Предотвращать таймаут", true)
 
-
-    private var movementInterval by intValue("Интервал движения (мс)", 8000, 500..15000)
-    private var movementDuration by intValue("Длительность движения (мс)", 500, 100..3000)
+    private var movementInterval by intValue("⏱️ Интервал движения (мс)", 8000, 500..15000)
+    private var movementDuration by intValue("⏲️ Длительность движения (мс)", 200, 50..1000)lue("Длительность движения (мс)", 500, 100..3000)
 
 
     private var reconnectDelay by intValue("Задержка переподключения (мс)", 3000, 1000..10000)

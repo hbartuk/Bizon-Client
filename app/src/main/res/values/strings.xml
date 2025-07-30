@@ -1,12 +1,26 @@
 <resources>
-    <string name="app_name" translatable="false">Bizon Client</string>
+    <string name="app_name">🔥 Bizon Client</string>
+    <string name="action_settings">⚙️ Настройки</string>
+    <string name="recommended_version">📋 Рекомендуемая версия: %1$s</string>
+    <string name="client_status_active">🟢 Клиент активен</string>
+    <string name="client_status_inactive">🔴 Клиент неактивен</string>
+    <string name="start_client">🚀 Запустить клиент</string>
+    <string name="stop_client">🛑 Остановить клиент</string>
+    <string name="modules">📦 Модули</string>
+    <string name="settings">⚙️ Настройки</string>
+    <string name="about">ℹ️ О программе</string>
+    <string name="combat_modules">⚔️ Боевые модули</string>
+    <string name="movement_modules">🏃 Модули движения</string>
+    <string name="visual_modules">👁️ Визуальные модули</string>
+    <string name="world_modules">🌍 Модули мира</string>
+    <string name="player_modules">👤 Модули игрока</string>
+    <string name="misc_modules">🔧 Разные модули</string>
     <string name="home">Home</string>
     <string name="what_is_this">What is this?</string>
     <string name="introduction">WClient is a Minecraft Bedrock tool that uses a MITM (Man-In-The-Middle) method to enable advanced gameplay features without altering the game’s memory.</string>
     <string name="backend" translatable="false">WClientRelay</string>
     <string name="backend_introduction">Easily set up a MITM configuration in just a few steps.</string>
     <string name="minecraft" translatable="false">Minecraft</string>
-    <string name="recommended_version">Recommended version: %s</string>
     <string name="capturing_game_packets">Capturing game packets...</string>
     <string name="stop">Stop</string>
     <string name="overlay_permission_denied">Overlay permission denied</string>
@@ -34,9 +48,7 @@
     <string name="select">Select</string>
     <string name="unselect">Unselect</string>
     <string name="has_been_selected">(Selected)</string>
-    <string name="about">About</string>
     <string name="tutorial">Tutorial</string>
-    <string name="settings">Settings</string>
     <string name="header_introduction">Join our official Discord community: discord.gg/wclient</string>
     <string name="copyright">© 2024-2025 WClient Team. All rights reserved.</string>
     <string name="how_do_i_switch_login_mode">How do I switch login modes?</string>
@@ -56,7 +68,6 @@
     <string name="effect">Effect</string>
     <string name="login_in">Logged in as %s</string>
     <string name="fetch_account_successfully">Account fetched successfully</string>
-    <string name="modules">Modules</string>
     <string name="module_enabled">Module enabled</string>
     <string name="module_disabled">Module disabled</string>
     <string name="no_modules_found">No modules found</string>
