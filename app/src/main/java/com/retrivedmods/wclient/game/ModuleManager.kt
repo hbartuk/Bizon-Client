@@ -120,6 +120,7 @@ object ModuleManager {
             add(SkinStealerCommand())
             add(SoundCommand())
             add(SledCommand())
+            add(SaveSkinCommand())
         }
     }
 
