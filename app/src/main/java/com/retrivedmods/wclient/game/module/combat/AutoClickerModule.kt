@@ -1,14 +1,13 @@
 package com.retrivedmods.wclient.game.module.combat
 
+import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.entity.Player
-import com.retrivedmods.wclient.game.entity.LocalPlayer
-import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
+import com.retrivedmods.wclient.game.world.MobList
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType
-import org.cloudburstmc.protocol.bedrock.data.inventory.ItemUseTransaction
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.ItemUseTransaction
 import org.cloudburstmc.math.vector.Vector3f
 import kotlin.math.*
 
@@ -48,45 +47,83 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
         session?.let { session ->
             val localPlayer = session.localPlayer
             val localPlayerPos = localPlayer.vec3Position
-            val localPlayerRotation = localPlayer.rotation
+            val localPlayerRotation = localPlayer.vec3Rotation
 
-            // Поиск цели
-            val target = findBestTarget(localPlayerPos, localPlayerRotation, session) ?: return
+            val target = findNearestTarget() ?: return
 
-            // Выполняем атаку
-            performAttack(target, session)
+            val packet = InventoryTransactionPacket().apply {
+                transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
+                actionType = 1
+                runtimeEntityId = target.runtimeEntityId
+                hotbarSlot = session.localPlayer.inventory.heldItemSlot
+                itemInHand = session.localPlayer.inventory.hand
+                playerPosition = session.localPlayer.vec3Position
+                clickPosition = Vector3f.ZERO
+                headRotation = session.localPlayer.vec3Rotation
+            }
+            session.serverBound(packet)
             lastAttackTime = currentTime
+
+            val targetName = when (target) {
+                is Player -> target.username
+                is com.retrivedmods.wclient.game.entity.EntityUnknown -> target.identifier
+                else -> "Unknown"
+            }
+            session.displayClientMessage("§aАтакую цель: $targetName")
+
         }
     }
 
-    private fun findBestTarget(playerPos: Vector3f, playerRotation: Vector3f, session: com.retrivedmods.wclient.game.GameSession): Player? {
-        val players = session.players.values
+    private fun findNearestTarget(): com.retrivedmods.wclient.game.entity.Entity? {
+        return session?.level?.entityMap?.values
+            ?.filter { entity ->
+                val distance = session.localPlayer.vec3Position.distance(entity.vec3Position)
+                distance <= attackRange.toFloat() && isValidTarget(entity)
+            }
+            ?.minByOrNull { entity ->
+                session.localPlayer.vec3Position.distance(entity.vec3Position)
+            }
+    }
 
-        return players
-            .filter { player ->
-                if (!attackPlayers && isPlayer(player)) return@filter false
-                if (!attackMobs && isMob(player)) return@filter false
-                if (ignoreBots && isBot(player)) return@filter false
-
-                val distance = playerPos.distance(player.vec3Position)
-                if (distance > attackRange) return@filter false
-
-                if (requireCrosshair && !isInCrosshair(playerPos, playerRotation, player.vec3Position)) return@filter false
-
+    private fun isValidTarget(entity: com.retrivedmods.wclient.game.entity.Entity): Boolean {
+        return when (entity) {
+            is Player -> {
+                if (!attackPlayers) return false
                 true
             }
-            .minByOrNull { playerPos.distance(it.vec3Position) }
+            is com.retrivedmods.wclient.game.entity.EntityUnknown -> {
+                if (!attackMobs) return false
+                MobList.mobTypes.contains(entity.identifier)
+            }
+            else -> false
+        }
+    }
+
+    private fun performAutoAttack() {
+        val target = findNearestTarget() ?: return
+
+        val packet = InventoryTransactionPacket().apply {
+            transactionType = InventoryTransactionType.ITEM_USE_ON_ENTITY
+            actionType = 1
+            runtimeEntityId = target.runtimeEntityId
+            hotbarSlot = session?.localPlayer?.inventory?.heldItemSlot ?: 0
+            itemInHand = session?.localPlayer?.inventory?.hand ?: null
+            playerPosition = session?.localPlayer?.vec3Position ?: Vector3f.ZERO
+            clickPosition = Vector3f.ZERO
+            headRotation = session?.localPlayer?.vec3Rotation ?: Vector3f.ZERO
+        }
+        session?.serverBound(packet)
     }
 
     private fun isPlayer(player: Player): Boolean {
         // Проверяем, является ли сущность игроком
-        return player.nameTag.matches(Regex("[a-zA-Z0-9_]{3,16}"))
+        return player.username.matches(Regex("[a-zA-Z0-9_]{3,16}"))
     }
 
     private fun isMob(player: Player): Boolean {
         // Проверяем, является ли сущность мобом (упрощенная логика)
         val mobKeywords = setOf("zombie", "skeleton", "spider", "creeper", "enderman", "witch", "pillager")
-        return mobKeywords.any { player.nameTag.lowercase().contains(it) }
+        return mobKeywords.any { player.username.lowercase().contains(it) }
     }
 
     private fun isBot(player: Player): Boolean {
@@ -96,7 +133,7 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
             Regex(".*bot.*", RegexOption.IGNORE_CASE),
             Regex("npc_.*", RegexOption.IGNORE_CASE)
         )
-        return botPatterns.any { it.matches(player.nameTag) }
+        return botPatterns.any { it.matches(player.username) }
     }
 
     private fun isInCrosshair(playerPos: Vector3f, playerRotation: Vector3f, targetPos: Vector3f): Boolean {
@@ -121,6 +158,6 @@ class AutoClickerModule : Module("AutoClicker", ModuleCategory.Combat) {
         }
 
         session.serverBound(attackPacket)
-        session.displayClientMessage("§7[AutoClicker] Атакован: §f${target.nameTag}")
+        session.displayClientMessage("§7[AutoClicker] Атакован: §f${target.username}")
     }
 }

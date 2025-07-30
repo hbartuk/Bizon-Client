@@ -13,10 +13,6 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
     init {
         // Убрали вызов sendClientMessage из блока init.
     }
-    
-    override fun onEnabled() {
-        super.onEnabled()
-    }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
         if (!isEnabled) return
@@ -31,7 +27,7 @@ class SkinStealerModule : Module("skinstealer", ModuleCategory.Misc) {
 
                 if (entrySkin != null && entryName.isNotBlank()) {
                     SkinCache.putSkin(entryName.lowercase(), entrySkin)
-                    session?.displayClientMessage("§a[SkinStealer] Сохранён скин игрока: §b$entryName")
+                    session.displayClientMessage("§a[SkinStealer] Сохранён скин игрока: §b$entryName")
                 }
             }
         }
