@@ -1,3 +1,5 @@
+// Файл: /home/runner/work/Bizon-Client/Bizon-Client/app/src/main/java/com/retrivedmods/wclient/game/Module.kt
+
 package com.retrivedmods.wclient.game
 
 import androidx.compose.runtime.getValue
@@ -25,11 +27,12 @@ abstract class Module(
         set(value) {
             if (_isEnabledState != value) {
                 _isEnabledState = value
-                // Когда isEnabled меняется через сеттер, вызываем соответствующие методы
                 if (_isEnabledState) {
                     onEnabled()
                 } else {
                     onDisabled()
+                    // При выключении модуля, закрываем его окно настроек
+                    isSettingsOpen = false
                 }
             }
         }
@@ -42,6 +45,10 @@ abstract class Module(
     var shortcutX = 0
     var shortcutY = 100
     val overlayShortcutButton by lazy { OverlayShortcutButton(this) }
+
+    // --- НОВОЕ СОСТОЯНИЕ ДЛЯ ОКНА НАСТРОЕК ---
+    var isSettingsOpen by mutableStateOf(false)
+    // ----------------------------------------
 
     override val values: MutableList<Value<*>> = ArrayList()
 
@@ -56,18 +63,22 @@ abstract class Module(
 
     open fun initialize() {
         runOnSession { it.displayClientMessage("DEBUG: Модуль ${this.name} проинициализирован.") }
-        // Если модуль включен по умолчанию, он вызовет onEnabled() через сеттер isEnabled
-        // if (isEnabled) onEnabled() // Эта строка теперь может быть лишней, так как сеттер isEnabled это делает
     }
 
-    // --- Вот этот метод нужно добавить! ---
     fun toggle() {
-        isEnabled = !isEnabled // Это вызовет сеттер isEnabled, который в свою очередь вызовет onEnabled/onDisabled
+        isEnabled = !isEnabled
     }
-    // ------------------------------------
 
-    open fun onEnabled() { sendToggleMessage(true) }
-    open fun onDisabled() { sendToggleMessage(false) }
+    open fun onEnabled() {
+        sendToggleMessage(true)
+        // Открываем окно настроек, если оно не было открыто
+        // isSettingsOpen = true // Раскомментируй, если хочешь, чтобы окно настроек открывалось сразу при включении
+    }
+    open fun onDisabled() {
+        sendToggleMessage(false)
+        isSettingsOpen = false // Закрываем окно настроек при выключении
+    }
+
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {}
     override fun afterPacketBound(packet: BedrockPacket) {}
     override fun onDisconnect(reason: String) {}
@@ -83,14 +94,12 @@ abstract class Module(
                 put("y", shortcutY)
             })
         }
+        // Сохраняем состояние окна настроек, если нужно
+        put("isSettingsOpen", isSettingsOpen)
     }
 
     open fun fromJson(jsonElement: JsonElement) {
         if (jsonElement is JsonObject) {
-            // При загрузке из JSON, напрямую обновляем _isEnabledState, чтобы не вызывать onEnabled/onDisabled
-            // во время инициализации, а только когда пользователь реально его переключает.
-            // Если тебе нужно вызывать onEnabled/onDisabled при загрузке,
-            // тогда вызывай isEnabled = ... вместо _isEnabledState = ...
             _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.booleanOrNull ?: _isEnabledState
             (jsonElement["values"] as? JsonObject)?.forEach { (key, elem) ->
                 getValue(key)?.runCatching { fromJson(elem) }?.onFailure { getValue(key)?.reset() }
@@ -100,6 +109,8 @@ abstract class Module(
                 shortcutY = (it["y"] as? JsonPrimitive)?.intOrNull ?: shortcutY
                 isShortcutDisplayed = true
             }
+            // Загружаем состояние окна настроек
+            isSettingsOpen = (jsonElement["isSettingsOpen"] as? JsonPrimitive)?.booleanOrNull ?: isSettingsOpen
         }
     }
 
