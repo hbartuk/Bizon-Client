@@ -1,3 +1,4 @@
+
 package com.retrivedmods.wclient.overlay
 
 import android.content.Context
@@ -31,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.ModuleManager
-import com.retrivedmods.wclient.overlay.window.OverlayWindow
 import kotlinx.coroutines.delay
 
 class OverlayClickGUI : OverlayWindow() {
@@ -75,122 +75,134 @@ class OverlayClickGUI : OverlayWindow() {
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         ) {
-            ModernMenuContent()
+            ModernMenuContent(
+                context = context,
+                selectedCategory = selectedModuleCategory,
+                onCategorySelected = { selectedModuleCategory = it },
+                searchQuery = searchQuery,
+                onSearchQueryChanged = { searchQuery = it },
+                onDismiss = {
+                    OverlayManager.dismissOverlayWindow(this@OverlayClickGUI)
+                }
+            )
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun ModernMenuContent() {
+    private fun ModernMenuContent(
+        context: Context,
+        selectedCategory: ModuleCategory,
+        onCategorySelected: (ModuleCategory) -> Unit,
+        searchQuery: String,
+        onSearchQueryChanged: (String) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        val gradientBackground = Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF0F0F23),
+                Color(0xFF1A1A2E),
+                Color(0xFF16213E)
+            )
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF1A1A2E).copy(alpha = 0.95f),
-                            Color(0xFF16213E).copy(alpha = 0.98f),
-                            Color(0xFF0F0F23).copy(alpha = 1.0f)
-                        ),
-                        radius = 1000f
-                    )
-                )
-                .clickable { isVisible = false }
+                .background(gradientBackground)
+                .clickable { onDismiss() }
         ) {
-            // Главная панель
             Card(
                 modifier = Modifier
-                    .align(Alignment.Center)
                     .fillMaxWidth(0.95f)
                     .fillMaxHeight(0.9f)
-                    .shadow(
-                        elevation = 25.dp,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
-                    ),
+                    .align(Alignment.Center)
+                    .shadow(20.dp, shape = MaterialTheme.shapes.large)
+                    .clickable(enabled = false) { },
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E1E3F).copy(alpha = 0.95f)
+                    containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
                 ),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                shape = MaterialTheme.shapes.large
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp)
+                        .padding(24.dp)
                 ) {
                     // Заголовок
-                    HeaderSection()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "WClient Menu",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Red.copy(alpha = 0.2f)
+                            )
+                        ) {
+                            Text("✕", color = Color.Red, fontSize = 16.sp)
+                        }
+                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Категории (теперь сверху)
-                    CategorySection()
+                    // Поиск
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChanged,
+                        label = { Text("Поиск модулей...", color = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color.Cyan,
+                            unfocusedBorderColor = Color.Gray
+                        )
+                    )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Строка поиска
-                    SearchSection()
+                    // Категории
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(ModuleCategory.values()) { category ->
+                            CategoryChip(
+                                category = category,
+                                isSelected = category == selectedCategory,
+                                onClick = { onCategorySelected(category) }
+                            )
+                        }
+                    }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Модули
-                    ModulesSection()
+                    val filteredModules = ModuleManager.modules
+                        .filter { module ->
+                            module.category == selectedCategory &&
+                                    (searchQuery.isEmpty() || 
+                                     module.name.contains(searchQuery, ignoreCase = true))
+                        }
+
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(filteredModules) { module ->
+                            ModuleCard(module = module)
+                        }
+                    }
                 }
-            }
-
-            // Кнопка закрытия
-            IconButton(
-                onClick = { isVisible = false },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(30.dp)
-                    .size(50.dp)
-                    .background(
-                        Color(0xFFFF4757).copy(alpha = 0.8f),
-                        CircleShape
-                    )
-            ) {
-                Text(
-                    "×",
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun HeaderSection() {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "WClient",
-                color = Color(0xFF00D9FF),
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "Configuration Panel",
-                color = Color(0xFFAAB2BD),
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-
-    @Composable
-    private fun CategorySection() {
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 4.dp)
-        ) {
-            items(ModuleCategory.values()) { category ->
-                CategoryChip(
-                    category = category,
-                    isSelected = selectedModuleCategory == category,
-                    onClick = { selectedModuleCategory = category }
-                )
             }
         }
     }
@@ -201,85 +213,50 @@ class OverlayClickGUI : OverlayWindow() {
         isSelected: Boolean,
         onClick: () -> Unit
     ) {
-        val animatedColor by animateColorAsState(
-            targetValue = if (isSelected) Color(0xFF00D9FF) else Color(0xFF3A3A5C),
-            animationSpec = tween(200)
+        val backgroundColor by animateColorAsState(
+            targetValue = if (isSelected) Color.Cyan else Color.Gray.copy(alpha = 0.3f),
+            label = "chipBackground"
+        )
+        
+        val textColor by animateColorAsState(
+            targetValue = if (isSelected) Color.Black else Color.White,
+            label = "chipText"
         )
 
-        val animatedTextColor by animateColorAsState(
-            targetValue = if (isSelected) Color.White else Color(0xFFAAB2BD),
-            animationSpec = tween(200)
-        )
-
-        Surface(
+        Box(
             modifier = Modifier
+                .clip(CircleShape)
+                .background(backgroundColor)
                 .clickable { onClick() }
-                .padding(vertical = 4.dp),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(25.dp),
-            color = animatedColor
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Text(
                 text = category.name,
-                color = animatedTextColor,
-                fontSize = 14.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+                color = textColor,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
             )
         }
     }
 
     @Composable
-    private fun SearchSection() {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            label = { Text("Поиск модулей...", color = Color(0xFFAAB2BD)) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF00D9FF),
-                unfocusedBorderColor = Color(0xFF3A3A5C),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color(0xFFAAB2BD),
-                cursorColor = Color(0xFF00D9FF)
-            ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
-        )
-    }
-
-    @Composable
-    private fun ModulesSection() {
-        val filteredModules = ModuleManager.modules
-            .filter { 
-                it.category == selectedModuleCategory &&
-                (searchQuery.isEmpty() || it.name.contains(searchQuery, ignoreCase = true))
-            }
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
-        ) {
-            items(filteredModules) { module ->
-                ModuleCard(module = module)
-            }
-        }
-    }
-
-    @Composable
     private fun ModuleCard(module: com.retrivedmods.wclient.game.Module) {
-        val isEnabled = module.isEnabled
-
-        val animatedCardColor by animateColorAsState(
-            targetValue = if (isEnabled) Color(0xFF2E5266) else Color(0xFF2A2A4A),
-            animationSpec = tween(200)
+        val borderColor by animateColorAsState(
+            targetValue = if (module.isEnabled) Color.Green else Color.Transparent,
+            label = "moduleBorder"
         )
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { module.isEnabled = !module.isEnabled },
-            colors = CardDefaults.cardColors(containerColor = animatedCardColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                .border(2.dp, borderColor, MaterialTheme.shapes.medium)
+                .clickable { module.toggle() },
+            colors = CardDefaults.cardColors(
+                containerColor = if (module.isEnabled) 
+                    Color.Green.copy(alpha = 0.1f) 
+                else 
+                    Color.Gray.copy(alpha = 0.1f)
+            ),
+            shape = MaterialTheme.shapes.medium
         ) {
             Row(
                 modifier = Modifier
@@ -288,30 +265,26 @@ class OverlayClickGUI : OverlayWindow() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column {
                     Text(
                         text = module.name,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (module.isEnabled) Color.Green else Color.White
                     )
-                    if (module.name.isNotBlank()) {
-                            Text(
-                                text = "Модуль: ${module.name}",
-                                color = Color(0xFFAAB2BD),
-                                fontSize = 12.sp
-                            )
-                    }
+                    Text(
+                        text = "Категория: ${module.category.name}",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
                 }
-
+                
                 Switch(
-                    checked = isEnabled,
-                    onCheckedChange = { module.isEnabled = !module.isEnabled },
+                    checked = module.isEnabled,
+                    onCheckedChange = { module.toggle() },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Color(0xFF00D9FF),
-                        uncheckedThumbColor = Color(0xFFAAB2BD),
-                        uncheckedTrackColor = Color(0xFF3A3A5C)
+                        checkedThumbColor = Color.Green,
+                        checkedTrackColor = Color.Green.copy(alpha = 0.5f)
                     )
                 )
             }
