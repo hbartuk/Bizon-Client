@@ -56,4 +56,9 @@
     <string name="effect">Effect</string>
     <string name="login_in">Logged in as %s</string>
     <string name="fetch_account_successfully">Account fetched successfully</string>
+    <string name="modules">Modules</string>
+    <string name="module_enabled">Module enabled</string>
+    <string name="module_disabled">Module disabled</string>
+    <string name="no_modules_found">No modules found</string>
+    <string name="search_modules">Search modules...</string>
 </resources>
