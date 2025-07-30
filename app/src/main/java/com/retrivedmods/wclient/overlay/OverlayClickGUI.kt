@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.overlay
 
+// In OverlayClickGUI.kt, in the import section
+import androidx.compose.material.icons.filled.Close // Add this import
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
