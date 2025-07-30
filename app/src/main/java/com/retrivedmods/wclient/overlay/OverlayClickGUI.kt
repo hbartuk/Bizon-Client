@@ -1,5 +1,7 @@
 package com.retrivedmods.wclient.overlay
 
+import android.content.Context
+import android.graphics.Point
 import android.os.Build
 import android.view.WindowManager
 import androidx.compose.animation.*
@@ -92,7 +94,7 @@ class OverlayClickGUI : OverlayWindow() {
                         radius = 1000f
                     )
                 )
-                .clickable { hide() }
+                .clickable { isVisible = false }
         ) {
             // Главная панель
             Card(
@@ -136,7 +138,7 @@ class OverlayClickGUI : OverlayWindow() {
 
             // Кнопка закрытия
             IconButton(
-                onClick = { hide() },
+                onClick = { isVisible = false },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(30.dp)
