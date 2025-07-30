@@ -22,7 +22,17 @@ abstract class Module(
     private var _isEnabledState by mutableStateOf(defaultEnabled)
     open var isEnabled: Boolean
         get() = _isEnabledState
-        set(value) { if (_isEnabledState != value) _isEnabledState = value }
+        set(value) {
+            if (_isEnabledState != value) {
+                _isEnabledState = value
+                // Когда isEnabled меняется через сеттер, вызываем соответствующие методы
+                if (_isEnabledState) {
+                    onEnabled()
+                } else {
+                    onDisabled()
+                }
+            }
+        }
 
     val isSessionCreated: Boolean
         get() = ::session.isInitialized
@@ -46,8 +56,15 @@ abstract class Module(
 
     open fun initialize() {
         runOnSession { it.displayClientMessage("DEBUG: Модуль ${this.name} проинициализирован.") }
-        if (isEnabled) onEnabled()
+        // Если модуль включен по умолчанию, он вызовет onEnabled() через сеттер isEnabled
+        // if (isEnabled) onEnabled() // Эта строка теперь может быть лишней, так как сеттер isEnabled это делает
     }
+
+    // --- Вот этот метод нужно добавить! ---
+    fun toggle() {
+        isEnabled = !isEnabled // Это вызовет сеттер isEnabled, который в свою очередь вызовет onEnabled/onDisabled
+    }
+    // ------------------------------------
 
     open fun onEnabled() { sendToggleMessage(true) }
     open fun onDisabled() { sendToggleMessage(false) }
@@ -70,6 +87,10 @@ abstract class Module(
 
     open fun fromJson(jsonElement: JsonElement) {
         if (jsonElement is JsonObject) {
+            // При загрузке из JSON, напрямую обновляем _isEnabledState, чтобы не вызывать onEnabled/onDisabled
+            // во время инициализации, а только когда пользователь реально его переключает.
+            // Если тебе нужно вызывать onEnabled/onDisabled при загрузке,
+            // тогда вызывай isEnabled = ... вместо _isEnabledState = ...
             _isEnabledState = (jsonElement["state"] as? JsonPrimitive)?.booleanOrNull ?: _isEnabledState
             (jsonElement["values"] as? JsonObject)?.forEach { (key, elem) ->
                 getValue(key)?.runCatching { fromJson(elem) }?.onFailure { getValue(key)?.reset() }
