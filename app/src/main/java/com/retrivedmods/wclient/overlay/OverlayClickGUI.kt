@@ -16,8 +16,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings // Добавляем импорт для иконки настроек
 import androidx.compose.material3.*
-import androidx.compose.runtime.* // Важно: убедитесь, что здесь есть все нужные импорты для Compose
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.ModuleManager
-import com.retrivedmods.wclient.game.Module // Важно: Убедитесь, что класс Module импортирован
+import com.retrivedmods.wclient.game.Module
+import com.retrivedmods.wclient.game.BooleanValue // Предполагаем наличие этих классов Value
+import com.retrivedmods.wclient.game.NumberValue
+import com.retrivedmods.wclient.game.ModeValue
 import kotlinx.coroutines.delay
 
 class OverlayClickGUI : OverlayWindow() {
@@ -54,13 +59,13 @@ class OverlayClickGUI : OverlayWindow() {
         get() = _layoutParams
 
     private var selectedModuleCategory by mutableStateOf(ModuleCategory.Combat)
-    private var searchQuery by mutableStateOf("")
+    // searchQuery больше не нужен, так как убираем поиск
+    // private var searchQuery by mutableStateOf("")
 
     @Composable
     override fun Content() {
         val context = LocalContext.current
 
-        // Анимация появления
         var isVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -79,12 +84,9 @@ class OverlayClickGUI : OverlayWindow() {
                 context = context,
                 selectedCategory = selectedModuleCategory,
                 onCategorySelected = { selectedModuleCategory = it },
-                searchQuery = searchQuery,
-                onSearchQueryChanged = { searchQuery = it },
+                // searchQuery больше не передается
+                // onSearchQueryChanged = { searchQuery = it },
                 onDismiss = {
-                    // Используйте ваш OverlayManager для скрытия окна
-                    // Если OverlayManager.dismissOverlayWindow - это ваш способ, оставьте его
-                    // Если нет, замените на правильный способ закрытия OverlayWindow
                     OverlayManager.dismissOverlayWindow(this@OverlayClickGUI)
                 }
             )
@@ -97,8 +99,9 @@ class OverlayClickGUI : OverlayWindow() {
         context: Context,
         selectedCategory: ModuleCategory,
         onCategorySelected: (ModuleCategory) -> Unit,
-        searchQuery: String,
-        onSearchQueryChanged: (String) -> Unit,
+        // searchQuery и onSearchQueryChanged удалены из параметров
+        // searchQuery: String,
+        // onSearchQueryChanged: (String) -> Unit,
         onDismiss: () -> Unit
     ) {
         val gradientBackground = Brush.verticalGradient(
@@ -113,7 +116,7 @@ class OverlayClickGUI : OverlayWindow() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradientBackground)
-                .clickable { onDismiss() } // Закрытие меню по клику вне карты
+                .clickable { onDismiss() }
         ) {
             Card(
                 modifier = Modifier
@@ -121,7 +124,7 @@ class OverlayClickGUI : OverlayWindow() {
                     .fillMaxHeight(0.9f)
                     .align(Alignment.Center)
                     .shadow(20.dp, shape = MaterialTheme.shapes.large)
-                    .clickable(enabled = false) { }, // Предотвращает закрытие по клику внутри карты
+                    .clickable(enabled = false) { },
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
                 ),
@@ -157,7 +160,8 @@ class OverlayClickGUI : OverlayWindow() {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Поиск
+                    // --- Поле поиска удалено ---
+                    /*
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChanged,
@@ -172,8 +176,9 @@ class OverlayClickGUI : OverlayWindow() {
                             unfocusedLabelColor = Color.Gray
                         )
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
+                    */
+                    // ----------------------------
 
                     // Категории
                     LazyRow(
@@ -191,12 +196,11 @@ class OverlayClickGUI : OverlayWindow() {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Модули
+                    // Модули (теперь без фильтрации по поиску)
                     val filteredModules = ModuleManager.modules
                         .filter { module ->
-                            module.category == selectedCategory &&
-                                    (searchQuery.isEmpty() ||
-                                     module.name.contains(searchQuery, ignoreCase = true))
+                            module.category == selectedCategory
+                            // && (searchQuery.isEmpty() || module.name.contains(searchQuery, ignoreCase = true)) // Удалено
                         }
 
                     LazyColumn(
@@ -244,7 +248,7 @@ class OverlayClickGUI : OverlayWindow() {
     }
 
     @Composable
-    private fun ModuleCard(module: Module) { // Убедитесь, что здесь используется правильный тип Module
+    private fun ModuleCard(module: Module) {
         val borderColor by animateColorAsState(
             targetValue = if (module.isEnabled) Color.Green else Color.Transparent,
             label = "moduleBorder"
@@ -254,7 +258,7 @@ class OverlayClickGUI : OverlayWindow() {
             modifier = Modifier
                 .fillMaxWidth()
                 .border(2.dp, borderColor, MaterialTheme.shapes.medium)
-                .clickable { module.toggle() }, // Здесь вызывается toggle()
+                .clickable { module.toggle() }, // Основной клик по-прежнему включает/выключает
             colors = CardDefaults.cardColors(
                 containerColor = if (module.isEnabled)
                     Color.Green.copy(alpha = 0.1f)
@@ -284,14 +288,187 @@ class OverlayClickGUI : OverlayWindow() {
                     )
                 }
 
-                Switch(
-                    checked = module.isEnabled,
-                    onCheckedChange = { module.toggle() }, // И здесь тоже
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Green,
-                        checkedTrackColor = Color.Green.copy(alpha = 0.5f)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Кнопка для открытия окна настроек
+                    // Отображаем только если у модуля есть настраиваемые значения
+                    if (module.values.isNotEmpty()) {
+                        IconButton(
+                            onClick = { module.isSettingsOpen = !module.isSettingsOpen }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Настройки",
+                                tint = if (module.isSettingsOpen) Color.Cyan else Color.Gray
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = module.isEnabled,
+                        onCheckedChange = { module.toggle() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Green,
+                            checkedTrackColor = Color.Green.copy(alpha = 0.5f)
+                        )
                     )
-                )
+                }
+            }
+        }
+
+        // --- НОВОЕ: Отображение окна настроек модуля ---
+        // Появляется только если модуль включен И isSettingsOpen=true
+        AnimatedVisibility(
+            visible = module.isEnabled && module.isSettingsOpen,
+            enter = fadeIn() + expandVertically(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            // Вызываем новый Composable для окна настроек
+            ModuleSettingsWindow(module = module)
+        }
+    }
+
+    // --- НОВЫЙ КОМПОНЕНТ: Окно настроек для отдельного модуля ---
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun ModuleSettingsWindow(module: Module) {
+        val gradientBackground = Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF282A36), // Темный фон
+                Color(0xFF383A49)
+            )
+        )
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f) // Меньший размер по ширине
+                .padding(horizontal = 16.dp, vertical = 8.dp) // Отступы от ModuleCard
+                .shadow(10.dp, shape = MaterialTheme.shapes.medium)
+                .clickable(enabled = false) { }, // Предотвращаем закрытие по клику
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF282A36).copy(alpha = 0.9f)
+            ),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Заголовок окна настроек (название модуля)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${module.name} Настройки",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    IconButton(onClick = { module.isSettingsOpen = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Закрыть", tint = Color.Gray)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Отображение подмодулей (Values)
+                if (module.values.isEmpty()) {
+                    Text(
+                        text = "У этого модуля нет настроек.",
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        module.values.forEach { value ->
+                            when (value) {
+                                is BooleanValue -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = value.name, color = Color.White)
+                                        Switch(
+                                            checked = value.value,
+                                            onCheckedChange = { value.value = it }
+                                        )
+                                    }
+                                }
+                                is NumberValue -> {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Text(text = "${value.name}: ${value.value}", color = Color.White)
+                                        Slider(
+                                            value = value.value.toFloat(),
+                                            onValueChange = { value.value = it },
+                                            valueRange = value.min.toFloat()..value.max.toFloat(),
+                                            steps = (value.max.toInt() - value.min.toInt() - 1), // Для целых чисел
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = Color.Cyan,
+                                                activeTrackColor = Color.Cyan
+                                            )
+                                        )
+                                    }
+                                }
+                                is ModeValue -> {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Text(text = "${value.name}: ${value.value}", color = Color.White)
+                                        // Простой DropdownMenu для выбора режима
+                                        var expanded by remember { mutableStateOf(false) }
+                                        ExposedDropdownMenuBox(
+                                            expanded = expanded,
+                                            onExpandedChange = { expanded = !expanded },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            OutlinedTextField(
+                                                value = value.value,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Режим", color = Color.Gray) },
+                                                trailingIcon = {
+                                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                                },
+                                                modifier = Modifier
+                                                    .menuAnchor()
+                                                    .fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedTextColor = Color.White,
+                                                    unfocusedTextColor = Color.White,
+                                                    focusedBorderColor = Color.Cyan,
+                                                    unfocusedBorderColor = Color.Gray,
+                                                    focusedLabelColor = Color.Cyan,
+                                                    unfocusedLabelColor = Color.Gray
+                                                )
+                                            )
+                                            ExposedDropdownMenu(
+                                                expanded = expanded,
+                                                onDismissRequest = { expanded = false }
+                                            ) {
+                                                value.modes.forEach { mode ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(mode, color = Color.White) },
+                                                        onClick = {
+                                                            value.value = mode
+                                                            expanded = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Добавь другие типы Value (например, StringValue, EnumValue)
+                                // и соответствующие им Compose компоненты
+                                else -> {
+                                    Text(text = "${value.name}: Неизвестный тип", color = Color.Red)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
