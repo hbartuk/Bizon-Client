@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape as ComposeRoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -40,8 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -108,7 +106,7 @@ class OverlayClickGUI : OverlayWindow() {
                                 Color(0xFF0A0A0A)
                             )
                         ),
-                        RoundedCornerShape(20.dp)
+                        ComposeRoundedCornerShape(20.dp)
                     )
                     .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {}
             ) {
@@ -145,12 +143,12 @@ class OverlayClickGUI : OverlayWindow() {
                             Color(0x35FF0080)
                         )
                     ),
-                    RoundedCornerShape(15.dp)
+                    ComposeRoundedCornerShape(15.dp)
                 )
                 .border(
                     1.5.dp,
                     Color.White.copy(alpha = 0.15f),
-                    RoundedCornerShape(15.dp)
+                    ComposeRoundedCornerShape(15.dp)
                 )
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -233,12 +231,12 @@ class OverlayClickGUI : OverlayWindow() {
                                 Color(0x12FFFFFF)
                             )
                         ),
-                        RoundedCornerShape(15.dp)
+                        ComposeRoundedCornerShape(15.dp)
                     )
                     .border(
                         1.dp,
                         Color.White.copy(alpha = 0.1f),
-                        RoundedCornerShape(15.dp)
+                        ComposeRoundedCornerShape(15.dp)
                     )
                     .padding(16.dp)
             ) {
@@ -274,12 +272,12 @@ class OverlayClickGUI : OverlayWindow() {
                             Color(0x25FFFFFF)
                         )
                     ),
-                    RoundedCornerShape(15.dp)
+                    ComposeRoundedCornerShape(15.dp)
                 )
                 .border(
                     1.dp,
                     Color.White.copy(alpha = 0.12f),
-                    RoundedCornerShape(15.dp)
+                    ComposeRoundedCornerShape(15.dp)
                 )
                 .padding(vertical = 12.dp, horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -477,9 +475,9 @@ class OverlayClickGUI : OverlayWindow() {
                                 Color(0x208000FF)
                             )
                         ),
-                        RoundedCornerShape(12.dp)
+                        ComposeRoundedCornerShape(12.dp)
                     )
-                    .border(1.dp, Color.White.copy(0.15f), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color.White.copy(0.15f), ComposeRoundedCornerShape(12.dp))
                     .padding(16.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -624,7 +622,7 @@ class OverlayClickGUI : OverlayWindow() {
             colors = CardDefaults.cardColors(
                 containerColor = Color.Transparent
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = ComposeRoundedCornerShape(12.dp)
         ) {
             Box(
                 modifier = Modifier
@@ -636,12 +634,12 @@ class OverlayClickGUI : OverlayWindow() {
                                 Color(0x15FFFFFF)
                             )
                         ),
-                        RoundedCornerShape(12.dp)
+                        ComposeRoundedCornerShape(12.dp)
                     )
                     .border(
                         1.dp,
                         Color.White.copy(alpha = 0.15f),
-                        RoundedCornerShape(12.dp)
+                        ComposeRoundedCornerShape(12.dp)
                     )
                     .padding(12.dp)
             ) {

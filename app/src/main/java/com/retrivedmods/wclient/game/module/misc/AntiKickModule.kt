@@ -34,6 +34,15 @@ class AntiKickModule : Module(
     private var preventTimeout by boolValue("⏰ Предотвращать таймаут", true)
 
     private var movementInterval by intValue("⏱️ Интервал движения (мс)", 8000, 500..15000)
+    
+    // Дополнительные переменные для функционала
+    private var isPerformingAntiAFK = false
+    private var lastMovementTime = 0L
+    private var reconnectAttempts = 0
+    private var lastHeartbeatTime = 0L
+    private val maxReconnectAttempts = 3
+    private val reconnectDelay = 5000
+    private val heartbeatInterval = 30000L
     private var movementDuration by intValue("⏲️ Длительность движения (мс)", 200, 50..1000)lue("Длительность движения (мс)", 500, 100..3000)
 
 
