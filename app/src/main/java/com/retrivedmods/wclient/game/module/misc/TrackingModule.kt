@@ -97,7 +97,8 @@ class TrackingModule : Module("tracking", ModuleCategory.Visual) {
         if (packet is AddPlayerPacket && packet.runtimeEntityId == targetPlayerRuntimeId) {
             modifyPlayerAppearanceMetadata(packet.metadata)
         } else if (packet is SetEntityDataPacket && packet.runtimeEntityId == targetPlayerRuntimeId) {
-            modifyPlayerAppearanceMetadata(packet.entityData) // <--- ИСПРАВЛЕНИЕ: Теперь 'entityData' должно быть доступно
+            // Пока что закомментируем эту строку, так как нужно правильно получить метаданные
+                    // modifyPlayerAppearanceMetadata(packet.entityData)
         }
     }
 
