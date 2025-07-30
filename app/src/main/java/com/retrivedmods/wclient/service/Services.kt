@@ -2,7 +2,7 @@
 
 package com.retrivedmods.wclient.service
 
-import android.content.Context
+import android.content.Context // <--- Убедитесь, что этот импорт есть
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -96,15 +96,15 @@ object Services {
                         captureModeModel.serverPort
                     )
                 ) {
-                    // Создаем GameSession с текущей MuCuteRelaySession
-                    val session = GameSession(this) // 'this' здесь - это MuCuteRelaySession
+                    // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Создаем GameSession с MuCuteRelaySession И Context ***
+                    val session = GameSession(this, context) // <--- ВОТ ЗДЕСЬ ИСПРАВЛЕНО: 'this' (MuCuteRelaySession) и 'context'
 
                     // Добавляем GameSession как слушатель для MuCuteRelaySession
                     listeners.add(session)
 
-                    // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Инициализация ModuleManager с новой GameSession ***
+                    // Инициализация ModuleManager с новой GameSession
                     Log.d("Services", "Calling ModuleManager.initialize() with new GameSession.")
-                    ModuleManager.initialize(session) // <--- ВОТ РЕШЕНИЕ ПРОБЛЕМЫ
+                    ModuleManager.initialize(session)
 
                     // Добавляем остальные слушатели
                     listeners.add(AutoCodecPacketListener(this))
@@ -124,7 +124,7 @@ object Services {
     private fun off() {
         thread(name = "MuCuteRelayThread") {
             ModuleManager.saveConfig()
-            // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Сброс сессии в ModuleManager при отключении ***
+            // Сброс сессии в ModuleManager при отключении
             Log.d("Services", "Setting ModuleManager.session to null on disconnect.")
             ModuleManager.session = null
 
@@ -144,8 +144,4 @@ object Services {
                 .show()
         }
     }
-
-    // *** УДАЛЕННЫЙ МЕТОД: initModules больше не нужен ***
-    // Старый метод initModules был удален, так как его логика
-    // теперь интегрирована непосредственно в блок captureMuCuteRelay.
 }
