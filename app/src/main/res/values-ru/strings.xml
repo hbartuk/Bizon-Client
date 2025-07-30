@@ -1,11 +1,28 @@
 
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">🔥 Bizon Client</string>
+    <string name="action_settings">⚙️ Настройки</string>
+    <string name="recommended_version">📋 Рекомендуемая версия: %1$s</string>
+    <string name="client_status_active">🟢 Клиент активен</string>
+    <string name="client_status_inactive">🔴 Клиент неактивен</string>
+    <string name="start_client">🚀 Запустить клиент</string>
+    <string name="stop_client">🛑 Остановить клиент</string>
+    <string name="modules">📦 Модули</string>
+    <string name="settings">⚙️ Настройки</string>
+    <string name="about">ℹ️ О программе</string>
+    <string name="combat_modules">⚔️ Боевые модули</string>
+    <string name="movement_modules">🏃 Модули движения</string>
+    <string name="visual_modules">👁️ Визуальные модули</string>
+    <string name="world_modules">🌍 Модули мира</string>
+    <string name="player_modules">👤 Модули игрока</string>
+    <string name="misc_modules">🔧 Разные модули</string>
     <string name="home">Главная</string>
     <string name="what_is_this">Что это?</string>
     <string name="introduction">WClient - это инструмент для Minecraft Bedrock, использующий технологию MITM (атака посредника) для включения расширенных игровых функций без изменения памяти игры.</string>
+    <string name="backend" translatable="false">WClientRelay</string>
     <string name="backend_introduction">Легко настройте MITM конфигурацию всего за несколько шагов.</string>
-    <string name="recommended_version">Рекомендуемая версия: %s</string>
+    <string name="minecraft" translatable="false">Minecraft</string>
     <string name="capturing_game_packets">Захват игровых пакетов...</string>
     <string name="stop">Остановить</string>
     <string name="overlay_permission_denied">Разрешение на наложение отклонено</string>
@@ -33,9 +50,7 @@
     <string name="select">Выбрать</string>
     <string name="unselect">Отменить Выбор</string>
     <string name="has_been_selected">(Выбрано)</string>
-    <string name="about">О Программе</string>
     <string name="tutorial">Руководство</string>
-    <string name="settings">Настройки</string>
     <string name="header_introduction">Присоединяйтесь к нашему официальному Discord сообществу: discord.gg/wclient</string>
     <string name="copyright">© 2024-2025 Команда WClient. Все права защищены.</string>
     <string name="how_do_i_switch_login_mode">Как переключить режим входа?</string>
@@ -55,7 +70,6 @@
     <string name="effect">Эффект</string>
     <string name="login_in">Вошел как %s</string>
     <string name="fetch_account_successfully">Аккаунт успешно получен</string>
-    <string name="modules">Модули</string>
     <string name="module_enabled">Модуль включен</string>
     <string name="module_disabled">Модуль выключен</string>
     <string name="no_modules_found">Модули не найдены</string>
