@@ -1,4 +1,3 @@
-
 package com.retrivedmods.wclient.overlay
 
 import android.content.Context
@@ -18,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.* // Важно: убедитесь, что здесь есть все нужные импорты для Compose
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.ModuleManager
+import com.retrivedmods.wclient.game.Module // Важно: Убедитесь, что класс Module импортирован
 import kotlinx.coroutines.delay
 
 class OverlayClickGUI : OverlayWindow() {
@@ -82,6 +82,9 @@ class OverlayClickGUI : OverlayWindow() {
                 searchQuery = searchQuery,
                 onSearchQueryChanged = { searchQuery = it },
                 onDismiss = {
+                    // Используйте ваш OverlayManager для скрытия окна
+                    // Если OverlayManager.dismissOverlayWindow - это ваш способ, оставьте его
+                    // Если нет, замените на правильный способ закрытия OverlayWindow
                     OverlayManager.dismissOverlayWindow(this@OverlayClickGUI)
                 }
             )
@@ -110,7 +113,7 @@ class OverlayClickGUI : OverlayWindow() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradientBackground)
-                .clickable { onDismiss() }
+                .clickable { onDismiss() } // Закрытие меню по клику вне карты
         ) {
             Card(
                 modifier = Modifier
@@ -118,7 +121,7 @@ class OverlayClickGUI : OverlayWindow() {
                     .fillMaxHeight(0.9f)
                     .align(Alignment.Center)
                     .shadow(20.dp, shape = MaterialTheme.shapes.large)
-                    .clickable(enabled = false) { },
+                    .clickable(enabled = false) { }, // Предотвращает закрытие по клику внутри карты
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
                 ),
@@ -141,7 +144,7 @@ class OverlayClickGUI : OverlayWindow() {
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        
+
                         Button(
                             onClick = onDismiss,
                             colors = ButtonDefaults.buttonColors(
@@ -164,7 +167,9 @@ class OverlayClickGUI : OverlayWindow() {
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             focusedBorderColor = Color.Cyan,
-                            unfocusedBorderColor = Color.Gray
+                            unfocusedBorderColor = Color.Gray,
+                            focusedLabelColor = Color.Cyan,
+                            unfocusedLabelColor = Color.Gray
                         )
                     )
 
@@ -190,7 +195,7 @@ class OverlayClickGUI : OverlayWindow() {
                     val filteredModules = ModuleManager.modules
                         .filter { module ->
                             module.category == selectedCategory &&
-                                    (searchQuery.isEmpty() || 
+                                    (searchQuery.isEmpty() ||
                                      module.name.contains(searchQuery, ignoreCase = true))
                         }
 
@@ -217,7 +222,7 @@ class OverlayClickGUI : OverlayWindow() {
             targetValue = if (isSelected) Color.Cyan else Color.Gray.copy(alpha = 0.3f),
             label = "chipBackground"
         )
-        
+
         val textColor by animateColorAsState(
             targetValue = if (isSelected) Color.Black else Color.White,
             label = "chipText"
@@ -239,7 +244,7 @@ class OverlayClickGUI : OverlayWindow() {
     }
 
     @Composable
-    private fun ModuleCard(module: com.retrivedmods.wclient.game.Module) {
+    private fun ModuleCard(module: Module) { // Убедитесь, что здесь используется правильный тип Module
         val borderColor by animateColorAsState(
             targetValue = if (module.isEnabled) Color.Green else Color.Transparent,
             label = "moduleBorder"
@@ -249,11 +254,11 @@ class OverlayClickGUI : OverlayWindow() {
             modifier = Modifier
                 .fillMaxWidth()
                 .border(2.dp, borderColor, MaterialTheme.shapes.medium)
-                .clickable { module.toggle() },
+                .clickable { module.toggle() }, // Здесь вызывается toggle()
             colors = CardDefaults.cardColors(
-                containerColor = if (module.isEnabled) 
-                    Color.Green.copy(alpha = 0.1f) 
-                else 
+                containerColor = if (module.isEnabled)
+                    Color.Green.copy(alpha = 0.1f)
+                else
                     Color.Gray.copy(alpha = 0.1f)
             ),
             shape = MaterialTheme.shapes.medium
@@ -278,10 +283,10 @@ class OverlayClickGUI : OverlayWindow() {
                         color = Color.Gray
                     )
                 }
-                
+
                 Switch(
                     checked = module.isEnabled,
-                    onCheckedChange = { module.toggle() },
+                    onCheckedChange = { module.toggle() }, // И здесь тоже
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.Green,
                         checkedTrackColor = Color.Green.copy(alpha = 0.5f)
