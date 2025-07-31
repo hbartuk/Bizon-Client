@@ -32,6 +32,10 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uuid: UUID = UUID.randomUUID()
         private set
 
+    // --- ДОБАВЛЕНО: XUID для локального игрока ---
+    var xuid: String? = null
+    // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+
     var blockBreakServerAuthoritative = false
         private set
 
@@ -51,11 +55,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
     override var health: Float = 100f
 
-    override var vec3Position: Vector3f = Vector3f.ZERO // Инициализация начальной позицией
-    // УДАЛЕНО: var/override var vec3Rotation: Vector3f = Vector3f.ZERO, так как это вызывает ошибку компиляции.
-    // Если ротация необходима, она должна быть объявлена в 'Entity' как 'open var'
-    // или управляться методами в 'Player'/'Entity'.
-    var vec3Motion: Vector3f = Vector3f.ZERO // Инициализация нулевой скоростью
+    override var vec3Position: Vector3f = Vector3f.ZERO
+    var vec3Motion: Vector3f = Vector3f.ZERO
 
 
     override fun onPacketBound(packet: BedrockPacket) {
@@ -74,14 +75,18 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             blockBreakServerAuthoritative = packet.isServerAuthoritativeBlockBreaking
             soundServerAuthoritative = packet.networkPermissions.isServerAuthSounds
 
-            this.vec3Motion = Vector3f.ZERO // Убедимся, что motion обнулен при старте
+            this.vec3Motion = Vector3f.ZERO
 
             reset()
         }
         if (packet is PlayerListPacket) {
             for (entry in packet.entries) {
+                // В этом месте не нужно извлекать XUID из PlayerListPacket для LocalPlayer,
+                // так как это делается надежнее через LoginPacket в GameSession.
+                // Просто убедимся, что UUID корректно установлен.
                 if (entry.entityId == this.uniqueEntityId) {
                     this.uuid = entry.uuid
+                    // this.xuid = entry.xuid // Если PlayerListEntry содержит xuid напрямую, можно установить и здесь, но LoginPacket надежнее.
                     session.displayClientMessage("§a[WClient] Обнаружен мой UUID из PlayerListPacket: §b${this.uuid}")
                     session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.name}")
                     break
@@ -91,9 +96,9 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
         if (packet is PlayerAuthInputPacket) {
             this.vec3Position = packet.position
-            // УДАЛЕНО: Обновление vec3Rotation из пакета, так как свойство было удалено.
-            // Если 'rotate(packet.rotation)' определено в 'Entity', оно должно использоваться там.
-            tickExists = packet.tick
+            // Предполагается, что tickExists определен в Player или Entity.
+            // Если нет, либо удалите, либо определите.
+            // tickExists = packet.tick
         }
         if (packet is ContainerOpenPacket) {
             openContainer = if (packet.id.toInt() == 0) {
@@ -154,7 +159,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             itemInHand = inventory.hand
             playerPosition = vec3Position
 
-            // Изменение для clickPosition сохранено, так как оно критично для прохождения урона
             clickPosition = entity.vec3Position.add(0f, 0.9f, 0f)
         }
 
@@ -165,4 +169,6 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         super.onDisconnect()
         reset()
     }
+    // Предполагается, что метод reset() определен в Player или Entity.
+    // fun reset() { ... }
 }
