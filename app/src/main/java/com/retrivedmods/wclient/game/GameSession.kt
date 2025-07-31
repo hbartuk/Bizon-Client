@@ -4,44 +4,46 @@ import android.content.Context
 import android.util.Log
 import com.retrivedmods.wclient.game.entity.LocalPlayer
 import com.retrivedmods.wclient.game.world.Level
-import com.mucheng.mucute.relay.MuCuteRelaySession // ПУТЬ К ВАШЕЙ РЕАЛИЗАЦИИ ПРОКСИ-СЕССИИ!
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin
-import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin.TrustedSkinFlag
+// import com.mucheng.mucute.relay.MuCuteRelaySession // ЗАКОММЕНТИРУЙТЕ ИЛИ УДАЛИТЕ, пока не нужен
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket
-import org.cloudburstmc.protocol.bedrock.packet.LoginPacket
-import com.google.gson.JsonParser
-import com.retrivedmods.wclient.utils.base64Decode // Предполагаем, что у вас есть такая утилита в WClient
-import java.io.ByteArrayOutputStream
+import org.cloudburstmc.protocol.bedrock.packet.LoginPacket // Пока что оставим, но логика будет удалена
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // Пока что оставим, но логика будет удалена
+// УДАЛИТЕ ВСЕ ИМПОРТЫ СВЯЗАННЫЕ СО СКИНОМ И PlayerListEntry
+// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
+// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin
+// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin.TrustedSkinFlag
+// import com.google.gson.JsonParser // УДАЛИТЕ, если не используется
+// import com.retrivedmods.wclient.utils.base64Decode // УДАЛИТЕ, если не используется
+// import java.io.ByteArrayOutputStream // УДАЛИТЕ, если не используется
+// import java.nio.charset.StandardCharsets // УДАЛИТЕ, если не используется
 
-// Если у вас есть другой интерфейс для обработчиков пакетов,
-// адаптируйте его. Для простоты, оставим эту заглушку.
+// --- ИНТЕРФЕЙСЫ ---
+// УДАЛИТЕ файл ComposedPacketHandler.kt, если он дублирует этот интерфейс.
+// Если ComposedPacketHandler.kt нужен, оставьте его там, а отсюда удалите это определение.
 interface ComposedPacketHandler {
     fun beforePacketBound(packet: BedrockPacket): Boolean
     fun afterPacketBound(packet: BedrockPacket)
     fun onDisconnect(reason: String)
 }
 
-// ЭТОТ ИНТЕРФЕЙС НУЖЕН ВАШЕМУ ПРОКСИ (MuCuteRelaySession), ЧТОБЫ ВЫЗЫВАТЬ МЕТОДЫ GameSession
-// Вам НУЖНО убедиться, что ваша MuCuteRelaySession (или как у вас там назван ваш прокси-сессия)
-// вызывает эти методы (onPacketInbound, onPacketOutbound) для ваших слушателей.
-interface IWClientPacketListener { // Изменил название, чтобы не путать с dev.sora.relay
+// Этот интерфейс предназначен для ВАШЕГО ПРОКСИ (MuCuteRelaySession).
+// Мы сделаем его минимальным.
+interface IProxyPacketListener { // Переименовал, чтобы было яснее
     fun onPacketOutbound(packet: BedrockPacket): Boolean
-    fun onPacketPostOutbound(packet: BedrockPacket)
     fun onPacketInbound(packet: BedrockPacket): Boolean
-    fun onPacketPostInbound(packet: BedrockPacket)
     fun onDisconnect(isClient: Boolean, reason: String)
 }
 
-
+// --- ОСНОВНОЙ КЛАСС GameSession ---
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(
-    // Здесь должна быть ссылка на ваш класс, который управляет перехватом пакетов
-    val muCuteRelaySession: MuCuteRelaySession,
+    // Здесь должна быть ссылка на ваш класс, который управляет перехватом пакетов.
+    // Если ваш класс называется иначе, измените тип здесь.
+    // Если у вас нет такого класса, то это будет основной проблемой.
+    val proxySession: Any, // ЗАМЕНИТЕ MuCuteRelaySession на Any, чтобы избежать ошибок, пока не разберемся
     val context: Context
-) : ComposedPacketHandler, IWClientPacketListener { // Используем ваш интерфейс
+) : ComposedPacketHandler, IProxyPacketListener {
 
     val localPlayer = LocalPlayer(this)
     val level = Level(this)
@@ -50,87 +52,63 @@ class GameSession(
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     }
 
-    // --- Ваша кастомная текстура скина для Bizon Client ---
-    // ПОМЕСТИТЕ ВАШ PNG-ФАЙЛ СКИНА В app/src/main/res/raw/my_bizon_skin.png
-    private val customBizonSkinData: ByteArray by lazy {
-        try {
-            context.resources.openRawResource(com.retrivedmods.wclient.R.raw.my_bizon_skin).use { inputStream ->
-                val buffer = ByteArrayOutputStream()
-                var nRead: Int
-                val data = ByteArray(16384)
-                while (inputStream.read(data, 0, data.size).also { nRead = it } != -1) {
-                    buffer.write(data, 0, nRead)
-                }
-                Log.d("GameSession", "Загружены данные кастомного скина, размер: ${buffer.size()} байт")
-                buffer.toByteArray()
-            }
-        } catch (e: Exception) {
-            Log.e("GameSession", "Ошибка при загрузке кастомного скина Bizon: ${e.message}", e)
-            ByteArray(0) // Возвращаем пустой массив, если ошибка
-        }
+    // --- Временно удаляем всю логику скинов ---
+    // private val customBizonSkinData: ByteArray by lazy { ... }
+    // private val CUSTOM_SKIN_GEOMETRY_CLASSIC = ...
+    // private val CUSTOM_SKIN_GEOMETRY_SLIM = ...
+
+
+    // --- Реализация методов ComposedPacketHandler ---
+    override fun beforePacketBound(packet: BedrockPacket): Boolean {
+        // Мы сделаем это максимально простым, чтобы скомпилировалось.
+        // Заглушка для ModuleManager
+        // val interceptablePacket = InterceptablePacketImpl(packet)
+        // for (module in ModuleManager.modules) {
+        //     module.beforePacketBound(interceptablePacket)
+        //     if (interceptablePacket.isIntercepted) {
+        //         return false
+        //     }
+        // }
+        return true
     }
 
-    private val CUSTOM_SKIN_GEOMETRY_CLASSIC = """
-        {"geometry":{"default":"geometry.humanoid.custom"}}
-    """.trimIndent()
+    override fun afterPacketBound(packet: BedrockPacket) {
+        // Заглушка для ModuleManager
+        // for (module in ModuleManager.modules) {
+        //     module.afterPacketBound(packet)
+        // }
+    }
 
-    private val CUSTOM_SKIN_GEOMETRY_SLIM = """
-        {"geometry":{"default":"geometry.humanoid.customSlim"}}
-    """.trimIndent()
 
-
-    // --- Реализация методов IWClientPacketListener ---
-
+    // --- Реализация методов IProxyPacketListener ---
     override fun onPacketOutbound(packet: BedrockPacket): Boolean {
-        // Логика обработки исходящих пакетов (клиент -> прокси -> сервер)
-        // Здесь можно подменить скин, который отправляется на сервер,
-        // если это необходимо (например, для других игроков).
-        // Но для _вашего_ клиента нужно менять входящие пакеты.
-
-        val interceptablePacket = InterceptablePacketImpl(packet) // Предполагается, что InterceptablePacketImpl существует
-        for (module in ModuleManager.modules) { // Предполагается, что ModuleManager существует
-            module.beforePacketBound(interceptablePacket)
-            if (interceptablePacket.isIntercepted) {
-                return false // Пакет перехвачен модулем
-            }
-        }
-        return true // Разрешить отправку пакета
+        // Здесь пока нет логики. Просто пропускаем пакет.
+        return true
     }
 
-    override fun onPacketPostOutbound(packet: BedrockPacket) {
-        for (module in ModuleManager.modules) {
-            module.afterPacketBound(packet)
-        }
-    }
-
-    // ЭТО КЛЮЧЕВОЙ МЕТОД ДЛЯ ПОДМЕНЫ СКИНА ДЛЯ ВАШЕГО КЛИЕНТА
     override fun onPacketInbound(packet: BedrockPacket): Boolean {
-        // Логика обработки входящих пакетов (сервер -> прокси -> клиент)
-        when (packet) {
-            is PlayerListPacket -> handlePlayerListPacket(packet) // МОДИФИКАЦИЯ СКИНА ЗДЕСЬ
-            is LoginPacket -> handleLoginPacket(packet)         // ПОЛУЧЕНИЕ XUID ЗДЕСЬ
-            // Добавьте другие обработки пакетов, если есть
-        }
-        return true // Всегда возвращаем true, чтобы МОДИФИЦИРОВАННЫЙ пакет ДОШЁЛ до клиента
-    }
-
-    override fun onPacketPostInbound(packet: BedrockPacket) {
-        // Логика после обработки входящего пакета
+        // Здесь пока нет логики. Просто пропускаем пакет.
+        // Удалены вызовы handlePlayerListPacket и handleLoginPacket
+        return true
     }
 
     override fun onDisconnect(isClient: Boolean, reason: String) {
         localPlayer.onDisconnect()
         level.onDisconnect()
 
-        // Вызываем onDisconnect для модулей
-        for (module in ModuleManager.modules) {
-            module.onDisconnect(reason)
-        }
+        // Заглушка для ModuleManager
+        // for (module in ModuleManager.modules) {
+        //     module.onDisconnect(reason)
+        // }
         Log.i("GameSession", "Отключено. Клиент: $isClient, Причина: $reason")
     }
 
     // --- Вспомогательные методы GameSession ---
 
+    /**
+     * Отправляет сообщение во внутриигровой чат клиента.
+     * Мы добавим обертки для clientBound/serverBound, чтобы LocalPlayer мог их вызывать.
+     */
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
         val textPacket = TextPacket()
         textPacket.type = type
@@ -140,86 +118,29 @@ class GameSession(
         textPacket.xuid = ""
         textPacket.platformChatId = ""
         textPacket.filteredMessage = ""
-        muCuteRelaySession.clientBound(textPacket) // Отправляем пакет клиенту через сессию прокси
+        // Здесь предполагается, что proxySession имеет метод clientBound
+        // (proxySession as? MuCuteRelaySession)?.clientBound(textPacket) // Раскомментировать, когда MuCuteRelaySession будет определен
     }
 
-    // --- Метод для обработки PlayerListPacket и подмены скина ---
-    private fun handlePlayerListPacket(packet: PlayerListPacket) {
-        if (localPlayer.xuid == null) {
-            Log.w("GameSession", "XUID локального игрока равен null, не могу изменить собственный скин в PlayerListPacket. Убедитесь, что LoginPacket был обработан.")
-            return
-        }
-
-        val newEntries = mutableListOf<PlayerListEntry>()
-
-        for (entry in packet.entries) {
-            if (entry.xuid == localPlayer.xuid) {
-                Log.d("GameSession", "Найдена запись локального игрока (${entry.displayName}, XUID: ${entry.xuid}) в PlayerListPacket. Модифицирую скин.")
-
-                val newSkin = Skin(
-                    "BizonClient_Skin_${localPlayer.xuid}",
-                    Skin.SkinData(customBizonSkinData),
-                    Skin.SkinData(customBizonSkinData), // fullSkinData часто то же самое
-                    null, // capedata, если у вас есть плащ
-                    CUSTOM_SKIN_GEOMETRY_CLASSIC, // Выберите: CLASSIC или SLIM
-                    "", // animationData
-                    null, // personaPieces
-                    null, // pieceTintColors
-                    false, // isPremium
-                    false, // isPersona
-                    true, // isPrimaryUser (ВАЖНО! Указывает, что это основной пользователь)
-                    false, // isCapeOnClassicSkin
-                    false, // isOverride
-                    TrustedSkinFlag.ALL_EMISSIVE // Можно попробовать TrustedSkinFlag.EMPTY или TrustedSkinFlag.NONE
-                )
-
-                val modifiedEntry = PlayerListEntry(
-                    entry.uuid,
-                    entry.xuid,
-                    entry.displayName,
-                    entry.entityId,
-                    entry.buildPlatform,
-                    entry.devNetId,
-                    newSkin, // <-- Подставляем наш новый скин
-                    entry.isTeacher,
-                    entry.isHost,
-                    entry.currentSequenceNumber
-                )
-                newEntries.add(modifiedEntry)
-            } else {
-                newEntries.add(entry)
-            }
-        }
-
-        packet.entries.clear()
-        packet.entries.addAll(newEntries)
-
-        Log.d("GameSession", "PlayerListPacket модифицирован для скина локального игрока. Всего записей: ${newEntries.size}")
+    // --- Добавляем методы clientBound и serverBound сюда, чтобы LocalPlayer мог их вызывать ---
+    // Эти методы должны будут передавать пакеты через ваш реальный прокси-сессию.
+    fun clientBound(packet: BedrockPacket) {
+        // Предполагается, что proxySession имеет метод clientBound
+        // (proxySession as? MuCuteRelaySession)?.clientBound(packet) // Раскомментировать, когда MuCuteRelaySession будет определен
+        Log.d("GameSession", "Sending client-bound packet: ${packet.javaClass.simpleName}")
     }
 
-    // --- Метод для извлечения XUID из LoginPacket ---
-    private fun handleLoginPacket(packet: LoginPacket) {
-        try {
-            val chainData = JsonParser.parseString(packet.chainData.toString(Charsets.UTF_8)).asJsonObject
-            val chain = chainData.getAsJsonArray("chain")
-            for (element in chain) {
-                val token = element.asString
-                val jwtSplit = token.split(".")
-                if (jwtSplit.size < 2) continue
-                
-                val payloadObject = JsonParser.parseString(base64Decode(jwtSplit[1]).toString(Charsets.UTF_8)).asJsonObject
-                
-                if (payloadObject.has("xuid")) {
-                    val xuid = payloadObject.get("xuid").asString
-                    localPlayer.xuid = xuid // Устанавливаем XUID для localPlayer
-                    Log.i("GameSession", "XUID локального игрока установлен на: $xuid")
-                    break
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("GameSession", "Ошибка при парсинге LoginPacket для XUID: ${e.message}", e)
-        }
+    fun serverBound(packet: BedrockPacket) {
+        // Предполагается, что proxySession имеет метод serverBound
+        // (proxySession as? MuCuteRelaySession)?.serverBound(packet) // Раскомментировать, когда MuCuteRelaySession будет определен
+        Log.d("GameSession", "Sending server-bound packet: ${packet.javaClass.simpleName}")
     }
+
+
+    // --- Временно удаляем всю логику обработки скинов и XUID ---
+    // private fun handlePlayerListPacket(packet: PlayerListPacket) { ... }
+    // private fun handleLoginPacket(packet: LoginPacket) { ... }
+
 
     // --- Методы для управления звуками (как вы их предоставили) ---
     fun stopAllSounds() {
@@ -234,17 +155,18 @@ class GameSession(
         println("GameSession: Переключаю звуки на: $enable")
     }
 
-    fun soundList(soundSet: Any) { // Замените 'Any' на ваш фактический тип
+    fun soundList(soundSet: Any) {
         println("GameSession: Устанавливаю список звуков на: $soundSet")
     }
 }
 
-// --- Классы-заглушки для компиляции ---
+// --- ЗАГЛУШКИ ДЛЯ КОМПИЛЯЦИИ ---
 // Если у вас УЖЕ есть эти классы в проекте, УДАЛИТЕ ЭТИ ЗАГЛУШКИ.
 // Они здесь только для того, чтобы весь GameSession.kt мог компилироваться.
 
-// Эта заглушка для класса вашей прокси-сессии. Замените на реальную реализацию.
-// Она должна иметь метод clientBound(packet: BedrockPacket)
+// ЗАГЛУШКА: Ваш главный класс прокси-сессии.
+// Если он определен в другом месте, удалите эту заглушку.
+// Иначе, замените 'Any' на реальный тип, когда он будет известен.
 /*
 package com.mucheng.mucute.relay
 
@@ -256,7 +178,8 @@ interface MuCuteRelaySession {
 }
 */
 
-// Пример заглушки для InterceptablePacketImpl
+// ЗАГЛУШКА: Класс для перехвата пакетов модулями.
+// Если он у вас уже есть, удалите.
 /*
 class InterceptablePacketImpl(val packet: BedrockPacket) {
     var isIntercepted: Boolean = false
@@ -264,24 +187,28 @@ class InterceptablePacketImpl(val packet: BedrockPacket) {
 }
 */
 
-// Пример заглушки для ModuleManager (если он есть в вашем проекте)
+// ЗАГЛУШКА: Объект ModuleManager.
+// Если он у вас уже есть, удалите.
 /*
 object ModuleManager {
-    val modules: List<Any> = emptyList() // Замените Any на ваш фактический тип модуля
+    // В реальном проекте здесь будет список ваших модулей
+    val modules: List<Any> = emptyList() // Замените Any на ваш фактический тип модуля (например, List<BaseModule>)
+
     fun beforePacketBound(packet: InterceptablePacketImpl) { }
     fun afterPacketBound(packet: BedrockPacket) { }
     fun onDisconnect(reason: String) { }
 }
 */
 
-// Пример заглушки для com.retrivedmods.wclient.utils.base64Decode
-// Убедитесь, что у вас есть реальная функция декодирования Base64
+// ЗАГЛУШКА: Функция декодирования Base64.
+// Если у вас уже есть эта функция (например, в com.retrivedmods.wclient.utils.Base64Utils.kt), удалите.
+// Иначе, создайте файл Base64Utils.kt в папке utils и поместите туда эту функцию.
 /*
 package com.retrivedmods.wclient.utils
 
+import android.util.Base64 // Используем стандартный Android Base64
+
 fun base64Decode(str: String): ByteArray {
-    // Реализуйте здесь декодирование Base64
-    // Например: android.util.Base64.decode(str, android.util.Base64.NO_WRAP)
-    return str.toByteArray() // ЗАГЛУШКА!
+    return Base64.decode(str, Base64.NO_WRAP) // NO_WRAP для отсутствия переносов строк
 }
 */
