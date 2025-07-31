@@ -41,8 +41,9 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
             }
         }
 
-
-
+        // *** ИСПРАВЛЕНИЕ: ДОБАВЛЕНА ЭТА СТРОКА ***
+        // Если пакет не был перехвачен ни одним модулем,
+        // он будет передан дальше по цепочке обработки.
         return false
     }
 
@@ -72,5 +73,4 @@ class GameSession(val muCuteRelaySession: MuCuteRelaySession) : ComposedPacketHa
         textPacket.filteredMessage = ""
         clientBound(textPacket)
     }
-
 }
