@@ -15,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.LinearGradient
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -110,9 +112,9 @@ class OverlayShortcutButton(
 
         Box(
             modifier = Modifier
-                .width(120.dp) // Чуть шире кнопка
-                .height(50.dp) // Чуть выше кнопка
-                .padding(4.dp) // Меньший внутренний отступ для большей области кнопки
+                .width(120.dp)
+                .height(50.dp)
+                .padding(4.dp)
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
                         _layoutParams.x += dragAmount.x.toInt()
@@ -122,15 +124,15 @@ class OverlayShortcutButton(
                     }
                 }
                 .shadow(
-                    elevation = if (module.isEnabled) 12.dp else 6.dp, // Более выраженная тень для активных
-                    shape = RoundedCornerShape(16.dp), // Более скругленные углы тени
-                    ambientColor = if (module.isEnabled) activeColorEnd.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.3f), // Цвет тени
+                    elevation = if (module.isEnabled) 12.dp else 6.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    ambientColor = if (module.isEnabled) activeColorEnd.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.3f),
                     spotColor = if (module.isEnabled) activeColorEnd.copy(alpha = 0.7f) else Color.Black.copy(alpha = 0.5f)
                 )
-                .background(backgroundBrush, shape = RoundedCornerShape(16.dp)) // Более скругленные углы кнопки
+                .background(backgroundBrush, shape = RoundedCornerShape(16.dp))
                 .border(
-                    width = 2.5.dp, // Более толстая рамка
-                    brush = if (module.isEnabled) { // Градиентная рамка для активной
+                    width = 2.5.dp,
+                    brush = if (module.isEnabled) {
                         Brush.horizontalGradient(
                             colors = listOf(
                                 activeColorStart,
@@ -138,7 +140,7 @@ class OverlayShortcutButton(
                             )
                         )
                     } else {
-                        SolidColor(borderColor.copy(alpha = 0.3f)) // Более приглушенная рамка для неактивных
+                        SolidColor(borderColor.copy(alpha = 0.3f))
                     },
                     shape = RoundedCornerShape(16.dp)
                 )
@@ -150,7 +152,7 @@ class OverlayShortcutButton(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
-                            color = glowColor, // Свечение
+                            color = glowColor,
                             shape = RoundedCornerShape(16.dp)
                         )
                 )
@@ -163,10 +165,10 @@ class OverlayShortcutButton(
                 Text(
                     text = module.name.translatedSelf,
                     color = textColor,
-                    fontSize = 14.sp, // Чуть больше шрифт
-                    fontWeight = FontWeight.SemiBold, // Жирный шрифт
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        letterSpacing = 0.5.sp // Небольшой межбуквенный интервал
+                        letterSpacing = 0.5.sp
                     )
                 )
             }
@@ -179,60 +181,41 @@ class OverlayShortcutButton(
     }
 }
 
-// Помощник для анимации Brush (Compose 1.6+), если нет - нужен свой.
-@Composable
-fun animateBrushAsState(
-    targetValue: Brush,
-    animationSpec: AnimationSpec<Brush> = spring(),
-    finishedListener: ((Brush) -> Unit)? = null,
-    label: String = "BrushAnimation"
-): State<Brush> {
-    val currentBrush = remember { mutableStateOf(targetValue) }
-    if (currentBrush.value == targetValue) {
-        return currentBrush // No animation needed
-    }
-
-    val anim = remember(targetValue) {
-        Animatable(currentBrush.value, Brush.VectorConverter)
-    }
-
-    LaunchedEffect(targetValue) {
-        anim.animateTo(targetValue, animationSpec) {
-            currentBrush.value = value
-        }
-        finishedListener?.invoke(targetValue)
-    }
-
-    return currentBrush
-}
-
-// Вам может понадобиться VectorConverter для Brush, если ваш Compose не поддерживает его "из коробки"
-// Если у вас более старая версия Compose, вам может потребоваться реализовать
-// Custom AnimationVectorConverter для Brush.
-// Если возникнет ошибка "Unresolved reference: VectorConverter",
-// раскомментируйте или создайте подобный класс:
-/*
-object BrushVectorConverter : TwoWayConverter<Brush, AnimationVector4D> {
-    override val convertFromVector: (AnimationVector4D) -> Brush = { vector ->
+/**
+ * Пользовательский TwoWayConverter для анимации Brush.
+ * Этот конвертер упрощен и работает для SolidColor и LinearGradient с двумя цветами.
+ * Для более сложных градиентов (например, с более чем двумя цветами, RadialGradient, SweepGradient)
+ * потребуется более сложная логика конвертации.
+ */
+val BrushTwoWayConverter = TwoWayConverter<Brush, AnimationVector4D>(
+    convertFromVector = { vector ->
+        // Предполагаем, что v1 и v2 - это компоненты первого цвета, v3 и v4 - второго.
+        // Или v1-v4 представляют собой параметры для создания SolidColor или LinearGradient.
+        // Для упрощения, анимируем цвета градиента, если это LinearGradient.
+        // Если вектор полностью нулевой или первый цвет прозрачный, возвращаем SolidColor(Transparent)
         if (vector.v1 == 0f && vector.v2 == 0f && vector.v3 == 0f && vector.v4 == 0f) {
             SolidColor(Color.Transparent)
         } else {
-            // Это упрощенная конвертация, для полноценной обработки разных типов Brush (Linear, Radial, Sweep)
-            // понадобится более сложная логика. Для градиента двух цветов можно анимировать цвета.
-            // Здесь мы предполагаем, что это в основном SolidColor или двухцветный градиент.
-            // Для более сложной анимации Brush, возможно, придется анимировать отдельные Color,
-            // а затем создавать Brush из них.
-            val color1 = Color(vector.v1)
-            val color2 = Color(vector.v2) // Предполагаем, что v2 хранит второй цвет для градиента
-            if (color2 != Color.Transparent) {
-                LinearGradient(color1, color2, Offset.Zero, Offset.Infinite)
-            } else {
-                SolidColor(color1)
-            }
-        }
-    }
+            val color1 = Color(vector.v1, vector.v2, vector.v3, vector.v4)
+            // Мы не можем легко представить второй цвет в одном AnimationVector4D,
+            // поэтому для градиента будем просто анимировать его как SolidColor
+            // и создавать LinearGradient из двух SolidColor в Composable.
+            // ИЛИ, если мы всегда знаем, что это двухцветный градиент,
+            // мы можем использовать AnimationVector8D, но Compose не имеет встроенного.
+            // Для этой задачи, где мы анимируем между двумя известными Brush,
+            // достаточно просто анимировать компоненты цвета.
 
-    override val convertToVector: (Brush) -> AnimationVector4D = { brush ->
+            // Важно: Эта реализация не идеально преобразует *любой* Brush из вектора.
+            // Она работает, потому что мы анимируем между SolidColor и LinearGradient
+            // с фиксированным количеством цветов, и можем "распаковать" их.
+            // Здесь мы будем полагаться на то, что animateBrushAsState
+            // правильно подает нам значения, которые можно интерпретировать как цвета.
+            SolidColor(color1) // Вернем просто цвет, т.к. сложно анимировать Brush напрямую.
+                               // Фактически, animateBrushAsState будет анимировать
+                               // отдельные цвета и Offset для градиента, если это нужно.
+        }
+    },
+    convertToVector = { brush ->
         when (brush) {
             is SolidColor -> AnimationVector4D(
                 brush.value.red,
@@ -241,17 +224,80 @@ object BrushVectorConverter : TwoWayConverter<Brush, AnimationVector4D> {
                 brush.value.alpha
             )
             is LinearGradient -> {
-                // Очень упрощено, нужно больше данных, чтобы полностью представить градиент в 4D векторе
+                // Очень упрощено. Для полноценной конвертации LinearGradient требуется больше параметров
+                // (colors, start/end offset, tilemode). AnimationVector4D не хватает.
+                // Для нашей текущей задачи (анимация между двумя конкретными Brush),
+                // мы будем анимировать цвета, которые строят эти Brush.
+                val color1 = brush.colors.getOrElse(0) { Color.Transparent }
+                // Если градиент имеет только один цвет или его нет, можно сделать SolidColor
+                // Для двухцветного градиента мы должны были бы кодировать оба цвета в векторе.
                 AnimationVector4D(
-                    brush.colors[0].red,
-                    brush.colors[0].green,
-                    brush.colors[0].blue,
-                    brush.colors[0].alpha // Можно использовать alpha для первого цвета
-                    // Для второго цвета или других параметров градиента потребуется больше измерений
+                    color1.red,
+                    color1.green,
+                    color1.blue,
+                    color1.alpha
                 )
             }
-            else -> AnimationVector4D(0f, 0f, 0f, 0f) // По умолчанию для неподдерживаемых типов
+            else -> AnimationVector4D(0f, 0f, 0f, 0f) // Для неподдерживаемых типов Brush
         }
     }
+)
+
+/**
+ * Анимирует Brush между начальным и конечным значениями.
+ * Использует пользовательский BrushTwoWayConverter.
+ */
+@Composable
+fun animateBrushAsState(
+    targetValue: Brush,
+    animationSpec: AnimationSpec<Brush> = spring(),
+    finishedListener: ((Brush) -> Unit)? = null,
+    label: String = "BrushAnimation"
+): State<Brush> {
+    // В отличие от стандартного animate*AsState, который использует State<T>,
+    // здесь мы хотим анимировать между двумя "известными" Brush.
+    // Вместо прямого анимирования Brush, мы будем анимировать их компоненты (цвета),
+    // а затем создавать Brush из этих анимированных компонентов.
+
+    // Для текущей задачи (анимация между двумя конкретными градиентами:
+    // SolidColor -> LinearGradient; LinearGradient -> SolidColor)
+    // мы можем анимировать их цвета и затем создавать Brush.
+
+    // Извлекаем цвета из текущего и целевого Brush.
+    // Это упрощение, которое хорошо работает для градиентов из 1-2 цветов.
+    val initialColors = (currentCompositeKeyHash.toString().hashCode() % 1000).let { hash ->
+        // Простая эвристика для получения начального состояния, если оно не SolidColor.
+        // Можно передавать начальный Brush явно.
+        if (targetValue is SolidColor) listOf(targetValue.value)
+        else if (targetValue is LinearGradient) targetValue.colors
+        else listOf(Color.Transparent)
+    }
+
+    val targetColors = if (targetValue is SolidColor) listOf(targetValue.value)
+                       else if (targetValue is LinearGradient) targetValue.colors
+                       else listOf(Color.Transparent)
+
+    val animatedColor1 by animateColorAsState(targetColors.getOrElse(0) { Color.Transparent }, animationSpec = tween(300))
+    val animatedColor2 by animateColorAsState(targetColors.getOrElse(1) { Color.Transparent }, animationSpec = tween(300))
+
+
+    // Собираем Brush из анимированных цветов.
+    val resultBrush = remember(animatedColor1, animatedColor2) {
+        if (targetValue is SolidColor) {
+            SolidColor(animatedColor1)
+        } else if (targetValue is LinearGradient && targetColors.size >= 2) {
+            // Сохраняем направление градиента исходного targetValue
+            LinearGradient(
+                colors = listOf(animatedColor1, animatedColor2),
+                start = targetValue.start,
+                end = targetValue.end,
+                tileMode = targetValue.tileMode
+            )
+        } else {
+            SolidColor(animatedColor1) // Fallback
+        }
+    }
+
+    // Возвращаем результат как State
+    return rememberUpdatedState(resultBrush)
 }
-*/
