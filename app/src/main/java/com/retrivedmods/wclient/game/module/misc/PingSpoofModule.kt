@@ -1,9 +1,9 @@
-package com.retrivedmods.wclient.game.module.impl.misc
+// File: com.retrivedmods.wclient.game.module.misc.PingSpoofModule.kt
+package com.retrivedmods.wclient.game.module.misc // Обратите внимание на путь
 
-import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.InterceptablePacket
-import com.retrivedmods.wclient.constructors.Element
-import com.retrivedmods.wclient.constructors.CheatCategory
+import com.retrivedmods.wclient.game.Module // <-- Изменено на Module
+import com.retrivedmods.wclient.game.ModuleCategory // <-- Изменено на ModuleCategory
 import com.retrivedmods.wclient.constructors.IntValue // Убедитесь, что этот импорт есть и корректен
 import com.retrivedmods.wclient.util.AssetManager
 import org.cloudburstmc.protocol.bedrock.packet.NetworkStackLatencyPacket
@@ -12,10 +12,10 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.math.coerceAtLeast
 
-// Передаем GameSession в конструктор Element, чтобы модуль мог взаимодействовать с сессией
-class PingSpoofElement(val session: GameSession, iconResId: Int = AssetManager.getAsset("ic_timer_sand_black_24dp")) : Element(
-    name = "FakePing",
-    category = CheatCategory.Misc,
+// PingSpoofModule теперь наследуется от Module
+class PingSpoofModule(iconResId: Int = AssetManager.getAsset("ic_timer_sand_black_24dp")) : Module(
+    name = "FakePing", // Передаем имя в конструктор Module
+    category = ModuleCategory.Misc, // Передаем категорию в конструктор Module
     iconResId = iconResId,
     displayNameResId = AssetManager.getString("module_fakeping_display_name") // Убедитесь, что эта строка существует в ваших ресурсах
 ) {
@@ -31,17 +31,18 @@ class PingSpoofElement(val session: GameSession, iconResId: Int = AssetManager.g
     override fun onEnabled() {
         super.onEnabled()
         pendingResponses.clear()
-        session.displayClientMessage("§a[FakePing] Включен. Целевой пинг: §b${pingValue}мс")
+        // session не null, т.к. инициализируется в ModuleManager.initialize
+        session?.displayClientMessage("§a[FakePing] Включен. Целевой пинг: §b${pingValue}мс")
     }
 
     override fun onDisabled() {
         super.onDisabled()
         pendingResponses.clear()
-        session.displayClientMessage("§c[FakePing] Выключен.")
+        session?.displayClientMessage("§c[FakePing] Выключен.")
     }
 
     override fun beforePacketBound(interceptablePacket: InterceptablePacket) {
-        if (!isEnabled) return
+        if (!isEnabled) return // Проверяем, включен ли модуль
 
         val packet = interceptablePacket.packet
 
@@ -51,6 +52,7 @@ class PingSpoofElement(val session: GameSession, iconResId: Int = AssetManager.g
                 handleLatencyPacket(interceptablePacket, packet)
             }
             // Используем PlayerAuthInputPacket как "пульс" для обработки отложенных ответов
+            // Проверяем packet.tick, чтобы не обрабатывать слишком часто
             packet is PlayerAuthInputPacket && packet.tick % tickInterval == 0L -> {
                 processPendingResponses()
             }
@@ -68,7 +70,7 @@ class PingSpoofElement(val session: GameSession, iconResId: Int = AssetManager.g
         // Очищаем кэш, если он становится слишком большим, чтобы избежать утечек памяти
         if (pendingResponses.size > 1000) { // Можно настроить это значение
             pendingResponses.clear()
-            session.displayClientMessage("§e[FakePing] Очищен буфер отложенных пинг-пакетов (переполнение).")
+            session?.displayClientMessage("§e[FakePing] Очищен буфер отложенных пинг-пакетов (переполнение).")
         }
     }
 
@@ -79,10 +81,10 @@ class PingSpoofElement(val session: GameSession, iconResId: Int = AssetManager.g
 
         readyPackets.forEach { (serverTimestamp, _) ->
             // Отправляем новый NetworkStackLatencyPacket на сервер, имитируя ответ клиента
-            // Убедитесь, что формат timestamp соответствует ожидаемому CloudburstMC (обычно миллисекунды)
-            session.serverBound(NetworkStackLatencyPacket().apply {
+            // timestamp должен быть в миллисекундах для CloudburstMC Protocol Bedrock
+            session?.serverBound(NetworkStackLatencyPacket().apply {
                 timestamp = serverTimestamp
-                fromServer = true // Важно: сервер ожидает, что это ответ на его пакет
+                fromServer = true // Важно: это ответ на пакет ОТ СЕРВЕРА
             })
             // Удаляем обработанный пакет из списка
             pendingResponses.remove(serverTimestamp)
