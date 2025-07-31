@@ -76,7 +76,7 @@ object ModuleManager {
             add(AdvanceDisablerModule())
             add(BlinkModule()) // Дублирование, возможно, следует удалить одну
             add(NightVisionModule())
-            add(PingSpoofElement(session!!))
+            add(PingSpoofModule(session!!))
             add(RegenerationModule())
             add(AutoDisconnectModule())
             add(SkinStealerModule())
