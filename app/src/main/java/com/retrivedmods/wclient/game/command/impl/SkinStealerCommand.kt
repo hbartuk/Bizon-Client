@@ -20,11 +20,11 @@ import java.util.UUID
  * В реальном клиенте вам нужно будет перехватывать пакеты AddPlayerPacket или SetEntityDataPacket
  * чтобы получить данные скина других игроков.
  */
-class SkinStealerCommand : Command("steal") {
+class SkinStealerCommand : Command("skin") {
 
     override fun exec(args: Array<String>, session: GameSession) {
         if (args.isEmpty()) {
-            session.displayClientMessage("§cИспользование: §7.steal <никнейм>")
+            session.displayClientMessage("§cИспользование: §7.skin <никнейм>")
             return
         }
 
