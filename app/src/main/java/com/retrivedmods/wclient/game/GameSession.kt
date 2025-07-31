@@ -4,44 +4,36 @@ import android.content.Context
 import android.util.Log
 import com.retrivedmods.wclient.game.entity.LocalPlayer
 import com.retrivedmods.wclient.game.world.Level
-// import com.mucheng.mucute.relay.MuCuteRelaySession // ЗАКОММЕНТИРУЙТЕ ИЛИ УДАЛИТЕ, пока не нужен
+// import com.mucheng.mucute.relay.MuCuteRelaySession // ЗАКОММЕНТИРУЙТЕ ИЛИ ИЗМЕНИТЕ, пока не разберемся с ним
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
-import org.cloudburstmc.protocol.bedrock.packet.LoginPacket // Пока что оставим, но логика будет удалена
-import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // Пока что оставим, но логика будет удалена
-// УДАЛИТЕ ВСЕ ИМПОРТЫ СВЯЗАННЫЕ СО СКИНОМ И PlayerListEntry
-// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry
-// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin
-// import org.cloudburstmc.protocol.bedrock.data.PlayerListEntry.Skin.TrustedSkinFlag
-// import com.google.gson.JsonParser // УДАЛИТЕ, если не используется
-// import com.retrivedmods.wclient.utils.base64Decode // УДАЛИТЕ, если не используется
-// import java.io.ByteArrayOutputStream // УДАЛИТЕ, если не используется
-// import java.nio.charset.StandardCharsets // УДАЛИТЕ, если не используется
+import org.cloudburstmc.protocol.bedrock.packet.LoginPacket
+import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket // Оставил, т.к. используется в LocalPlayer.kt
 
 // --- ИНТЕРФЕЙСЫ ---
-// УДАЛИТЕ файл ComposedPacketHandler.kt, если он дублирует этот интерфейс.
-// Если ComposedPacketHandler.kt нужен, оставьте его там, а отсюда удалите это определение.
-interface ComposedPacketHandler {
-    fun beforePacketBound(packet: BedrockPacket): Boolean
-    fun afterPacketBound(packet: BedrockPacket)
-    fun onDisconnect(reason: String)
-}
+// НЕ ДОЛЖНО БЫТЬ ДУБЛИРОВАНИЯ. Этот интерфейс должен быть определен ТОЛЬКО ОДИН РАЗ
+// (например, в файле ComposedPacketHandler.kt).
+// interface ComposedPacketHandler {
+//    fun beforePacketBound(packet: BedrockPacket): Boolean
+//    fun afterPacketBound(packet: BedrockPacket)
+//    fun onDisconnect(reason: String)
+// }
 
-// Этот интерфейс предназначен для ВАШЕГО ПРОКСИ (MuCuteRelaySession).
-// Мы сделаем его минимальным.
-interface IProxyPacketListener { // Переименовал, чтобы было яснее
+// Этот интерфейс предназначен для ВАШЕГО ПРОКСИ.
+// Ваш класс прокси (например, MuCuteRelaySession) должен вызывать эти методы.
+interface IProxyPacketListener {
     fun onPacketOutbound(packet: BedrockPacket): Boolean
+    fun onPacketPostOutbound(packet: BedrockPacket) // Добавлен, т.к. ComposedPacketHandler его может требовать
     fun onPacketInbound(packet: BedrockPacket): Boolean
+    fun onPacketPostInbound(packet: BedrockPacket)
     fun onDisconnect(isClient: Boolean, reason: String)
 }
 
 // --- ОСНОВНОЙ КЛАСС GameSession ---
 @Suppress("MemberVisibilityCanBePrivate")
 class GameSession(
-    // Здесь должна быть ссылка на ваш класс, который управляет перехватом пакетов.
-    // Если ваш класс называется иначе, измените тип здесь.
-    // Если у вас нет такого класса, то это будет основной проблемой.
-    val proxySession: Any, // ЗАМЕНИТЕ MuCuteRelaySession на Any, чтобы избежать ошибок, пока не разберемся
+    // ЗАМЕНИТЕ 'Any' на ваш реальный класс прокси-сессии, например: 'MuCuteRelaySession'
+    val proxySession: Any,
     val context: Context
 ) : ComposedPacketHandler, IProxyPacketListener {
 
@@ -52,7 +44,7 @@ class GameSession(
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     }
 
-    // --- Временно удаляем всю логику скинов ---
+    // --- Временно удалены все поля и логика, связанные со скинами ---
     // private val customBizonSkinData: ByteArray by lazy { ... }
     // private val CUSTOM_SKIN_GEOMETRY_CLASSIC = ...
     // private val CUSTOM_SKIN_GEOMETRY_SLIM = ...
@@ -60,10 +52,9 @@ class GameSession(
 
     // --- Реализация методов ComposedPacketHandler ---
     override fun beforePacketBound(packet: BedrockPacket): Boolean {
-        // Мы сделаем это максимально простым, чтобы скомпилировалось.
-        // Заглушка для ModuleManager
-        // val interceptablePacket = InterceptablePacketImpl(packet)
-        // for (module in ModuleManager.modules) {
+        // Заглушка.
+        // val interceptablePacket = InterceptablePacketImpl(packet) // Нужен InterceptablePacketImpl
+        // for (module in ModuleManager.modules) { // Нужен ModuleManager
         //     module.beforePacketBound(interceptablePacket)
         //     if (interceptablePacket.isIntercepted) {
         //         return false
@@ -73,8 +64,8 @@ class GameSession(
     }
 
     override fun afterPacketBound(packet: BedrockPacket) {
-        // Заглушка для ModuleManager
-        // for (module in ModuleManager.modules) {
+        // Заглушка.
+        // for (module in ModuleManager.modules) { // Нужен ModuleManager
         //     module.afterPacketBound(packet)
         // }
     }
@@ -86,18 +77,25 @@ class GameSession(
         return true
     }
 
+    override fun onPacketPostOutbound(packet: BedrockPacket) {
+        // Здесь пока нет логики.
+    }
+
     override fun onPacketInbound(packet: BedrockPacket): Boolean {
-        // Здесь пока нет логики. Просто пропускаем пакет.
-        // Удалены вызовы handlePlayerListPacket и handleLoginPacket
+        // Здесь пока нет логики обработки пакетов скинов/XUID. Просто пропускаем.
         return true
+    }
+
+    override fun onPacketPostInbound(packet: BedrockPacket) {
+        // Здесь пока нет логики.
     }
 
     override fun onDisconnect(isClient: Boolean, reason: String) {
         localPlayer.onDisconnect()
         level.onDisconnect()
 
-        // Заглушка для ModuleManager
-        // for (module in ModuleManager.modules) {
+        // Заглушка.
+        // for (module in ModuleManager.modules) { // Нужен ModuleManager
         //     module.onDisconnect(reason)
         // }
         Log.i("GameSession", "Отключено. Клиент: $isClient, Причина: $reason")
@@ -107,7 +105,6 @@ class GameSession(
 
     /**
      * Отправляет сообщение во внутриигровой чат клиента.
-     * Мы добавим обертки для clientBound/serverBound, чтобы LocalPlayer мог их вызывать.
      */
     fun displayClientMessage(message: String, type: TextPacket.Type = TextPacket.Type.RAW) {
         val textPacket = TextPacket()
@@ -118,26 +115,25 @@ class GameSession(
         textPacket.xuid = ""
         textPacket.platformChatId = ""
         textPacket.filteredMessage = ""
-        // Здесь предполагается, что proxySession имеет метод clientBound
-        // (proxySession as? MuCuteRelaySession)?.clientBound(textPacket) // Раскомментировать, когда MuCuteRelaySession будет определен
+        // --- ЗАКОММЕНТИРОВАНО ВРЕМЕННО ДЛЯ КОМПИЛЯЦИИ ---
+        // (proxySession as? MuCuteRelaySession)?.clientBound(textPacket)
     }
 
-    // --- Добавляем методы clientBound и serverBound сюда, чтобы LocalPlayer мог их вызывать ---
-    // Эти методы должны будут передавать пакеты через ваш реальный прокси-сессию.
+    // --- Методы для отправки пакетов через прокси (нужны LocalPlayer) ---
     fun clientBound(packet: BedrockPacket) {
-        // Предполагается, что proxySession имеет метод clientBound
-        // (proxySession as? MuCuteRelaySession)?.clientBound(packet) // Раскомментировать, когда MuCuteRelaySession будет определен
+        // --- ЗАКОММЕНТИРОВАНО ВРЕМЕННО ДЛЯ КОМПИЛЯЦИИ ---
+        // (proxySession as? MuCuteRelaySession)?.clientBound(packet)
         Log.d("GameSession", "Sending client-bound packet: ${packet.javaClass.simpleName}")
     }
 
     fun serverBound(packet: BedrockPacket) {
-        // Предполагается, что proxySession имеет метод serverBound
-        // (proxySession as? MuCuteRelaySession)?.serverBound(packet) // Раскомментировать, когда MuCuteRelaySession будет определен
+        // --- ЗАКОММЕНТИРОВАНО ВРЕМЕННО ДЛЯ КОМПИЛЯЦИИ ---
+        // (proxySession as? MuCuteRelaySession)?.serverBound(packet)
         Log.d("GameSession", "Sending server-bound packet: ${packet.javaClass.simpleName}")
     }
 
 
-    // --- Временно удаляем всю логику обработки скинов и XUID ---
+    // --- Временно удалены все методы обработки скинов и XUID ---
     // private fun handlePlayerListPacket(packet: PlayerListPacket) { ... }
     // private fun handleLoginPacket(packet: LoginPacket) { ... }
 
@@ -162,11 +158,10 @@ class GameSession(
 
 // --- ЗАГЛУШКИ ДЛЯ КОМПИЛЯЦИИ ---
 // Если у вас УЖЕ есть эти классы в проекте, УДАЛИТЕ ЭТИ ЗАГЛУШКИ.
-// Они здесь только для того, чтобы весь GameSession.kt мог компилироваться.
+// Они здесь только для того, чтобы GameSession.kt мог компилироваться.
 
 // ЗАГЛУШКА: Ваш главный класс прокси-сессии.
-// Если он определен в другом месте, удалите эту заглушку.
-// Иначе, замените 'Any' на реальный тип, когда он будет известен.
+// Разместите его в файле com/mucheng/mucute/relay/MuCuteRelaySession.kt
 /*
 package com.mucheng.mucute.relay
 
@@ -178,8 +173,8 @@ interface MuCuteRelaySession {
 }
 */
 
-// ЗАГЛУШКА: Класс для перехвата пакетов модулями.
-// Если он у вас уже есть, удалите.
+// ЗАГЛУШКА: Класс InterceptablePacketImpl.
+// Разместите его в файле InterceptablePacketImpl.kt
 /*
 class InterceptablePacketImpl(val packet: BedrockPacket) {
     var isIntercepted: Boolean = false
@@ -188,11 +183,10 @@ class InterceptablePacketImpl(val packet: BedrockPacket) {
 */
 
 // ЗАГЛУШКА: Объект ModuleManager.
-// Если он у вас уже есть, удалите.
+// Разместите его в файле ModuleManager.kt
 /*
 object ModuleManager {
-    // В реальном проекте здесь будет список ваших модулей
-    val modules: List<Any> = emptyList() // Замените Any на ваш фактический тип модуля (например, List<BaseModule>)
+    val modules: List<Any> = emptyList()
 
     fun beforePacketBound(packet: InterceptablePacketImpl) { }
     fun afterPacketBound(packet: BedrockPacket) { }
@@ -201,14 +195,114 @@ object ModuleManager {
 */
 
 // ЗАГЛУШКА: Функция декодирования Base64.
-// Если у вас уже есть эта функция (например, в com.retrivedmods.wclient.utils.Base64Utils.kt), удалите.
-// Иначе, создайте файл Base64Utils.kt в папке utils и поместите туда эту функцию.
+// Разместите ее в файле com/retrivedmods/wclient/utils/Base64Utils.kt
 /*
 package com.retrivedmods.wclient.utils
 
-import android.util.Base64 // Используем стандартный Android Base64
+import android.util.Base64
 
 fun base64Decode(str: String): ByteArray {
-    return Base64.decode(str, Base64.NO_WRAP) // NO_WRAP для отсутствия переносов строк
+    return Base64.decode(str, Base64.NO_WRAP)
 }
 */
+
+// ЗАГЛУШКА: Класс Entity.
+// Вам нужно определить свой базовый класс Entity.
+/*
+package com.retrivedmods.wclient.game.entity
+
+import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
+
+open class Entity(val uniqueId: Long) {
+    var posX: Float = 0f
+    var posY: Float = 0f
+    var posZ: Float = 0f
+    var tickExists: Long = 0L
+
+    // Placeholder for metadata, you'll need a proper implementation
+    val metadata: Map<Any, Any> = emptyMap() // Replace Any, Any with actual types like EntityDataTypes, Any
+
+    open fun onPacketBound(packet: BedrockPacket) {}
+    open fun onDisconnect() {}
+
+    fun move(x: Float, y: Float, z: Float) {
+        posX = x
+        posY = y
+        posZ = z
+    }
+
+    fun rotate(rotation: Vector3f) {
+        // Implement rotation logic here
+    }
+}
+*/
+
+// ЗАГЛУШКА: Для EntityDataTypes, если он используется
+/*
+package org.cloudburstmc.protocol.bedrock.data.entity
+
+object EntityDataTypes {
+    val NAME = Any() // Replace with actual EntityDataTypes.NAME if you have it
+}
+*/
+
+// ЗАГЛУШКА: Для MovePlayerPacket
+/*
+package org.cloudburstmc.protocol.bedrock.packet
+
+import org.cloudburstmc.math.vector.Vector3f
+
+class MovePlayerPacket : BedrockPacket() {
+    var runtimeEntityId: Long = 0L
+    var position: Vector3f = Vector3f.ZERO
+    var rotation: Vector3f = Vector3f.ZERO
+    // Add other properties/methods if needed by your code
+}
+*/
+
+// ЗАГЛУШКА: Для UpdateAttributesPacket
+/*
+package org.cloudburstmc.protocol.bedrock.packet
+
+import org.cloudburstmc.protocol.bedrock.data.AttributeData
+
+class UpdateAttributesPacket : BedrockPacket() {
+    var runtimeEntityId: Long = 0L
+    var attributes: List<AttributeData> = emptyList()
+    // Add other properties/methods if needed by your code
+}
+*/
+
+// ЗАГЛУШКА: Для AttributeData
+/*
+package org.cloudburstmc.protocol.bedrock.data
+
+class AttributeData(val name: String, val value: Float) {
+    // Add other properties/methods if needed by your code
+}
+
+
+---
+
+### Что вам нужно сделать:
+
+1.  **Скопируйте содержимое этих двух файлов** в соответствующие места в вашем проекте.
+2.  **УДАЛИТЕ все дублирующиеся определения** классов, интерфейсов или функций, которые я пометил как "ЗАГЛУШКА". Например, если у вас уже есть файл `ComposedPacketHandler.kt`, то удалите определение этого интерфейса из `GameSession.kt`.
+3.  **Создайте отсутствующие файлы для заглушек**, если их нет в вашем проекте (например, `Base64Utils.kt`, `MuCuteRelaySession.kt`, `InterceptablePacketImpl.kt`, `ModuleManager.kt`, `Entity.kt`, а также для пакетов `MovePlayerPacket`, `UpdateAttributesPacket`, `EntityDataTypes`, `AttributeData`). **Поместите их в правильные пути пакетов, указанные в заглушках.**
+4.  **В вашем файле `build.gradle` (module: app)** убедитесь, что у вас есть все необходимые зависимости для `CloudburstMC.Protocol.Bedrock` и `Gson`. Например:
+    ```gradle
+    dependencies {
+        // ... другие зависимости
+        implementation 'org.cloudburstmc:protocol-bedrock:YOUR_VERSION' // Замените YOUR_VERSION на актуальную версию
+        implementation 'com.google.code.gson:gson:2.10.1' // Или более новую версию
+        // Если используете Kotlin Coroutines (для некоторых асинхронных операций)
+        // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1"
+        // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
+    }
+    ```
+5.  **Очистите проект (Build -> Clean Project)** и затем **пересоберите его (Build -> Rebuild Project)** в Android Studio.
+
+Цель этого шага — **добиться полной компиляции проекта**. Как только это произойдет, мы сможем по очереди добавлять функциональность для скинов, убеждаясь, что каждый шаг работает.
+
+Сообщите мне, когда проект скомпилируется успешно!
