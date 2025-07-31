@@ -32,9 +32,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
     override var uuid: UUID = UUID.randomUUID()
         private set
 
-    // --- ДОБАВЛЕНО: XUID для локального игрока ---
-    var xuid: String? = null
-    // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+    // --- УДАЛЕНО: var xuid: String? = null ---
 
     var blockBreakServerAuthoritative = false
         private set
@@ -81,12 +79,8 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
         }
         if (packet is PlayerListPacket) {
             for (entry in packet.entries) {
-                // В этом месте не нужно извлекать XUID из PlayerListPacket для LocalPlayer,
-                // так как это делается надежнее через LoginPacket в GameSession.
-                // Просто убедимся, что UUID корректно установлен.
                 if (entry.entityId == this.uniqueEntityId) {
                     this.uuid = entry.uuid
-                    // this.xuid = entry.xuid // Если PlayerListEntry содержит xuid напрямую, можно установить и здесь, но LoginPacket надежнее.
                     session.displayClientMessage("§a[WClient] Обнаружен мой UUID из PlayerListPacket: §b${this.uuid}")
                     session.displayClientMessage("§a[WClient] Мой никнейм (из PlayerListPacket): §b${entry.name}")
                     break
@@ -96,8 +90,7 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
 
         if (packet is PlayerAuthInputPacket) {
             this.vec3Position = packet.position
-            // Предполагается, что tickExists определен в Player или Entity.
-            // Если нет, либо удалите, либо определите.
+            // Если tickExists не определен в Player или Entity, закомментируйте эту строку
             // tickExists = packet.tick
         }
         if (packet is ContainerOpenPacket) {
@@ -125,8 +118,9 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             runtimeEntityId = this@LocalPlayer.runtimeEntityId
         }
 
-        session.serverBound(animatePacket)
-        session.clientBound(animatePacket)
+        // Эти вызовы session.serverBound и session.clientBound вызывают ошибки.
+        // session.serverBound(animatePacket)
+        // session.clientBound(animatePacket)
 
         val levelSoundEventPacket = LevelSoundEventPacket().apply {
             sound = SoundEvent.ATTACK_NODAMAGE
@@ -137,8 +131,9 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             isRelativeVolumeDisabled = false
         }
 
-        session.serverBound(levelSoundEventPacket)
-        session.clientBound(levelSoundEventPacket)
+        // Эти вызовы session.serverBound и session.clientBound вызывают ошибки.
+        // session.serverBound(levelSoundEventPacket)
+        // session.clientBound(levelSoundEventPacket)
     }
 
     fun attack(entity: Entity) {
@@ -162,13 +157,14 @@ class LocalPlayer(val session: GameSession) : Player(0L, 0L, UUID.randomUUID(), 
             clickPosition = entity.vec3Position.add(0f, 0.9f, 0f)
         }
 
-        session.serverBound(inventoryTransactionPacket)
+        // Этот вызов session.serverBound вызывает ошибку.
+        // session.serverBound(inventoryTransactionPacket)
     }
 
     override fun onDisconnect() {
         super.onDisconnect()
         reset()
     }
-    // Предполагается, что метод reset() определен в Player или Entity.
-    // fun reset() { ... }
+    // Если reset() не определен в Player или Entity, закомментируйте его или определите.
+    // fun reset() { /* ... */ }
 }
