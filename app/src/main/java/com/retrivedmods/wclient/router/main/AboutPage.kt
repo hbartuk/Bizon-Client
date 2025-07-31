@@ -47,7 +47,7 @@ fun AboutPageContent() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 InfoCard(title = "bizon client") {
-                    Text("версия : 0.0.1 beta public", style = MaterialTheme.typography.bodyMedium)
+                    Text("версия : 0.1 alpha private", style = MaterialTheme.typography.bodyMedium)
                     Text("создатель : Hbart/hbort", style = MaterialTheme.typography.bodyMedium)
                 }
 
@@ -56,17 +56,13 @@ fun AboutPageContent() {
                     Text("• Protohax")
                     Text("• Project Lumina")
                     Text("• WClient")
+                    Text("• Другу Nikita218000")
                 }
 
                 InfoCard(title = "Социальные сети") {
                     ClickableText("GitHub", "https://github.com/hbartuk")
                     ClickableText("telegram", "@hbortuk")
                     ClickableText("vk", "@hbortik")
-                }
-
-                InfoCard(title = "License") {
-                    Text("Licensed under the GNU GPL v3 License.", style = MaterialTheme.typography.bodySmall)
-                    Text("You are free to modify and distribute the code under the same license.")
                 }
             }
         }
