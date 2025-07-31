@@ -7,7 +7,7 @@ import org.cloudburstmc.protocol.bedrock.packet.NetworkStackLatencyPacket
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket
 import java.util.*
 import kotlin.collections.HashMap
-import kotlin.math.coerceAtLeast // Импорт функции coerceAtLeast
+import kotlin.math.* // Импорт функции coerceAtLeast
 
 // PingSpoofModule теперь имеет пустой конструктор.
 // Если ваш базовый класс Module требует параметры в конструкторе,
