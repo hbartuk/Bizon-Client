@@ -3,7 +3,7 @@ package com.retrivedmods.wclient.game
 
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket
 
-class InterceptablePacket(override val packet: BedrockPacket) {
+class InterceptablePacket(val packet: BedrockPacket) {
     var isIntercepted: Boolean = false
         private set
 
