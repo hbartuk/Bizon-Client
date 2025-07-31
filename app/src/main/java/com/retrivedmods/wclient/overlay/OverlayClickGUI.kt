@@ -3,6 +3,7 @@ package com.retrivedmods.wclient.overlay
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.util.Log // Добавляем импорт Log
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,12 +50,7 @@ class OverlayClickGUI : OverlayWindow() {
 
     private val _layoutParams by lazy {
         super.layoutParams.apply {
-            // Keep existing flags for dimming and blur
             flags = flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            // Add FLAG_WATCH_OUTSIDE_TOUCH to help detect touches outside the content,
-            // though the full-screen background clickable handles the main dismissal.
-            // No need for FLAG_NOT_TOUCHABLE here, as we want to handle clicks on the dim area.
-            
             if (Build.VERSION.SDK_INT >= 31) {
                 blurBehindRadius = 30
             }
@@ -75,10 +71,8 @@ class OverlayClickGUI : OverlayWindow() {
     override fun Content() {
         val context = LocalContext.current
 
-        // The root Box is responsible for the full-screen dimmed background and
-        // dismissing the overlay when the background is clicked.
         Box(
-            modifier = Modifier
+            modifier = Modifier // Добавил modifier =
                 .fillMaxSize()
                 .background(
                     Brush.radialGradient(
@@ -89,36 +83,31 @@ class OverlayClickGUI : OverlayWindow() {
                         radius = 1000f
                     )
                 )
-                // This clickable modifier is crucial. It captures touches on the dim background
-                // and dismisses the overlay. If this isn't working, the problem is in dismissal,
-                // not the touch flags necessarily.
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    // Log to verify this block is executed
-                    android.util.Log.d("OverlayClickGUI", "Dim background clicked, attempting to dismiss overlay.")
+                    // Добавил Log.d для отладки, если нужно.
+                    Log.d("OverlayClickGUI", "Dim background clicked, attempting to dismiss overlay.")
                     OverlayManager.dismissOverlayWindow(this)
                 },
             contentAlignment = Alignment.Center
         ) {
-            // Compact Premium Container - This is the actual GUI box
+            // Compact Premium Container
             Box(
                 modifier = Modifier
                     .size(width = 720.dp, height = 480.dp)
-                    .rgbBorder()
+                    .rgbBorder() // Здесь будет новый сине-фиолетовый градиент
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF0F0F0F), // Dark gray
-                                Color(0xFF1B1B1B), // Slightly lighter gray
-                                Color(0xFF0F0F0F)  // Dark gray again
+                                Color(0xFF0F0F0F), // Темно-серый фон
+                                Color(0xFF1B1B1B), // Чуть светлее
+                                Color(0xFF0F0F0F)
                             )
                         ),
                         RoundedCornerShape(20.dp)
                     )
-                    // This clickable prevents touches on the GUI content from dismissing the overlay.
-                    // It consumes the touch so it doesn't propagate to the parent Box.
                     .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {}
             ) {
                 Column(
@@ -148,10 +137,10 @@ class OverlayClickGUI : OverlayWindow() {
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            Color(0x3500BFFF), // Sky blue
-                            Color(0x35006EFF), // Dark blue
-                            Color(0x356A00FF), // Indigo
-                            Color(0x3500BFFF)  // Sky blue
+                            Color(0x3500BFFF), // Небесно-голубой
+                            Color(0x35006EFF), // Темно-синий
+                            Color(0x356A00FF), // Индиго
+                            Color(0x3500BFFF)  // Небесно-голубой (для циклического градиента)
                         )
                     ),
                     RoundedCornerShape(15.dp)
@@ -186,13 +175,13 @@ class OverlayClickGUI : OverlayWindow() {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_wclient),
-                        contentDescription = "Bizon Client Logo",
+                        painter = painterResource(R.drawable.ic_wclient), // Иконку оставил прежней, если нужно, измените R.drawable.ic_wclient на нужную.
+                        contentDescription = "Логотип Bizon Client", // Изменен текст
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                RainbowText("Bizon Client", fontSize = 20f, fontWeight = FontWeight.Bold)
+                RainbowText("Bizon Client", fontSize = 20f, fontWeight = FontWeight.Bold) // Изменен текст
             }
 
             // Action Buttons
@@ -200,13 +189,13 @@ class OverlayClickGUI : OverlayWindow() {
                 PremiumIconButton(
                     iconRes = R.drawable.ic_discord,
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/your_bizon_discord")))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/your_bizon_discord"))) // Изменена ссылка
                     }
                 )
                 PremiumIconButton(
                     iconRes = R.drawable.ic_web,
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://bizonclient.xyz/")))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://bizonclient.xyz/"))) // Изменена ссылка
                     }
                 )
                 PremiumIconButton(
@@ -237,8 +226,8 @@ class OverlayClickGUI : OverlayWindow() {
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color(0x15FFFFFF), // Slightly darker
-                                Color(0x0AFFFFFF), // Even darker
+                                Color(0x15FFFFFF), // Чуть темнее
+                                Color(0x0AFFFFFF), // Еще темнее
                                 Color(0x15FFFFFF)
                             )
                         ),
@@ -327,11 +316,12 @@ class OverlayClickGUI : OverlayWindow() {
                     .scale(animatedScale)
                     .background(
                         if (isSelected) {
+                            // Новые цвета для выбранной категории (сине-фиолетовые)
                             Brush.radialGradient(
                                 colors = listOf(
-                                    Color(0xFF00BFFF), // Sky blue
-                                    Color(0xFF006EFF), // Dark blue
-                                    Color(0xFF6A00FF)  // Indigo
+                                    Color(0xFF00BFFF), // Небесно-голубой
+                                    Color(0xFF006EFF), // Темно-синий
+                                    Color(0xFF6A00FF)  // Индиго
                                 )
                             )
                         } else {
@@ -460,11 +450,11 @@ class OverlayClickGUI : OverlayWindow() {
             uri?.let {
                 if (ModuleManager.importConfigFromFile(context, it)) {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("✅ Конфигурация успешно импортирована!")
+                        snackbarHostState.showSnackbar("✅ Конфигурация успешно импортирована!") // Изменен текст
                     }
                 } else {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("❌ Не удалось импортировать конфигурацию.")
+                        snackbarHostState.showSnackbar("❌ Не удалось импортировать конфигурацию.") // Изменен текст
                     }
                 }
             }
@@ -481,9 +471,9 @@ class OverlayClickGUI : OverlayWindow() {
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                Color(0x2000BFFF),
-                                Color(0x20006EFF),
-                                Color(0x206A00FF)
+                                Color(0x2000BFFF), // Небесно-голубой
+                                Color(0x20006EFF), // Темно-синий
+                                Color(0x206A00FF)  // Индиго
                             )
                         ),
                         RoundedCornerShape(12.dp)
@@ -503,14 +493,14 @@ class OverlayClickGUI : OverlayWindow() {
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            "Настройки Bizon Client",
+                            "Настройки Bizon Client", // Изменен текст
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Text(
-                        "Управление конфигурациями Bizon Client",
+                        "Управление конфигурациями Bizon Client", // Изменен текст
                         color = Color(0xFFBBBBBB),
                         fontSize = 12.sp
                     )
@@ -526,40 +516,40 @@ class OverlayClickGUI : OverlayWindow() {
             ) {
                 item {
                     PremiumActionCard(
-                        title = "Импорт Конфигурации",
-                        description = "Загрузить настройки клиента",
+                        title = "Импорт Конфигурации", // Изменен текст
+                        description = "Загрузить настройки клиента", // Изменен текст
                         icon = Icons.Rounded.Upload,
                         onClick = { filePickerLauncher.launch("application/json") }
                     )
                 }
                 item {
                     PremiumActionCard(
-                        title = "Экспорт Конфигурации",
-                        description = "Сохранить текущие настройки",
+                        title = "Экспорт Конфигурации", // Изменен текст
+                        description = "Сохранить текущие настройки", // Изменен текст
                         icon = Icons.Rounded.SaveAlt,
                         onClick = { showFileNameDialog = true }
                     )
                 }
                 item {
                     PremiumActionCard(
-                        title = "Сброс Конфигурации",
-                        description = "Восстановить настройки по умолчанию",
+                        title = "Сброс Конфигурации", // Изменен текст
+                        description = "Восстановить настройки по умолчанию", // Изменен текст
                         icon = Icons.Rounded.Refresh,
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Конфигурация сброшена до стандартных значений!")
+                                snackbarHostState.showSnackbar("Конфигурация сброшена до стандартных значений!") // Изменен текст
                             }
                         }
                     )
                 }
                 item {
                     PremiumActionCard(
-                        title = "Резервная Копия",
-                        description = "Создать резервную копию настроек",
+                        title = "Резервная Копия", // Изменен текст
+                        description = "Создать резервную копию настроек", // Изменен текст
                         icon = Icons.Rounded.BackupTable,
                         onClick = {
                             coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Резервное копирование создано!")
+                                snackbarHostState.showSnackbar("Резервное копирование создано!") // Изменен текст
                             }
                         }
                     )
@@ -582,18 +572,18 @@ class OverlayClickGUI : OverlayWindow() {
                 confirmButton = {
                     TextButton(onClick = {
                         val filePath = if (ModuleManager.exportConfigToFile(context, configFileName)) {
-                            context.getFileStreamPath(configFileName)?.absolutePath ?: "Неизвестный путь"
+                            context.getFileStreamPath(configFileName)?.absolutePath ?: "Неизвестный путь" // Изменен текст
                         } else null
 
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(
-                                filePath?.let { "✅ Экспортировано в: $it" } ?: "❌ Не удалось экспортировать конфигурацию"
+                                filePath?.let { "✅ Экспортировано в: $it" } ?: "❌ Не удалось экспортировать конфигурацию" // Изменен текст
                             )
                         }
 
                         showFileNameDialog = false
                     }) {
-                        Text("Экспорт", color = Color(0xFF00BFFF))
+                        Text("Экспорт", color = Color(0xFF00BFFF)) // Изменен цвет
                     }
                 },
                 dismissButton = {
@@ -602,22 +592,22 @@ class OverlayClickGUI : OverlayWindow() {
                     }
                 },
                 title = {
-                    Text("Экспорт Конфигурации", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Экспорт Конфигурации", color = Color.White, fontWeight = FontWeight.Bold) // Изменен текст
                 },
                 text = {
                     OutlinedTextField(
                         value = configFileName,
                         onValueChange = { configFileName = it },
-                        label = { Text("Имя файла", color = Color.White.copy(alpha = 0.7f)) },
-                        placeholder = { Text("например, my_bizon_config.json", color = Color.White.copy(alpha = 0.5f)) },
+                        label = { Text("Имя файла", color = Color.White.copy(alpha = 0.7f)) }, // Изменен текст
+                        placeholder = { Text("например, my_bizon_config.json", color = Color.White.copy(alpha = 0.5f)) }, // Изменен текст
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF00BFFF),
+                            focusedBorderColor = Color(0xFF00BFFF), // Изменен цвет
                             unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            cursorColor = Color(0xFF00BFFF)
+                            cursorColor = Color(0xFF00BFFF) // Изменен цвет курсора
                         )
                     )
                 },
@@ -671,10 +661,11 @@ class OverlayClickGUI : OverlayWindow() {
                         modifier = Modifier
                             .size(36.dp)
                             .background(
+                                // Новые цвета для ActionCard (сине-фиолетовые)
                                 Brush.radialGradient(
                                     colors = listOf(
-                                        Color(0x4000BFFF), // Sky blue
-                                        Color(0x40006EFF)  // Dark blue
+                                        Color(0x4000BFFF), // Небесно-голубой
+                                        Color(0x40006EFF)  // Темно-синий
                                     )
                                 ),
                                 CircleShape
@@ -708,7 +699,7 @@ class OverlayClickGUI : OverlayWindow() {
         }
     }
 
-    // Enhanced RGB Animated Border Modifier
+    // Улучшенный модификатор RGB-анимированной границы
     @Composable
     private fun Modifier.rgbBorder(): Modifier {
         val transition = rememberInfiniteTransition()
@@ -724,7 +715,7 @@ class OverlayClickGUI : OverlayWindow() {
             val strokeWidth = 4.dp.toPx()
             val radius = 20.dp.toPx()
 
-            // Create enhanced gradient colors with more vibrant transitions (синие/фиолетовые оттенки)
+            // Новые градиентные цвета для RGB-бордера (сине-фиолетовые оттенки)
             val colors = listOf(
                 Color.hsv((phase) % 360f, 0.9f, 1f),
                 Color.hsv((phase + 45) % 360f, 0.85f, 1f),
@@ -733,7 +724,7 @@ class OverlayClickGUI : OverlayWindow() {
                 Color.hsv((phase + 180) % 360f, 0.9f, 1f),
                 Color.hsv((phase + 225) % 360f, 0.85f, 1f),
                 Color.hsv((phase + 270) % 360f, 0.9f, 1f),
-                Color.hsv((phase + 315) % 0.85f, 1f),
+                Color.hsv((phase + 315) % 360f, 0.85f, 1f),
                 Color.hsv((phase) % 360f, 0.9f, 1f)
             )
 
