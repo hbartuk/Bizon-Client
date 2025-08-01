@@ -13,13 +13,8 @@ import com.retrivedmods.wclient.game.module.visual.*
 import com.retrivedmods.wclient.game.module.world.*
 
 // Эти явные импорты нужны, если DesyncModule и FreeCameraModule находятся в других подпакетах.
-// Если они в том же пакете, что и com.retrivedmods.wclient.game.module.player.*,
-// то эти строки не нужны, но и вреда от них не будет, если они дублируют.
 import com.retrivedmods.wclient.game.module.player.DesyncModule
 import com.retrivedmods.wclient.game.module.player.FreeCameraModule
-
-// *** НОВЫЙ ИМПОРТ ДЛЯ SPOOFINGMODULE ***
-//import com.retrivedmods.wclient.game.module.misc.SpoofingModule // Убедитесь, что путь правильный, если SpoofingModule находится в другом месте
 
 // Импорт команд
 import com.retrivedmods.wclient.game.command.impl.SledCommand
@@ -42,7 +37,6 @@ object ModuleManager {
 
     var session: GameSession? = null
 
-    // *** ИСПРАВЛЕНИЕ: МЕНЯЕМ НА "public val _modules" ДЛЯ НАДЕЖНОСТИ ***
     public val _modules: MutableList<Module> = ArrayList()
     val modules: List<Module> = _modules
 
@@ -77,13 +71,13 @@ object ModuleManager {
             add(JetPackModule())
             add(AdvanceDisablerModule())
             add(ChatIgnoreModule())
-            add(BlinkModule()) // Дублирование, возможно, следует удалить одну
+            add(BlinkModule())
             add(NightVisionModule())
             add(PingSpoofModule())
             add(RegenerationModule())
             add(AutoDisconnectModule())
             add(SkinStealerModule())
-            add(SoundModule()) // SoundModule is registered here
+            add(SoundModule())
             add(AntiKickModule())
             add(NoFormsModule())
             add(PlayerJoinNotifierModule())
@@ -121,7 +115,6 @@ object ModuleManager {
             add(EnemyHunterModule())
             // *** НОВЫЕ МОДУЛИ ***
             add(LagModule())
-            add(NameResolverModule())
         }
 
         with(_commands) {
@@ -130,7 +123,7 @@ object ModuleManager {
             add(SledCommand())
             add(ChatIgnoreCommand())
             add(SaveSkinCommand())
-            // *** НОВЫЕ КОМАНДЫ ***
+            // *** НОВАЯ КОМАНДА ***
             add(LagCommand())
         }
     }
@@ -144,7 +137,6 @@ object ModuleManager {
     }
 
     inline fun <reified T : Module> getModule(): T? {
-        // Доступ к _modules теперь разрешен, потому что он public
         return _modules.firstOrNull { it is T } as? T
     }
 
