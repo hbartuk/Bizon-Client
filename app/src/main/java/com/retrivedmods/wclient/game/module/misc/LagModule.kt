@@ -1,25 +1,25 @@
-package com.retrivedmods.wclient.game.module.combat
+package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
-import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
 import org.cloudburstmc.protocol.bedrock.data.PlayerActionType
+import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
-import org.cloudburstmc.protocol.bedrock.data.entity.AnimateAction
+import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerSlotType
 
 class LagModule : Module("LagMachine", ModuleCategory.Combat) {
 
     private var isCollecting = false
     private val collectedPackets = mutableListOf<InterceptablePacket>()
 
-    private var potionsPerSecond: Int = 0
+    private var actionsPerSecond: Int = 0
     private var collectionTime: Long = 0
 
     private var startTime: Long = 0
 
-    fun startCollecting(potionsPerSecond: Int, collectionTime: Long) {
-        this.potionsPerSecond = potionsPerSecond
+    fun startCollecting(actionsPerSecond: Int, collectionTime: Long) {
+        this.actionsPerSecond = actionsPerSecond
         this.collectionTime = collectionTime * 1000 // Переводим в миллисекунды
         this.isCollecting = true
         this.startTime = System.currentTimeMillis()
@@ -44,7 +44,7 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
         session.displayClientMessage("§a[LagMachine] Все пакеты отправлены.")
     }
 
-    override fun onTick() {
+    override fun onUpdate() {
         if (!isCollecting) return
 
         val currentTime = System.currentTimeMillis()
@@ -55,31 +55,31 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
         }
 
         val localPlayer = session.localPlayer ?: return
-        
+
         // Генерируем пакеты броска зелья
-        for (i in 0 until potionsPerSecond) {
+        for (i in 0 until actionsPerSecond) {
             // Пакет начала использования предмета
-            val useItemPacket = PlayerActionPacket().apply {
+            val startUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = PlayerActionType.START_BREAK // Или START_ITEM_USE
-                blockPosition = localPlayer.position.toIntFloor() // Нужно указать позицию
-                face = 2 // Произвольное значение
+                action = PlayerActionType.START_ITEM_USE
+                blockPosition = localPlayer.position.toIntFloor()
+                face = -1
             }
-            collectedPackets.add(InterceptablePacket(useItemPacket))
+            collectedPackets.add(InterceptablePacket(startUsePacket))
 
             // Пакет анимации
             val animatePacket = AnimatePacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = AnimateAction.SWING_ARM
+                action = AnimatePacket.Action.SWING_ARM
             }
             collectedPackets.add(InterceptablePacket(animatePacket))
-            
+
             // Пакет завершения использования предмета
             val stopUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = PlayerActionType.STOP_BREAK // Или STOP_ITEM_USE
+                action = PlayerActionType.STOP_ITEM_USE
                 blockPosition = localPlayer.position.toIntFloor()
-                face = 2
+                face = -1
             }
             collectedPackets.add(InterceptablePacket(stopUsePacket))
         }
