@@ -20,6 +20,8 @@ class SoundCommand : Command("sound", "s") {
             session.displayClientMessage("§7.sound random [громкость] [питч] §8- Случайный звук")
             session.displayClientMessage("§7.sound stopall §8- Остановить все звуки")
             session.displayClientMessage("§7.sound level <событие> §8- LevelSound событие")
+            session.displayClientMessage("§7.sound attack §8- Быстрый звук атаки")
+            session.displayClientMessage("§7.sound testlevel §8- Тест LevelSound событий")
             return
         }
 
@@ -68,6 +70,17 @@ class SoundCommand : Command("sound", "s") {
                 session.displayClientMessage("§a[SoundCommand] Отправлена команда на остановку звуков.")
             }
 
+            "attack" -> {
+                println("DEBUG: Playing attack sound via SoundCommand")
+                soundModule.playAttackSound()
+            }
+
+            "testlevel" -> {
+                session.displayClientMessage("§e[SoundCommand] Запускаю тест LevelSound событий...")
+                println("DEBUG: Starting LevelSound test via SoundCommand")
+                soundModule.testLevelSounds()
+            }
+
             "level" -> {
                 if (args.size < 2) {
                     session.displayClientMessage("§c[SoundCommand] Укажите событие для LevelSound!")
@@ -79,11 +92,11 @@ class SoundCommand : Command("sound", "s") {
                 try {
                     val soundEvent = SoundEvent.valueOf(eventName)
                     println("DEBUG: Playing LevelSound event: $soundEvent")
-                    soundModule.playLevelSound(soundEvent)
+                    soundModule.playLevelSoundAdvanced(soundEvent)
                     session.displayClientMessage("§a[SoundCommand] LevelSound событие: §b$eventName")
                 } catch (e: IllegalArgumentException) {
                     session.displayClientMessage("§c[SoundCommand] Неизвестное событие: §7$eventName")
-                    session.displayClientMessage("§7Примеры: BLOCK_PLACE, ENTITY_HURT, ITEM_USE_ON")
+                    session.displayClientMessage("§7Примеры: ATTACK_NODAMAGE, BLOCK_PLACE, ITEM_USE_ON, STEP, HIT")
                 }
             }
 
