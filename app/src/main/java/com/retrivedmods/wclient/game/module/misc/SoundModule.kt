@@ -168,11 +168,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     fun testLevelSounds() {
         val testEvents = listOf(
             SoundEvent.ATTACK_NODAMAGE,
-            SoundEvent.BLOCK_PLACE,
+            SoundEvent.PLACE, // Исправлено: BLOCK_PLACE -> PLACE
             SoundEvent.ITEM_USE_ON,
             SoundEvent.STEP,
             SoundEvent.HIT,
-            SoundEvent.ENTITY_HURT
+            SoundEvent.HURT // Исправлено: ENTITY_HURT -> HURT
         )
 
         val currentSession = session ?: return
