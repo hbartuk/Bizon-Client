@@ -122,8 +122,9 @@ class NoFormsModule : Module("NoForms", ModuleCategory.Misc) {
         return false
     }
 
-    override fun onEnable() {
-        super.onEnable()
+    // ИСПРАВЛЕНО: onEnable -> onEnabled
+    override fun onEnabled() {
+        super.onEnabled()
         blockedFormsCount = 0
         session.displayClientMessage("§a[NoForms] Модуль включен - все формы будут скрыты")
         
@@ -136,8 +137,9 @@ class NoFormsModule : Module("NoForms", ModuleCategory.Misc) {
         }
     }
 
-    override fun onDisable() {
-        super.onDisable()
+    // ИСПРАВЛЕНО: onDisable -> onDisabled
+    override fun onDisabled() {
+        super.onDisabled()
         
         if (showBlockedMessage) {
             session.displayClientMessage("§c[NoForms] Модуль отключен (заблокировано форм: $blockedFormsCount)")
