@@ -1,9 +1,10 @@
+// File: com.retrivedmods.wclient.game.command.impl.LagCommand.kt
 package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
 import com.retrivedmods.wclient.game.ModuleManager
 import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.module.combat.LagModule
+import com.retrivedmods.wclient.game.module.misc.LagModule // ИСПРАВЛЕНО: Путь к модулю теперь 'misc'
 
 class LagCommand : Command("lag", ".") {
 
