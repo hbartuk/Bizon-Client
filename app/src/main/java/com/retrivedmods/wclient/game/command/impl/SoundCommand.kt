@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/retrivedmods/wclient/game/command/impl/SoundCommand.kt
 package com.retrivedmods.wclient.game.command.impl
 
 import com.retrivedmods.wclient.game.GameSession
@@ -16,7 +15,6 @@ class SoundCommand : Command("sound", "s") {
             return
         }
 
-        // Автоматически включаем модуль, если он выключен
         if (!soundModule.isEnabled) {
             soundModule.isEnabled = true
             session.displayClientMessage("§a[SoundCommand] Модуль SoundModule автоматически включен.")
@@ -55,7 +53,7 @@ class SoundCommand : Command("sound", "s") {
 
             "testlevel" -> {
                 session.displayClientMessage("§e[SoundCommand] Запускаю тест LevelSound событий...")
-                soundModule.testLevelSounds()
+                soundModule.testLevelSounds() // ИСПРАВЛЕНО
             }
 
             "level" -> {
@@ -77,7 +75,6 @@ class SoundCommand : Command("sound", "s") {
             }
             
             else -> {
-                // Воспроизведение конкретного звука
                 val soundName = args.getOrNull(0) ?: run {
                     session.displayClientMessage("§c[SoundCommand] Укажите имя звука или команду.")
                     return
@@ -85,7 +82,6 @@ class SoundCommand : Command("sound", "s") {
                 val volume = args.getOrNull(1)?.toFloatOrNull() ?: 1.0f
                 val pitch = args.getOrNull(2)?.toFloatOrNull() ?: 1.0f
 
-                // Валидация параметров
                 if (volume < 0.0f || volume > 10.0f) {
                     session.displayClientMessage("§c[SoundCommand] Громкость должна быть от 0.0 до 10.0")
                     return
