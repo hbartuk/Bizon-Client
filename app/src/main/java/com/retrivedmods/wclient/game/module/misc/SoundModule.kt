@@ -6,7 +6,7 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEvent2Packet
-import org.cloudburstmc.protocol.bedrock.data.SoundEvent // <- ОСТАВЬТЕ ТОЛЬКО ЭТОТ ИМПОРТ
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent
 import org.cloudburstmc.math.vector.Vector3f
 import kotlin.random.Random
 
