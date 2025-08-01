@@ -121,9 +121,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     fun playLevelSoundAdvanced(
         soundEvent: SoundEvent,
         identifier: String = "minecraft:player",
-        extraData: Int = -1,
-        babySound: Boolean = false,
-        relativeVolumeDisabled: Boolean = false
+        extraData: Int = -1
     ) {
         val currentSession = session ?: return
         val player = currentSession.localPlayer
@@ -169,8 +167,12 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
     fun testLevelSounds() {
         val testEvents = listOf(
-            SoundEvent.ATTACK_NODAMAGE, SoundEvent.BLOCK_PLACE, SoundEvent.ITEM_USE_ON,
-            SoundEvent.STEP, SoundEvent.HIT, SoundEvent.ENTITY_HURT
+            SoundEvent.ATTACK_NODAMAGE,
+            SoundEvent.BLOCK_PLACE,
+            SoundEvent.ITEM_USE_ON,
+            SoundEvent.STEP,
+            SoundEvent.HIT,
+            SoundEvent.ENTITY_HURT
         )
 
         val currentSession = session ?: return
