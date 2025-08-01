@@ -5,7 +5,6 @@ import com.retrivedmods.wclient.game.InterceptablePacket
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession
-import org.cloudburstmc.protocol.bedrock.data.chat.ChatType
 import org.cloudburstmc.protocol.bedrock.packet.TextPacket
 import java.io.File
 
@@ -37,7 +36,7 @@ class ChatIgnoreModule : Module("ChatIgnore", ModuleCategory.Misc) {
         if (!isEnabled) return
 
         val packet = interceptablePacket.packet
-        if (packet is TextPacket && packet.chatType == ChatType.CHAT) {
+        if (packet is TextPacket && packet.type == TextPacket.Type.CHAT) {
             val message = packet.message
             val sender = packet.sourceName ?: ""
 
