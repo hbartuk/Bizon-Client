@@ -75,7 +75,7 @@ object ModuleManager {
             add(SpeedModule())
             add(JetPackModule())
             add(AdvanceDisablerModule())
-            addChatIgnoreModule())
+            add(ChatIgnoreModule())
             add(BlinkModule()) // Дублирование, возможно, следует удалить одну
             add(NightVisionModule())
             add(PingSpoofModule())
