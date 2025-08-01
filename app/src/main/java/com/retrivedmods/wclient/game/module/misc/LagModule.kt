@@ -6,7 +6,7 @@ import com.retrivedmods.wclient.game.ModuleCategory
 import org.cloudburstmc.protocol.bedrock.data.PlayerActionType
 import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
-import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerSlotType
+import org.cloudburstmc.math.vector.Vector3f // Нужно добавить этот импорт
 
 class LagModule : Module("LagMachine", ModuleCategory.Combat) {
 
@@ -20,7 +20,7 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
 
     fun startCollecting(actionsPerSecond: Int, collectionTime: Long) {
         this.actionsPerSecond = actionsPerSecond
-        this.collectionTime = collectionTime * 1000 // Переводим в миллисекунды
+        this.collectionTime = collectionTime * 1000
         this.isCollecting = true
         this.startTime = System.currentTimeMillis()
         collectedPackets.clear()
@@ -44,7 +44,7 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
         session.displayClientMessage("§a[LagMachine] Все пакеты отправлены.")
     }
 
-    override fun onUpdate() {
+    override fun onTick() {
         if (!isCollecting) return
 
         val currentTime = System.currentTimeMillis()
@@ -55,14 +55,15 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
         }
 
         val localPlayer = session.localPlayer ?: return
-
+        val playerPosition = localPlayer.position ?: return // Предполагаем, что у игрока есть свойство 'position'
+        
         // Генерируем пакеты броска зелья
         for (i in 0 until actionsPerSecond) {
             // Пакет начала использования предмета
             val startUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = PlayerActionType.START_ITEM_USE
-                blockPosition = localPlayer.position.toIntFloor()
+                action = PlayerActionType.START_BREAK 
+                blockPosition = playerPosition.toIntFloor()
                 face = -1
             }
             collectedPackets.add(InterceptablePacket(startUsePacket))
@@ -73,12 +74,12 @@ class LagModule : Module("LagMachine", ModuleCategory.Combat) {
                 action = AnimatePacket.Action.SWING_ARM
             }
             collectedPackets.add(InterceptablePacket(animatePacket))
-
+            
             // Пакет завершения использования предмета
             val stopUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = PlayerActionType.STOP_ITEM_USE
-                blockPosition = localPlayer.position.toIntFloor()
+                action = PlayerActionType.STOP_BREAK
+                blockPosition = playerPosition.toIntFloor()
                 face = -1
             }
             collectedPackets.add(InterceptablePacket(stopUsePacket))
