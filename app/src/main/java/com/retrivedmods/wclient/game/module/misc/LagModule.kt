@@ -9,7 +9,7 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
 import org.cloudburstmc.math.vector.Vector3f
 
-class LagModule : Module("LagMachine", ModuleCategory.Misc) { // ИСПРАВЛЕНО: Категория изменена на Misc
+class LagModule : Module("LagMachine", ModuleCategory.Misc) {
 
     private var isCollecting = false
     private val collectedPackets = mutableListOf<InterceptablePacket>()
@@ -56,14 +56,14 @@ class LagModule : Module("LagMachine", ModuleCategory.Misc) { // ИСПРАВЛ�
         }
 
         val localPlayer = session.localPlayer ?: return
-        val playerPosition = localPlayer.position ?: return // Предполагаем, что у игрока есть свойство 'position'
-
+        val playerPosition = localPlayer.vec3Position // ИСПРАВЛЕНО: Используем vec3Position
+        
         // Генерируем пакеты броска зелья
         for (i in 0 until actionsPerSecond) {
             // Пакет начала использования предмета
             val startUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
-                action = PlayerActionType.START_BREAK
+                action = PlayerActionType.START_BREAK 
                 blockPosition = playerPosition.toIntFloor()
                 face = -1
             }
@@ -75,7 +75,7 @@ class LagModule : Module("LagMachine", ModuleCategory.Misc) { // ИСПРАВЛ�
                 action = AnimatePacket.Action.SWING_ARM
             }
             collectedPackets.add(InterceptablePacket(animatePacket))
-
+            
             // Пакет завершения использования предмета
             val stopUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
