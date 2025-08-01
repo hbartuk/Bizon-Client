@@ -27,6 +27,7 @@ import com.retrivedmods.wclient.game.command.impl.SaveSkinCommand
 import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
+import com.retrivedmods.wclient.game.command.impl.ChatIgnoreCommand
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -74,6 +75,7 @@ object ModuleManager {
             add(SpeedModule())
             add(JetPackModule())
             add(AdvanceDisablerModule())
+            addChatIgnoreModule())
             add(BlinkModule()) // Дублирование, возможно, следует удалить одну
             add(NightVisionModule())
             add(PingSpoofModule())
@@ -122,6 +124,7 @@ object ModuleManager {
             add(SkinStealerCommand())
             add(SoundCommand())
             add(SledCommand())
+            add(ChatIgnoreCommand())
             add(SaveSkinCommand())
         }
     }
