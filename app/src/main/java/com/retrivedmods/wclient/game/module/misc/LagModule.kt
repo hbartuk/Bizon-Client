@@ -1,4 +1,3 @@
-// File: com.retrivedmods.wclient.game.module.misc.LagModule.kt
 package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.InterceptablePacket
@@ -8,6 +7,12 @@ import org.cloudburstmc.protocol.bedrock.data.PlayerActionType
 import org.cloudburstmc.protocol.bedrock.packet.PlayerActionPacket
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket
 import org.cloudburstmc.math.vector.Vector3f
+import org.cloudburstmc.math.vector.Vector3i // НОВЫЙ ИМПОРТ
+
+// НОВАЯ ФУНКЦИЯ-РАСШИРЕНИЕ ДЛЯ Vector3f
+fun Vector3f.toIntFloor(): Vector3i {
+    return Vector3i.from(this.x.toInt(), this.y.toInt(), this.z.toInt())
+}
 
 class LagModule : Module("LagMachine", ModuleCategory.Misc) {
 
@@ -56,11 +61,9 @@ class LagModule : Module("LagMachine", ModuleCategory.Misc) {
         }
 
         val localPlayer = session.localPlayer ?: return
-        val playerPosition = localPlayer.vec3Position // ИСПРАВЛЕНО: Используем vec3Position
-        
-        // Генерируем пакеты броска зелья
+        val playerPosition = localPlayer.vec3Position
+
         for (i in 0 until actionsPerSecond) {
-            // Пакет начала использования предмета
             val startUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
                 action = PlayerActionType.START_BREAK 
@@ -69,14 +72,12 @@ class LagModule : Module("LagMachine", ModuleCategory.Misc) {
             }
             collectedPackets.add(InterceptablePacket(startUsePacket))
 
-            // Пакет анимации
             val animatePacket = AnimatePacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
                 action = AnimatePacket.Action.SWING_ARM
             }
             collectedPackets.add(InterceptablePacket(animatePacket))
             
-            // Пакет завершения использования предмета
             val stopUsePacket = PlayerActionPacket().apply {
                 runtimeEntityId = localPlayer.runtimeEntityId
                 action = PlayerActionType.STOP_BREAK
