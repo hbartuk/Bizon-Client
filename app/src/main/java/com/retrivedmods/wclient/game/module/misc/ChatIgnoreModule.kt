@@ -37,26 +37,22 @@ class ChatIgnoreModule : Module("ChatIgnore", ModuleCategory.Misc) {
             val message = packet.message
             val sender = packet.sourceName ?: ""
 
-            // --- ПРОВЕРЯЕМ, НЕ ЯВЛЯЕТСЯ ЛИ ОТПРАВИТЕЛЬ НАМИ ---
-            val localPlayerName = session.localPlayer?.name
-            if (localPlayerName != null && sender.equals(localPlayerName, ignoreCase = true)) {
-                // Если отправитель - это ты, не блокируем сообщение.
+            // --- ИСПРАВЛЕНИЕ: ПРОВЕРЯЕМ, ЯВЛЯЕТСЯ ЛИ СООБЩЕНИЕ ОТ СЕБЯ ---
+            // Сообщения от себя обычно имеют пустой sender.
+            if (sender.isBlank()) {
                 return
             }
             
             // --- ТЕПЕРЬ ФИЛЬТРУЕМ ТОЛЬКО ЧУЖИЕ СООБЩЕНИЯ ---
             val isIgnoredMessage = ignoredMessages.any { ignoredText ->
-                // Проверяем, содержит ли сообщение игнорируемое слово (без учета регистра)
                 message.contains(ignoredText, ignoreCase = true)
             }
 
             val isIgnoredSender = ignoreNames && ignoredMessages.any { ignoredName ->
-                // Проверяем, содержит ли ник отправителя игнорируемое слово (без учета регистра)
                 sender.contains(ignoredName, ignoreCase = true)
             }
 
             if (isIgnoredMessage || isIgnoredSender) {
-                // Если хоть одно условие совпало, блокируем пакет
                 interceptablePacket.intercept()
                 if (showBlockedMessage) {
                     session.displayClientMessage("§7[ChatIgnore] Заблокировано: §8$message")
