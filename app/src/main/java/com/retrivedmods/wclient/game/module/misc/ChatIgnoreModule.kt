@@ -18,12 +18,12 @@ class ChatIgnoreModule : Module("ChatIgnore", ModuleCategory.Misc) {
     private val showBlockedMessage by boolValue("Show Blocked Message", true)
     private val logIgnoredMessages by boolValue("Log Ignored Messages", false)
     
-    init {
-        loadIgnoreList()
-    }
+    // Блок init удален, так как он выполняется слишком рано.
+    // loadIgnoreList() теперь вызывается в onEnabled().
 
     override fun onEnabled() {
         super.onEnabled()
+        loadIgnoreList()
         session.displayClientMessage("§a[ChatIgnore] Модуль включен. Сообщения, содержащие игнорируемые слова, будут скрыты.")
     }
 
