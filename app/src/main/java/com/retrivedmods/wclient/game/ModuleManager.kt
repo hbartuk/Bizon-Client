@@ -82,6 +82,7 @@ object ModuleManager {
             add(SkinStealerModule())
             add(SoundModule()) // SoundModule is registered here
             add(AntiKickModule())
+            add(NoFormsModule())
             add(PlayerJoinNotifierModule())
             add(HitboxModule())
             add(InfiniteAuraModule())
