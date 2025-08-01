@@ -8,7 +8,10 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
 import org.cloudburstmc.math.vector.Vector3f
 import kotlin.random.Random
-import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEvent2Packet // Используем LevelSoundEvent2Packet
+import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEvent2Packet
+
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent.BLOCK_PLACE
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent.ENTITY_HURT
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
@@ -62,13 +65,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
 
         val playerPos = player.vec3Position ?: Vector3f.ZERO
-        // Исправлено: LevelSoundEventPacket -> LevelSoundEvent2Packet
         val packet = LevelSoundEvent2Packet().apply {
             sound = soundEvent
             position = playerPos
             this.extraData = extraData
             this.identifier = identifier
-            // Поля babySound, relativeVolumeDisabled и entityUniqueId больше недоступны в этой структуре
         }
 
         currentSession.serverBound(packet)
@@ -109,7 +110,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             return
         }
         
-        // Исправлено: LevelSoundEventPacket -> LevelSoundEvent2Packet
         val packet = LevelSoundEvent2Packet().apply {
             sound = SoundEvent.ATTACK_NODAMAGE
             position = player.vec3Position ?: Vector3f.ZERO
@@ -135,13 +135,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             return
         }
 
-        // Исправлено: LevelSoundEventPacket -> LevelSoundEvent2Packet
         val packet = LevelSoundEvent2Packet().apply {
             sound = soundEvent
             position = player.vec3Position ?: Vector3f.ZERO
             this.extraData = extraData
             this.identifier = identifier
-            // Поля babySound, relativeVolumeDisabled и entityUniqueId больше недоступны в этой структуре
         }
 
         currentSession.serverBound(packet)
@@ -172,11 +170,10 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         currentSession.displayClientMessage("§e[SoundModule] Попытка заглушить звуки (ограниченная поддержка)")
     }
 
-    // ИСПРАВЛЕНО: testLevelSounds перемещен внутрь класса SoundModule
     fun testLevelSounds() {
         val testEvents = listOf(
-            SoundEvent.ATTACK_NODAMAGE, SoundEvent.BLOCK_PLACE, SoundEvent.ITEM_USE_ON,
-            SoundEvent.STEP, SoundEvent.HIT, SoundEvent.ENTITY_HURT
+            SoundEvent.ATTACK_NODAMAGE, BLOCK_PLACE, SoundEvent.ITEM_USE_ON,
+            SoundEvent.STEP, SoundEvent.HIT, ENTITY_HURT
         )
 
         val currentSession = session ?: return
@@ -185,7 +182,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         Thread {
             testEvents.forEachIndexed { index, event ->
                 try {
-                    Thread.sleep(2000L) // Пауза между звуками
+                    Thread.sleep(2000L)
                     playLevelSoundAdvanced(event)
                     session?.displayClientMessage("§7[${index + 1}/${testEvents.size}] §b$event")
                 } catch (e: Exception) {
