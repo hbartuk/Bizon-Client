@@ -28,6 +28,7 @@ import com.retrivedmods.wclient.game.command.Command
 import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
 import com.retrivedmods.wclient.game.command.impl.ChatIgnoreCommand
+import com.retrivedmods.wclient.game.command.impl.LagCommand
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -118,6 +119,9 @@ object ModuleManager {
             add(PlayerTracerModule())
             add(ChestFinderModule())
             add(EnemyHunterModule())
+            // *** НОВЫЕ МОДУЛИ ***
+            add(LagModule())
+            add(NameResolverModule())
         }
 
         with(_commands) {
@@ -126,6 +130,8 @@ object ModuleManager {
             add(SledCommand())
             add(ChatIgnoreCommand())
             add(SaveSkinCommand())
+            // *** НОВЫЕ КОМАНДЫ ***
+            add(LagCommand())
         }
     }
 
