@@ -1,4 +1,44 @@
-package com.retrivedmods.wclient.game.module.misc
+/**
+     * Получить список доступных звуков
+     */
+    fun listAvailableSounds(): List<String> = workingSounds
+
+    /**
+     * Тест различных SoundEvent'ов
+     */
+    fun testLevelSounds() {
+        val testEvents = listOf(
+            SoundEvent.ATTACK_NODAMAGE,
+            SoundEvent.BLOCK_PLACE,
+            SoundEvent.ITEM_USE_ON,
+            SoundEvent.STEP,
+            SoundEvent.HIT,
+            SoundEvent.ENTITY_HURT
+        )
+
+        runOnSession { session ->
+            session.displayClientMessage("§e[SoundModule] Тест LevelSound событий...")
+            
+            Thread {
+                testEvents.forEachIndexed { index, event ->
+                    try {
+                        Thread.sleep(2000L) // Пауза между звуками
+                        playLevelSoundAdvanced(event)
+                        
+                        runOnSession { 
+                            it.displayClientMessage("§7[${index + 1}/${testEvents.size}] §b$event")
+                        }
+                    } catch (e: Exception) {
+                        println("ERROR в testLevelSounds: ${e.message}")
+                    }
+                }
+                
+                runOnSession {
+                    it.displayClientMessage("§a[SoundModule] Тест LevelSound завершен!")
+                }
+            }.start()
+        }
+    }package com.retrivedmods.wclient.game.module.misc
 
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
@@ -146,9 +186,10 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 position = playerPos
                 this.extraData = extraData
                 this.identifier = identifier
-                // Дополнительные параметры для совместимости
-                isBabyMob = false
-                isGlobal = false
+                // Правильные поля согласно структуре пакета
+                babySound = false
+                relativeVolumeDisabled = false
+                entityUniqueId = player.runtimeEntityId ?: -1L
             }
 
             try {
@@ -207,9 +248,77 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     }
 
     /**
-     * Получить список доступных звуков
+     * Быстрый способ воспроизвести звук атаки (как в примере)
      */
-    fun listAvailableSounds(): List<String> = workingSounds
+    fun playAttackSound() {
+        runOnSession { currentSession ->
+            val player = currentSession.localPlayer
+            if (player == null) {
+                currentSession.displayClientMessage("§c[SoundModule] Игрок недоступен для звука атаки.")
+                return@runOnSession
+            }
+
+            val packet = LevelSoundEventPacket().apply {
+                sound = SoundEvent.ATTACK_NODAMAGE
+                position = player.vec3Position ?: Vector3f.ZERO
+                extraData = -1
+                identifier = "minecraft:player"
+                babySound = false
+                relativeVolumeDisabled = false
+                entityUniqueId = player.runtimeEntityId ?: -1L
+            }
+
+            try {
+                currentSession.serverBound(packet)
+                currentSession.displayClientMessage("§a[AttackSound] Звук атаки отправлен!")
+                println("DEBUG: AttackSound отправлен с правильной структурой пакета")
+            } catch (e: Exception) {
+                println("ERROR: Ошибка отправки AttackSound: ${e.message}")
+                currentSession.displayClientMessage("§c[AttackSound] Ошибка: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Универсальный метод для LevelSoundEvent с полным контролем параметров
+     */
+    fun playLevelSoundAdvanced(
+        soundEvent: SoundEvent,
+        identifier: String = "minecraft:player",
+        extraData: Int = -1,
+        babySound: Boolean = false,
+        relativeVolumeDisabled: Boolean = false
+    ) {
+        println("DEBUG: === ADVANCED LEVEL SOUND ===")
+        println("DEBUG: Event: $soundEvent, ID: $identifier, Extra: $extraData")
+
+        runOnSession { currentSession ->
+            val player = currentSession.localPlayer
+            if (player == null) {
+                currentSession.displayClientMessage("§c[SoundModule] Игрок недоступен.")
+                return@runOnSession
+            }
+
+            val packet = LevelSoundEventPacket().apply {
+                sound = soundEvent
+                position = player.vec3Position ?: Vector3f.ZERO
+                this.extraData = extraData
+                this.identifier = identifier
+                this.babySound = babySound
+                this.relativeVolumeDisabled = relativeVolumeDisabled
+                this.entityUniqueId = player.runtimeEntityId ?: -1L
+            }
+
+            try {
+                currentSession.serverBound(packet)
+                currentSession.displayClientMessage("§a[AdvancedLevel] §b$soundEvent §7отправлен")
+                println("DEBUG: AdvancedLevelSound успешно отправлен")
+            } catch (e: Exception) {
+                println("ERROR: Ошибка в AdvancedLevelSound: ${e.message}")
+                currentSession.displayClientMessage("§c[AdvancedLevel] Ошибка: ${e.message}")
+            }
+        }
+    }
 
     /**
      * Воспроизвести звук с проверкой на существование
