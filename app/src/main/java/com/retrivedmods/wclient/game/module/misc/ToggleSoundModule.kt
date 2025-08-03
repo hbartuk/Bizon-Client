@@ -10,7 +10,6 @@ import org.cloudburstmc.math.vector.Vector3f
 
 class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
 
-    // ИСПРАВЛЕНО: Заменяем val на var, чтобы можно было переназначать
     private var celestialMode = true
     private var nursultanMode = false
     private var smoothMode = false
@@ -70,6 +69,7 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
     }
 
     fun toggleCelestial() {
+        // ИСПРАВЛЕНО: Заменяем val на var, чтобы можно было изменять
         celestialMode = true
         nursultanMode = false
         smoothMode = false
@@ -83,6 +83,7 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
     }
 
     fun toggleNursultan() {
+        // ИСПРАВЛЕНО: Заменяем val на var
         celestialMode = false
         nursultanMode = true
         smoothMode = false
@@ -96,6 +97,7 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
     }
 
     fun toggleSmooth() {
+        // ИСПРАВЛЕНО: Заменяем val на var
         celestialMode = false
         nursultanMode = false
         smoothMode = true
