@@ -53,20 +53,21 @@ class SoundCommand : Command("sound", "s") {
 
             "testlevel" -> {
                 session.displayClientMessage("§e[SoundCommand] Запускаю тест LevelSound событий...")
-                soundModule.testLevelSounds() // ИСПРАВЛЕНО
+                soundModule.testLevelSounds()
             }
 
             "level" -> {
                 if (args.size < 2) {
                     session.displayClientMessage("§c[SoundCommand] Укажите событие для LevelSound!")
-                    session.displayClientMessage("§7Пример: .sound level BLOCK_PLACE")
+                    session.displayClientMessage("§7Пример: .sound level ATTACK_NODAMAGE")
                     return
                 }
 
                 val eventName = args[1].uppercase()
                 try {
                     val soundEvent = SoundEvent.valueOf(eventName)
-                    soundModule.playLevelSoundAdvanced(soundEvent)
+                    // ИСПРАВЛЕНО: Используем playLevelSound и передаем ID события
+                    soundModule.playLevelSound(soundEvent.ordinal)
                     session.displayClientMessage("§a[SoundCommand] LevelSound событие: §b$eventName")
                 } catch (e: IllegalArgumentException) {
                     session.displayClientMessage("§c[SoundCommand] Неизвестное событие: §7$eventName")
