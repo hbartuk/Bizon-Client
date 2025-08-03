@@ -128,9 +128,9 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 position = playerPos
                 this.extraData = extraData
                 this.identifier = identifier
-                // Правильные поля согласно структуре пакета
-                babySound = false
-                relativeVolumeDisabled = false
+                // Используем правильные поля с публичными сеттерами
+                isBabySound = false
+                isRelativeVolumeDisabled = false
                 entityUniqueId = player.uniqueEntityId
             }
 
@@ -165,8 +165,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 position = player.vec3Position ?: Vector3f.ZERO
                 extraData = -1
                 identifier = "minecraft:player"
-                babySound = false
-                relativeVolumeDisabled = false
+                isBabySound = false
+                isRelativeVolumeDisabled = false
                 entityUniqueId = player.uniqueEntityId
             }
 
@@ -206,8 +206,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 position = player.vec3Position ?: Vector3f.ZERO
                 this.extraData = extraData
                 this.identifier = identifier
-                this.babySound = babySound
-                this.relativeVolumeDisabled = relativeVolumeDisabled
+                this.isBabySound = babySound
+                this.isRelativeVolumeDisabled = relativeVolumeDisabled
                 this.entityUniqueId = player.uniqueEntityId
             }
 
@@ -273,11 +273,9 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     fun testLevelSounds() {
         val testEvents = listOf(
             SoundEvent.ATTACK_NODAMAGE,
-            SoundEvent.BLOCK_PLACE,
             SoundEvent.ITEM_USE_ON,
             SoundEvent.STEP,
-            SoundEvent.HIT,
-            SoundEvent.ENTITY_HURT
+            SoundEvent.HIT
         )
 
         runOnSession { session ->
