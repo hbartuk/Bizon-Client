@@ -159,8 +159,8 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
             val playSoundPacket = PlaySoundPacket().apply {
                 sound = soundName
                 position = playerPos
-                volume = volume.coerceIn(0.0f, 10.0f)
-                pitch = pitch.coerceIn(0.1f, 2.0f)
+                this.volume = volume.coerceIn(0.0f, 10.0f)
+                this.pitch = pitch.coerceIn(0.1f, 2.0f)
             }
 
             try {
@@ -258,7 +258,7 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
                     Thread.sleep(2000)
                     
                     runOnSession {
-                        it.displayClientMessage("§a[ToggleSound] Тест завершен!")
+                         it.displayClientMessage("§a[ToggleSound] Тест завершен!")
                     }
                 } catch (e: Exception) {
                     println("ERROR в testAllModes: ${e.message}")
