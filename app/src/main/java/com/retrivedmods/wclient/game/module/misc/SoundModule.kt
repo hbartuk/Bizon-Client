@@ -81,8 +81,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             val playSoundPacket = PlaySoundPacket().apply {
                 sound = soundName
                 position = playerPos
-                volume = volume.coerceIn(0.0f, 10.0f) // Ограничиваем громкость
-                pitch = pitch.coerceIn(0.1f, 2.0f)   // Ограничиваем питч
+                this.volume = volume.coerceIn(0.0f, 10.0f) // Ограничиваем громкость
+                this.pitch = pitch.coerceIn(0.1f, 2.0f)   // Ограничиваем питч
             }
 
             try {
@@ -131,7 +131,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 // Используем правильные поля с публичными сеттерами
                 isBabySound = false
                 isRelativeVolumeDisabled = false
-                entityUniqueId = player.uniqueEntityId
+                // Убираем entityUniqueId так как это поле не доступно
             }
 
             try {
@@ -167,7 +167,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 identifier = "minecraft:player"
                 isBabySound = false
                 isRelativeVolumeDisabled = false
-                entityUniqueId = player.uniqueEntityId
+                // Убираем entityUniqueId
             }
 
             try {
@@ -208,7 +208,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 this.identifier = identifier
                 this.isBabySound = babySound
                 this.isRelativeVolumeDisabled = relativeVolumeDisabled
-                this.entityUniqueId = player.uniqueEntityId
+                // Убираем entityUniqueId
             }
 
             try {
