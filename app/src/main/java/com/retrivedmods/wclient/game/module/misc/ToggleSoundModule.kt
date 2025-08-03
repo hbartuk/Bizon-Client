@@ -3,7 +3,6 @@ package com.retrivedmods.wclient.game.module.misc
 import com.retrivedmods.wclient.game.Module
 import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession
-
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
 import org.cloudburstmc.protocol.bedrock.data.SoundEvent
@@ -11,33 +10,21 @@ import org.cloudburstmc.math.vector.Vector3f
 
 class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
 
-    // Настройки звуковых наборов
+    // ИСПРАВЛЕНО: Заменяем val на var, чтобы можно было переназначать
     private var celestialMode = true
     private var nursultanMode = false
     private var smoothMode = false
     private var soundsEnabled = false
 
-    // Наборы звуков (адаптированные под Nukkit-MOT)
     object SoundSets {
         val CELESTIAL = listOf(
-            "note.pling",
-            "random.orb",
-            "mob.endermen.portal",
-            "random.levelup"
+            "note.pling", "random.orb", "mob.endermen.portal", "random.levelup"
         )
-
         val NURSULTAN = listOf(
-            "random.pop",
-            "random.click",
-            "tile.piston.out",
-            "random.bow"
+            "random.pop", "random.click", "tile.piston.out", "random.bow"
         )
-
         val SMOOTH = listOf(
-            "random.break",
-            "mob.ghast.scream",
-            "random.explode",
-            "random.anvil_land"
+            "random.break", "mob.ghast.scream", "random.explode", "random.anvil_land"
         )
     }
 
@@ -56,7 +43,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         runOnSession {
             it.displayClientMessage("§a[ToggleSound] Звуки включены!")
             
-            // Воспроизводим звук включения в зависимости от режима
             when {
                 celestialMode -> {
                     it.displayClientMessage("§b[Mode] Celestial активен")
@@ -83,9 +69,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Переключение режима Celestial
-     */
     fun toggleCelestial() {
         celestialMode = true
         nursultanMode = false
@@ -99,9 +82,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Переключение режима Nursultan
-     */
     fun toggleNursultan() {
         celestialMode = false
         nursultanMode = true
@@ -115,9 +95,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Переключение режима Smooth
-     */
     fun toggleSmooth() {
         celestialMode = false
         nursultanMode = false
@@ -131,9 +108,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение случайного звука из набора
-     */
     private fun playRandomFromSet(soundSet: List<String>) {
         if (!soundsEnabled) return
         
@@ -145,15 +119,11 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение звука (исправленная версия для Nukkit-MOT)
-     */
     private fun playSound(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
         println("DEBUG: ToggleSound playing: $soundName")
 
         runOnSession { currentSession ->
             val player = currentSession.localPlayer ?: return@runOnSession
-
             val playerPos = player.vec3Position ?: Vector3f.ZERO
 
             val playSoundPacket = PlaySoundPacket().apply {
@@ -172,9 +142,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение звука при событии (например, включение модуля)
-     */
     fun playToggleSound() {
         if (!soundsEnabled) return
 
@@ -186,17 +153,11 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение звука уведомления
-     */
     fun playNotificationSound() {
         if (!soundsEnabled) return
 
-        // Особые звуки для уведомлений
         val notificationSounds = listOf(
-            "random.orb",
-            "note.pling",
-            "random.levelup"
+            "random.orb", "note.pling", "random.levelup"
         )
 
         val sound = notificationSounds.random()
@@ -207,14 +168,8 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Проверка состояния звуков
-     */
     fun isSoundsEnabled(): Boolean = soundsEnabled
 
-    /**
-     * Получить текущий активный режим
-     */
     fun getCurrentMode(): String {
         return when {
             celestialMode -> "Celestial"
@@ -224,9 +179,6 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Получить звуки текущего режима
-     */
     fun getCurrentSoundSet(): List<String> {
         return when {
             celestialMode -> SoundSets.CELESTIAL
@@ -236,29 +188,21 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Тест всех режимов подряд
-     */
     fun testAllModes() {
         runOnSession { session ->
             session.displayClientMessage("§e[ToggleSound] Тестирую все режимы...")
             
             Thread {
                 try {
-                    // Тест Celestial
                     toggleCelestial()
                     Thread.sleep(2000)
-                    
-                    // Тест Nursultan
                     toggleNursultan()
                     Thread.sleep(2000)
-                    
-                    // Тест Smooth
                     toggleSmooth()
                     Thread.sleep(2000)
                     
                     runOnSession {
-                         it.displayClientMessage("§a[ToggleSound] Тест завершен!")
+                        it.displayClientMessage("§a[ToggleSound] Тест завершен!")
                     }
                 } catch (e: Exception) {
                     println("ERROR в testAllModes: ${e.message}")
