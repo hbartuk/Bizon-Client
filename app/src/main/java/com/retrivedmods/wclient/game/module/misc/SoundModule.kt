@@ -11,23 +11,11 @@ import org.cloudburstmc.math.vector.Vector3f
 
 class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
-    // Список проверенных звуков для Nukkit-MOT
     private val workingSounds = listOf(
-        "random.pop",
-        "note.pling",
-        "random.click",
-        "random.orb",
-        "mob.endermen.portal",
-        "random.anvil_land",
-        "random.break",
-        "tile.piston.out",
-        "mob.ghast.scream",
-        "random.explode",
-        "random.bow",
-        "mob.zombie.say",
-        "mob.skeleton.say",
-        "random.levelup",
-        "mob.enderdragon.growl"
+        "random.pop", "note.pling", "random.click", "random.orb", "mob.endermen.portal",
+        "random.anvil_land", "random.break", "tile.piston.out", "mob.ghast.scream",
+        "random.explode", "random.bow", "mob.zombie.say", "mob.skeleton.say",
+        "random.levelup", "mob.enderdragon.growl"
     )
 
     override fun initialize() {
@@ -42,7 +30,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         super.onEnabled()
         runOnSession {
             it.displayClientMessage("§a[SoundModule] Модуль активирован.")
-            // Тестовый звук при включении
             playSound("random.pop", 1.0f, 1.0f)
         }
     }
@@ -54,10 +41,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение обычного пользовательского звука по названию.
-     * Оптимизировано для работы с Nukkit-MOT.
-     */
     fun playSound(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
         println("DEBUG: === НАЧАЛО ОТПРАВКИ ЗВУКА ===")
         println("DEBUG: Звук: $soundName, Громкость: $volume, Питч: $pitch")
@@ -72,17 +55,12 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 return@runOnSession
             }
 
-            // Получаем позицию игрока
             val playerPos = player.vec3Position ?: Vector3f.ZERO
             println("DEBUG: Позиция игрока: $playerPos")
 
-            // Создаем пакет звука согласно структуре Nukkit-MOT
             val playSoundPacket = PlaySoundPacket().apply {
-                // name в Nukkit-MOT
                 sound = soundName
-                // Позиция в блочных координатах (Nukkit-MOT использует int x,y,z)
                 position = playerPos
-                // volume и pitch как float
                 volume = volume.coerceIn(0.0f, 10.0f)
                 pitch = pitch.coerceIn(0.1f, 2.0f)
             }
@@ -102,12 +80,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Воспроизведение системного игрового звука через LevelSoundEventPacket.
-     * Адаптировано под структуру Nukkit-MOT.
-     */
     fun playLevelSound(
-        soundId: Int, // Используем int ID вместо SoundEvent
+        soundId: Int,
         identifier: String = "",
         extraData: Int = -1,
         isBaby: Boolean = false,
@@ -126,19 +100,17 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
             val playerPos = player.vec3Position ?: Vector3f.ZERO
 
-            // Создаем пакет согласно структуре Nukkit-MOT LevelSoundEventPacket
             val packet = LevelSoundEventPacket().apply {
-                // Используем int sound ID
-                sound = SoundEvent.fromId(soundId) ?: SoundEvent.ATTACK_NODAMAGE
+                sound = SoundEvent.values()[soundId] // ИСПРАВЛЕНО: Используем values()
                 position = playerPos
                 extraData = extraData
                 identifier = identifier
                 isBabySound = isBaby
                 isRelativeVolumeDisabled = isGlobal
-                // entityUniqueId доступен только в протоколе >= v1_21_70_24
-                if (player.uniqueEntityId > 0) {
-                    entityUniqueId = player.uniqueEntityId
-                }
+                // ИСПРАВЛЕНО: Закомментировал строку, так как она вызывает ошибку
+                // if (player.uniqueEntityId > 0) {
+                //     entityUniqueId = player.uniqueEntityId
+                // }
             }
 
             try {
@@ -156,49 +128,31 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Быстрый способ воспроизвести звук атаки
-     */
     fun playAttackSound() {
         println("DEBUG: Играю звук атаки (SOUND_ATTACK_NODAMAGE = 42)")
-        playLevelSound(42, "minecraft:player", -1, false, false) // SOUND_ATTACK_NODAMAGE = 42
+        playLevelSound(42, "minecraft:player", -1, false, false)
     }
 
-    /**
-     * Воспроизведение звука шага
-     */
     fun playStepSound() {
         println("DEBUG: Играю звук шага (SOUND_STEP = 2)")
-        playLevelSound(2, "minecraft:player", -1, false, false) // SOUND_STEP = 2
+        playLevelSound(2, "minecraft:player", -1, false, false)
     }
 
-    /**
-     * Воспроизведение звука удара
-     */
     fun playHitSound() {
         println("DEBUG: Играю звук удара (SOUND_HIT = 1)")
-        playLevelSound(1, "minecraft:player", -1, false, false) // SOUND_HIT = 1
+        playLevelSound(1, "minecraft:player", -1, false, false)
     }
 
-    /**
-     * Воспроизведение звука размещения блока
-     */
     fun playPlaceSound() {
         println("DEBUG: Играю звук размещения (SOUND_PLACE = 6)")
-        playLevelSound(6, "minecraft:stone", -1, false, false) // SOUND_PLACE = 6
+        playLevelSound(6, "minecraft:stone", -1, false, false)
     }
 
-    /**
-     * Воспроизведение звука взрыва
-     */
     fun playExplodeSound() {
         println("DEBUG: Играю звук взрыва (SOUND_EXPLODE = 48)")
-        playLevelSound(48, "", -1, false, true) // SOUND_EXPLODE = 48, глобальный
+        playLevelSound(48, "", -1, false, true)
     }
 
-    /**
-     * Тестирование различных звуков подряд
-     */
     fun testSounds() {
         runOnSession { session ->
             session.displayClientMessage("§e[SoundModule] §7Начинаю тест звуков...")
@@ -206,7 +160,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             Thread {
                 workingSounds.take(5).forEachIndexed { index, sound ->
                     try {
-                        Thread.sleep(1500L) // Пауза между звуками
+                        Thread.sleep(1500L)
                         playSound(sound, 1.0f, 1.0f)
                         
                         runOnSession { 
@@ -224,9 +178,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Тест LevelSound событий с правильными ID
-     */
     fun testLevelSounds() {
         val testSounds = mapOf(
             42 to "ATTACK_NODAMAGE",
@@ -243,7 +194,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             Thread {
                 testSounds.entries.forEachIndexed { index, (soundId, name) ->
                     try {
-                        Thread.sleep(2000L) // Пауза между звуками
+                        Thread.sleep(2000L)
                         playLevelSound(soundId)
                         
                         runOnSession { 
@@ -261,9 +212,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Случайный звук из списка
-     */
     fun playRandomSound(volume: Float = 1.0f, pitch: Float = 1.0f) {
         val randomSound = workingSounds.random()
         playSound(randomSound, volume, pitch)
@@ -273,11 +221,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Случайный LevelSound
-     */
     fun playRandomLevelSound() {
-        val randomSounds = listOf(42, 1, 2, 6, 17, 79, 81, 62) // Популярные звуки
+        val randomSounds = listOf(42, 1, 2, 6, 17, 79, 81, 62)
         val randomId = randomSounds.random()
         playLevelSound(randomId)
         
@@ -286,14 +231,8 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Получить список доступных звуков
-     */
     fun listAvailableSounds(): List<String> = workingSounds
 
-    /**
-     * Воспроизвести звук с проверкой на существование
-     */
     fun playSoundSafe(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
         if (workingSounds.contains(soundName)) {
             playSound(soundName, volume, pitch)
@@ -305,9 +244,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Создание звукового спама (осторожно!)
-     */
     fun playSoundSpam(soundName: String, count: Int = 5, delayMs: Long = 100L) {
         runOnSession { session ->
             session.displayClientMessage("§e[SoundSpam] Начинаю спам: §b$soundName §7x$count")
@@ -329,9 +265,6 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
         }
     }
 
-    /**
-     * Заглушка для остановки всех звуков
-     */
     fun stopAllSounds() {
         runOnSession { currentSession ->
             try {
