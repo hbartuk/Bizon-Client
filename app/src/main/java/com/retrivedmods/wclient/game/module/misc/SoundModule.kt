@@ -72,17 +72,19 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 return@runOnSession
             }
 
-            // Получаем точную позицию игрока
+            // Получаем позицию игрока
             val playerPos = player.vec3Position ?: Vector3f.ZERO
-
             println("DEBUG: Позиция игрока: $playerPos")
 
-            // Создаем пакет звука
+            // Создаем пакет звука согласно структуре Nukkit-MOT
             val playSoundPacket = PlaySoundPacket().apply {
+                // name в Nukkit-MOT
                 sound = soundName
+                // Позиция в блочных координатах (Nukkit-MOT использует int x,y,z)
                 position = playerPos
-                this.volume = volume.coerceIn(0.0f, 10.0f) // Ограничиваем громкость
-                this.pitch = pitch.coerceIn(0.1f, 2.0f)   // Ограничиваем питч
+                // volume и pitch как float
+                volume = volume.coerceIn(0.0f, 10.0f)
+                pitch = pitch.coerceIn(0.1f, 2.0f)
             }
 
             try {
@@ -102,16 +104,17 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
     /**
      * Воспроизведение системного игрового звука через LevelSoundEventPacket.
-     * Более надежный способ для некоторых серверов.
+     * Адаптировано под структуру Nukkit-MOT.
      */
     fun playLevelSound(
-        soundEvent: SoundEvent,
+        soundId: Int, // Используем int ID вместо SoundEvent
         identifier: String = "",
         extraData: Int = -1,
-        volume: Float = 1.0f
+        isBaby: Boolean = false,
+        isGlobal: Boolean = false
     ) {
         println("DEBUG: === НАЧАЛО ОТПРАВКИ LEVEL SOUND ===")
-        println("DEBUG: SoundEvent: $soundEvent, Identifier: $identifier, ExtraData: $extraData")
+        println("DEBUG: SoundID: $soundId, Identifier: $identifier, ExtraData: $extraData")
 
         runOnSession { currentSession ->
             val player = currentSession.localPlayer
@@ -123,15 +126,19 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
             val playerPos = player.vec3Position ?: Vector3f.ZERO
 
+            // Создаем пакет согласно структуре Nukkit-MOT LevelSoundEventPacket
             val packet = LevelSoundEventPacket().apply {
-                sound = soundEvent
+                // Используем int sound ID
+                sound = SoundEvent.fromId(soundId) ?: SoundEvent.ATTACK_NODAMAGE
                 position = playerPos
-                this.extraData = extraData
-                this.identifier = identifier
-                // Используем правильные поля с публичными сеттерами
-                isBabySound = false
-                isRelativeVolumeDisabled = false
-                // Убираем entityUniqueId так как это поле не доступно
+                extraData = extraData
+                identifier = identifier
+                isBabySound = isBaby
+                isRelativeVolumeDisabled = isGlobal
+                // entityUniqueId доступен только в протоколе >= v1_21_70_24
+                if (player.uniqueEntityId > 0) {
+                    entityUniqueId = player.uniqueEntityId
+                }
             }
 
             try {
@@ -139,7 +146,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 currentSession.serverBound(packet)
                 println("DEBUG: LevelSoundEventPacket успешно отправлен!")
                 
-                currentSession.displayClientMessage("§a[LevelSound] §b$soundEvent §7отправлен на сервер")
+                currentSession.displayClientMessage("§a[LevelSound] §bID:$soundId §7отправлен на сервер")
             } catch (e: Exception) {
                 println("ERROR: Ошибка отправки LevelSoundEventPacket: ${e.message}")
                 currentSession.displayClientMessage("§c[LevelSound] Ошибка: ${e.message}")
@@ -150,76 +157,43 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     }
 
     /**
-     * Быстрый способ воспроизвести звук атаки (как в примере)
+     * Быстрый способ воспроизвести звук атаки
      */
     fun playAttackSound() {
-        runOnSession { currentSession ->
-            val player = currentSession.localPlayer
-            if (player == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Игрок недоступен для звука атаки.")
-                return@runOnSession
-            }
-
-            val packet = LevelSoundEventPacket().apply {
-                sound = SoundEvent.ATTACK_NODAMAGE
-                position = player.vec3Position ?: Vector3f.ZERO
-                extraData = -1
-                identifier = "minecraft:player"
-                isBabySound = false
-                isRelativeVolumeDisabled = false
-                // Убираем entityUniqueId
-            }
-
-            try {
-                currentSession.serverBound(packet)
-                currentSession.displayClientMessage("§a[AttackSound] Звук атаки отправлен!")
-                println("DEBUG: AttackSound отправлен с правильной структурой пакета")
-            } catch (e: Exception) {
-                println("ERROR: Ошибка отправки AttackSound: ${e.message}")
-                currentSession.displayClientMessage("§c[AttackSound] Ошибка: ${e.message}")
-            }
-        }
+        println("DEBUG: Играю звук атаки (SOUND_ATTACK_NODAMAGE = 42)")
+        playLevelSound(42, "minecraft:player", -1, false, false) // SOUND_ATTACK_NODAMAGE = 42
     }
 
     /**
-     * Универсальный метод для LevelSoundEvent с полным контролем параметров
+     * Воспроизведение звука шага
      */
-    fun playLevelSoundAdvanced(
-        soundEvent: SoundEvent,
-        identifier: String = "minecraft:player",
-        extraData: Int = -1,
-        babySound: Boolean = false,
-        relativeVolumeDisabled: Boolean = false
-    ) {
-        println("DEBUG: === ADVANCED LEVEL SOUND ===")
-        println("DEBUG: Event: $soundEvent, ID: $identifier, Extra: $extraData")
+    fun playStepSound() {
+        println("DEBUG: Играю звук шага (SOUND_STEP = 2)")
+        playLevelSound(2, "minecraft:player", -1, false, false) // SOUND_STEP = 2
+    }
 
-        runOnSession { currentSession ->
-            val player = currentSession.localPlayer
-            if (player == null) {
-                currentSession.displayClientMessage("§c[SoundModule] Игрок недоступен.")
-                return@runOnSession
-            }
+    /**
+     * Воспроизведение звука удара
+     */
+    fun playHitSound() {
+        println("DEBUG: Играю звук удара (SOUND_HIT = 1)")
+        playLevelSound(1, "minecraft:player", -1, false, false) // SOUND_HIT = 1
+    }
 
-            val packet = LevelSoundEventPacket().apply {
-                sound = soundEvent
-                position = player.vec3Position ?: Vector3f.ZERO
-                this.extraData = extraData
-                this.identifier = identifier
-                this.isBabySound = babySound
-                this.isRelativeVolumeDisabled = relativeVolumeDisabled
-                // Убираем entityUniqueId
-            }
+    /**
+     * Воспроизведение звука размещения блока
+     */
+    fun playPlaceSound() {
+        println("DEBUG: Играю звук размещения (SOUND_PLACE = 6)")
+        playLevelSound(6, "minecraft:stone", -1, false, false) // SOUND_PLACE = 6
+    }
 
-            try {
-                currentSession.serverBound(packet)
-                currentSession.displayClientMessage("§a[AdvancedLevel] §b$soundEvent §7отправлен")
-                println("DEBUG: AdvancedLevelSound успешно отправлен")
-            } catch (e: Exception) {
-                println("ERROR: Ошибка в AdvancedLevelSound: ${e.message}")
-                currentSession.displayClientMessage("§c[AdvancedLevel] Ошибка: ${e.message}")
-            }
-        }
+    /**
+     * Воспроизведение звука взрыва
+     */
+    fun playExplodeSound() {
+        println("DEBUG: Играю звук взрыва (SOUND_EXPLODE = 48)")
+        playLevelSound(48, "", -1, false, true) // SOUND_EXPLODE = 48, глобальный
     }
 
     /**
@@ -251,44 +225,29 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     }
 
     /**
-     * Случайный звук из списка
-     */
-    fun playRandomSound(volume: Float = 1.0f, pitch: Float = 1.0f) {
-        val randomSound = workingSounds.random()
-        playSound(randomSound, volume, pitch)
-        
-        runOnSession {
-            it.displayClientMessage("§e[Random] §b$randomSound")
-        }
-    }
-
-    /**
-     * Получить список доступных звуков
-     */
-    fun listAvailableSounds(): List<String> = workingSounds
-
-    /**
-     * Тест различных SoundEvent'ов
+     * Тест LevelSound событий с правильными ID
      */
     fun testLevelSounds() {
-        val testEvents = listOf(
-            SoundEvent.ATTACK_NODAMAGE,
-            SoundEvent.ITEM_USE_ON,
-            SoundEvent.STEP,
-            SoundEvent.HIT
+        val testSounds = mapOf(
+            42 to "ATTACK_NODAMAGE",
+            1 to "HIT", 
+            2 to "STEP",
+            6 to "PLACE",
+            17 to "HURT",
+            79 to "POP"
         )
 
         runOnSession { session ->
             session.displayClientMessage("§e[SoundModule] Тест LevelSound событий...")
             
             Thread {
-                testEvents.forEachIndexed { index, event ->
+                testSounds.entries.forEachIndexed { index, (soundId, name) ->
                     try {
                         Thread.sleep(2000L) // Пауза между звуками
-                        playLevelSoundAdvanced(event)
+                        playLevelSound(soundId)
                         
                         runOnSession { 
-                            it.displayClientMessage("§7[${index + 1}/${testEvents.size}] §b$event")
+                            it.displayClientMessage("§7[${index + 1}/${testSounds.size}] §b$name §8(ID:$soundId)")
                         }
                     } catch (e: Exception) {
                         println("ERROR в testLevelSounds: ${e.message}")
@@ -301,6 +260,36 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
             }.start()
         }
     }
+
+    /**
+     * Случайный звук из списка
+     */
+    fun playRandomSound(volume: Float = 1.0f, pitch: Float = 1.0f) {
+        val randomSound = workingSounds.random()
+        playSound(randomSound, volume, pitch)
+        
+        runOnSession {
+            it.displayClientMessage("§e[Random] §b$randomSound")
+        }
+    }
+
+    /**
+     * Случайный LevelSound
+     */
+    fun playRandomLevelSound() {
+        val randomSounds = listOf(42, 1, 2, 6, 17, 79, 81, 62) // Популярные звуки
+        val randomId = randomSounds.random()
+        playLevelSound(randomId)
+        
+        runOnSession {
+            it.displayClientMessage("§e[RandomLevel] §bID:$randomId")
+        }
+    }
+
+    /**
+     * Получить список доступных звуков
+     */
+    fun listAvailableSounds(): List<String> = workingSounds
 
     /**
      * Воспроизвести звук с проверкой на существование
@@ -317,12 +306,34 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
     }
 
     /**
+     * Создание звукового спама (осторожно!)
+     */
+    fun playSoundSpam(soundName: String, count: Int = 5, delayMs: Long = 100L) {
+        runOnSession { session ->
+            session.displayClientMessage("§e[SoundSpam] Начинаю спам: §b$soundName §7x$count")
+            
+            Thread {
+                repeat(count) { i ->
+                    try {
+                        playSound(soundName, 1.0f, 1.0f)
+                        if (i < count - 1) Thread.sleep(delayMs)
+                    } catch (e: Exception) {
+                        println("ERROR в playSoundSpam: ${e.message}")
+                    }
+                }
+                
+                runOnSession {
+                    it.displayClientMessage("§a[SoundSpam] Спам завершен!")
+                }
+            }.start()
+        }
+    }
+
+    /**
      * Заглушка для остановки всех звуков
      */
     fun stopAllSounds() {
         runOnSession { currentSession ->
-            // В Bedrock Edition нет прямого способа остановить все звуки
-            // Можно попробовать отправить пакет с нулевой громкостью
             try {
                 val silentPacket = PlaySoundPacket().apply {
                     sound = "random.click"
@@ -332,7 +343,7 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 }
                 currentSession.serverBound(silentPacket)
                 
-                currentSession.displayClientMessage("§e[SoundModule] Попытка заглушить звуки (ограниченная поддержка)")
+                currentSession.displayClientMessage("§e[SoundModule] Попытка заглушить звуки")
                 println("DEBUG: stopAllSounds() - отправлен тихий пакет")
             } catch (e: Exception) {
                 currentSession.displayClientMessage("§c[SoundModule] Ошибка при заглушении: ${e.message}")
