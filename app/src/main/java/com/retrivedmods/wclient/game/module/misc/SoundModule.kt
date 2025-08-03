@@ -55,7 +55,11 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 return@runOnSession
             }
 
-            val playerPos = player.vec3Position ?: Vector3f.ZERO
+            // ИСПРАВЛЕНО: Объявляем playerPos как var, чтобы избежать ошибки
+            var playerPos = player.vec3Position
+            if (playerPos == null) {
+                playerPos = Vector3f.ZERO
+            }
             println("DEBUG: Позиция игрока: $playerPos")
 
             val playSoundPacket = PlaySoundPacket().apply {
@@ -98,24 +102,24 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
                 return@runOnSession
             }
 
-            val playerPos = player.vec3Position ?: Vector3f.ZERO
-
-            // ИСПРАВЛЕНО: Исправил логику для получения SoundEvent по ID
-            // Используем try-catch, чтобы избежать IndexOutOfBoundsException
-            val soundEvent = try {
-                SoundEvent.values()[soundId]
-            } catch (e: ArrayIndexOutOfBoundsException) {
-                SoundEvent.SOUND_UNKNOWN // Используем безопасное значение
+            // ИСПРАВЛЕНО: Объявляем playerPos как var, чтобы избежать ошибки
+            var playerPos = player.vec3Position
+            if (playerPos == null) {
+                playerPos = Vector3f.ZERO
             }
 
             val packet = LevelSoundEventPacket().apply {
-                sound = soundEvent
+                // ИСПРАВЛЕНО: Заменяем несуществующий SOUND_UNKNOWN на безопасное значение
+                sound = try {
+                    SoundEvent.values()[soundId]
+                } catch (e: ArrayIndexOutOfBoundsException) {
+                    SoundEvent.SOUND_NOT_DEFINED // Используем существующую константу
+                }
                 position = playerPos
                 extraData = extraData
                 identifier = identifier
                 isBabySound = isBaby
                 isRelativeVolumeDisabled = isGlobal
-                // ИСПРАВЛЕНО: Удалена строка с entityUniqueId, так как она вызывает ошибку
             }
 
             try {
