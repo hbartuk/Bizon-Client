@@ -154,21 +154,13 @@ class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
         runOnSession { currentSession ->
             val player = currentSession.localPlayer ?: return@runOnSession
 
-            val playerPos = try {
-                player.vec3Position ?: Vector3f.from(
-                    player.position.x,
-                    player.position.y,
-                    player.position.z
-                )
-            } catch (e: Exception) {
-                Vector3f.ZERO
-            }
+            val playerPos = player.vec3Position ?: Vector3f.ZERO
 
             val playSoundPacket = PlaySoundPacket().apply {
-                setSound(soundName)
-                setPosition(playerPos)
-                setVolume(volume.coerceIn(0.0f, 10.0f))
-                setPitch(pitch.coerceIn(0.1f, 2.0f))
+                sound = soundName
+                position = playerPos
+                volume = volume.coerceIn(0.0f, 10.0f)
+                pitch = pitch.coerceIn(0.1f, 2.0f)
             }
 
             try {
