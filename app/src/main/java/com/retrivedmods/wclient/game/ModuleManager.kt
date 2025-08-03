@@ -24,6 +24,7 @@ import com.retrivedmods.wclient.game.command.impl.SkinStealerCommand
 import com.retrivedmods.wclient.game.command.impl.SoundCommand
 import com.retrivedmods.wclient.game.command.impl.ChatIgnoreCommand
 import com.retrivedmods.wclient.game.command.impl.LagCommand
+import com.retrivedmods.wclient.game.command.impl.ToggleSoundCommand
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -51,6 +52,7 @@ object ModuleManager {
     init {
         with(_modules) {
             add(CommandHandlerModule())
+            add(ToggleSoundModule())
             add(FlyModule())
             add(GravityControlModule())
             add(ZoomModule())
@@ -125,6 +127,7 @@ object ModuleManager {
             add(SaveSkinCommand())
             // *** НОВАЯ КОМАНДА ***
             add(LagCommand())
+            add(ToggleSoundCommand())
         }
     }
 
