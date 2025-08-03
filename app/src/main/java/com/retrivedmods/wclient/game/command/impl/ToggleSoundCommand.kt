@@ -1,151 +1,215 @@
-// File: com.retrivedmods.wclient.game.command.impl.ToggleSoundCommand.kt
-package com.retrivedmods.wclient.game.command.impl
+package com.retrivedmods.wclient.game.module.misc
 
+import com.retrivedmods.wclient.game.Module
+import com.retrivedmods.wclient.game.ModuleCategory
 import com.retrivedmods.wclient.game.GameSession
-import com.retrivedmods.wclient.game.command.Command
-import com.retrivedmods.wclient.game.ModuleManager 
-import com.retrivedmods.wclient.game.module.misc.ToggleSoundModule
+import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket
+import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket
+import org.cloudburstmc.protocol.bedrock.data.SoundEvent
+import org.cloudburstmc.math.vector.Vector3f
 
-class ToggleSoundCommand : Command("togglesound", "ts") { 
+class ToggleSoundModule : Module("ToggleSound", ModuleCategory.Misc) {
 
-    override fun exec(args: Array<String>, session: GameSession) {
-        println("DEBUG: ToggleSoundCommand.exec() called. Args: ${args.joinToString(" ")}")
+    private var celestialMode = true
+    private var nursultanMode = false
+    private var smoothMode = false
+    private var soundsEnabled = false
 
-        if (args.isEmpty()) {
-            session.displayClientMessage("§e=== ToggleSound Command Help ===")
-            session.displayClientMessage("§7.togglesound on/off §8- Включить/выключить звуки")
-            session.displayClientMessage("§7.togglesound celestial §8- Режим Celestial")
-            session.displayClientMessage("§7.togglesound nursultan §8- Режим Nursultan")
-            session.displayClientMessage("§7.togglesound smooth §8- Режим Smooth")
-            session.displayClientMessage("§7.togglesound status §8- Показать статус")
-            session.displayClientMessage("§7.togglesound test §8- Тест всех режимов")
-            session.displayClientMessage("§7.togglesound play §8- Воспроизвести звук")
-            session.displayClientMessage("§7.togglesound notify §8- Звук уведомления")
-            return
+    object SoundSets {
+        val CELESTIAL = listOf(
+            "note.pling", "random.orb", "mob.endermen.portal", "random.levelup"
+        )
+        val NURSULTAN = listOf(
+            "random.pop", "random.click", "tile.piston.out", "random.bow"
+        )
+        val SMOOTH = listOf(
+            "random.break", "mob.ghast.scream", "random.explode", "random.anvil_land"
+        )
+    }
+
+    override fun initialize() {
+        super.initialize()
+        runOnSession {
+            it.displayClientMessage("§a[ToggleSound] Модуль инициализирован.")
+            it.displayClientMessage("§7Режимы: Celestial, Nursultan, Smooth")
         }
+    }
 
-        val toggleSoundModule = ModuleManager.getModule<ToggleSoundModule>()
-        if (toggleSoundModule == null) {
-            session.displayClientMessage("§c[ToggleSoundCommand] Модуль ToggleSoundModule не найден!")
-            println("ERROR: ToggleSoundModule is null в ToggleSoundCommand")
-            return
+    override fun onEnabled() {
+        super.onEnabled()
+        soundsEnabled = true
+        
+        runOnSession {
+            it.displayClientMessage("§a[ToggleSound] Звуки включены!")
+            
+            when {
+                celestialMode -> {
+                    it.displayClientMessage("§b[Mode] Celestial активен")
+                    playRandomFromSet(SoundSets.CELESTIAL)
+                }
+                nursultanMode -> {
+                    it.displayClientMessage("§e[Mode] Nursultan активен")
+                    playRandomFromSet(SoundSets.NURSULTAN)
+                }
+                smoothMode -> {
+                    it.displayClientMessage("§d[Mode] Smooth активен")
+                    playRandomFromSet(SoundSets.SMOOTH)
+                }
+            }
         }
+    }
 
-        when (args[0].lowercase()) {
-            "on", "enable" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = true
-                    session.displayClientMessage("§a[ToggleSound] Модуль включен!")
-                } else {
-                    session.displayClientMessage("§e[ToggleSound] Модуль уже включен.")
-                }
+    override fun onDisabled() {
+        super.onDisabled()
+        soundsEnabled = false
+        
+        runOnSession {
+            it.displayClientMessage("§c[ToggleSound] Звуки отключены.")
+        }
+    }
+
+    fun toggleCelestial() {
+        // ИСПРАВЛЕНО: Заменяем val на var, чтобы можно было изменять
+        celestialMode = true
+        nursultanMode = false
+        smoothMode = false
+        
+        runOnSession {
+            it.displayClientMessage("§b[ToggleSound] Режим: Celestial")
+            if (soundsEnabled) {
+                playRandomFromSet(SoundSets.CELESTIAL)
+            }
+        }
+    }
+
+    fun toggleNursultan() {
+        // ИСПРАВЛЕНО: Заменяем val на var
+        celestialMode = false
+        nursultanMode = true
+        smoothMode = false
+        
+        runOnSession {
+            it.displayClientMessage("§e[ToggleSound] Режим: Nursultan")
+            if (soundsEnabled) {
+                playRandomFromSet(SoundSets.NURSULTAN)
+            }
+        }
+    }
+
+    fun toggleSmooth() {
+        // ИСПРАВЛЕНО: Заменяем val на var
+        celestialMode = false
+        nursultanMode = false
+        smoothMode = true
+        
+        runOnSession {
+            it.displayClientMessage("§d[ToggleSound] Режим: Smooth")
+            if (soundsEnabled) {
+                playRandomFromSet(SoundSets.SMOOTH)
+            }
+        }
+    }
+
+    private fun playRandomFromSet(soundSet: List<String>) {
+        if (!soundsEnabled) return
+        
+        val randomSound = soundSet.random()
+        playSound(randomSound, 1.0f, 1.0f)
+        
+        runOnSession {
+            it.displayClientMessage("§7♪ $randomSound")
+        }
+    }
+
+    private fun playSound(soundName: String, volume: Float = 1.0f, pitch: Float = 1.0f) {
+        println("DEBUG: ToggleSound playing: $soundName")
+
+        runOnSession { currentSession ->
+            val player = currentSession.localPlayer ?: return@runOnSession
+            val playerPos = player.vec3Position ?: Vector3f.ZERO
+
+            val playSoundPacket = PlaySoundPacket().apply {
+                sound = soundName
+                position = playerPos
+                volume = volume.coerceIn(0.0f, 10.0f)
+                pitch = pitch.coerceIn(0.1f, 2.0f)
             }
 
-            "off", "disable" -> {
-                if (toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = false
-                    session.displayClientMessage("§c[ToggleSound] Модуль выключен!")
-                } else {
-                    session.displayClientMessage("§e[ToggleSound] Модуль уже выключен.")
-                }
+            try {
+                currentSession.serverBound(playSoundPacket)
+                println("DEBUG: ToggleSound packet sent: $soundName")
+            } catch (e: Exception) {
+                println("ERROR: ToggleSound failed to send: ${e.message}")
             }
+        }
+    }
 
-            "celestial" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = true
-                    session.displayClientMessage("§a[ToggleSound] Модуль автоматически включен.")
-                }
-                toggleSoundModule.toggleCelestial()
-                println("DEBUG: Switched to Celestial mode")
-            }
+    fun playToggleSound() {
+        if (!soundsEnabled) return
 
-            "nursultan" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = true
-                    session.displayClientMessage("§a[ToggleSound] Модуль автоматически включен.")
-                }
-                toggleSoundModule.toggleNursultan()
-                println("DEBUG: Switched to Nursultan mode")
-            }
+        when {
+            celestialMode -> playRandomFromSet(SoundSets.CELESTIAL)
+            nursultanMode -> playRandomFromSet(SoundSets.NURSULTAN)
+            smoothMode -> playRandomFromSet(SoundSets.SMOOTH)
+            else -> playSound("note.pling", 1.0f, 1.0f)
+        }
+    }
 
-            "smooth" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = true
-                    session.displayClientMessage("§a[ToggleSound] Модуль автоматически включен.")
-                }
-                toggleSoundModule.toggleSmooth()
-                println("DEBUG: Switched to Smooth mode")
-            }
+    fun playNotificationSound() {
+        if (!soundsEnabled) return
 
-            "status", "info" -> {
-                session.displayClientMessage("§e=== ToggleSound Status ===")
-                session.displayClientMessage("§7Модуль: §${if (toggleSoundModule.isEnabled) "aВключен" else "cВыключен"}")
-                session.displayClientMessage("§7Звуки: §${if (toggleSoundModule.isSoundsEnabled()) "aАктивны" else "cНеактивны"}")
-                session.displayClientMessage("§7Режим: §b${toggleSoundModule.getCurrentMode()}")
-                
-                val currentSounds = toggleSoundModule.getCurrentSoundSet()
-                if (currentSounds.isNotEmpty()) {
-                    session.displayClientMessage("§7Звуки режима:")
-                    currentSounds.chunked(3).forEach { chunk ->
-                        val line = chunk.joinToString("§7, §b") { "§b$it" }
-                        session.displayClientMessage("  §7$line")
+        val notificationSounds = listOf(
+            "random.orb", "note.pling", "random.levelup"
+        )
+
+        val sound = notificationSounds.random()
+        playSound(sound, 0.8f, 1.2f)
+        
+        runOnSession {
+            it.displayClientMessage("§a[Notification] §7♪ $sound")
+        }
+    }
+
+    fun isSoundsEnabled(): Boolean = soundsEnabled
+
+    fun getCurrentMode(): String {
+        return when {
+            celestialMode -> "Celestial"
+            nursultanMode -> "Nursultan"
+            smoothMode -> "Smooth"
+            else -> "None"
+        }
+    }
+
+    fun getCurrentSoundSet(): List<String> {
+        return when {
+            celestialMode -> SoundSets.CELESTIAL
+            nursultanMode -> SoundSets.NURSULTAN
+            smoothMode -> SoundSets.SMOOTH
+            else -> emptyList()
+        }
+    }
+
+    fun testAllModes() {
+        runOnSession { session ->
+            session.displayClientMessage("§e[ToggleSound] Тестирую все режимы...")
+            
+            Thread {
+                try {
+                    toggleCelestial()
+                    Thread.sleep(2000)
+                    toggleNursultan()
+                    Thread.sleep(2000)
+                    toggleSmooth()
+                    Thread.sleep(2000)
+                    
+                    runOnSession {
+                        it.displayClientMessage("§a[ToggleSound] Тест завершен!")
                     }
+                } catch (e: Exception) {
+                    println("ERROR в testAllModes: ${e.message}")
                 }
-            }
-
-            "test" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    toggleSoundModule.isEnabled = true
-                    session.displayClientMessage("§a[ToggleSound] Модуль автоматически включен для теста.")
-                }
-                
-                session.displayClientMessage("§e[ToggleSound] Запускаю тест всех режимов...")
-                println("DEBUG: Starting ToggleSound test")
-                toggleSoundModule.testAllModes()
-            }
-
-            "play" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    session.displayClientMessage("§c[ToggleSound] Модуль выключен! Используй: .ts on")
-                    return
-                }
-                
-                toggleSoundModule.playToggleSound()
-                session.displayClientMessage("§a[ToggleSound] Воспроизвожу звук текущего режима...")
-                println("DEBUG: Playing toggle sound")
-            }
-
-            "notify", "notification" -> {
-                if (!toggleSoundModule.isEnabled) {
-                    session.displayClientMessage("§c[ToggleSound] Модуль выключен! Используй: .ts on")
-                    return
-                }
-                
-                toggleSoundModule.playNotificationSound()
-                session.displayClientMessage("§a[ToggleSound] Звук уведомления отправлен!")
-                println("DEBUG: Playing notification sound")
-            }
-
-            "debug" -> {
-                // Отладочная информация
-                session.displayClientMessage("§e=== ToggleSound Debug ===")
-                session.displayClientMessage("§7Модуль найден: §atrue")
-                session.displayClientMessage("§7Модуль включен: §b${toggleSoundModule.isEnabled}")
-                session.displayClientMessage("§7Звуки активны: §b${toggleSoundModule.isSoundsEnabled()}")
-                session.displayClientMessage("§7Текущий режим: §b${toggleSoundModule.getCurrentMode()}")
-                session.displayClientMessage("§7Игрок: §b${session.localPlayer?.displayName ?: "null"}")
-                
-                // Тестовый звук
-                if (toggleSoundModule.isEnabled) {
-                    toggleSoundModule.playToggleSound()
-                    session.displayClientMessage("§7Тестовый звук отправлен!")
-                }
-            }
-
-            else -> {
-                session.displayClientMessage("§c[ToggleSound] Неизвестная команда: §7${args[0]}")
-                session.displayClientMessage("§7Используй: §e.ts §7для справки")
-            }
+            }.start()
         }
     }
 }
