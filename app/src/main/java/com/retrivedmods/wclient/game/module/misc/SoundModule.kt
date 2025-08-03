@@ -100,17 +100,22 @@ class SoundModule : Module("Sound", ModuleCategory.Misc) {
 
             val playerPos = player.vec3Position ?: Vector3f.ZERO
 
+            // ИСПРАВЛЕНО: Исправил логику для получения SoundEvent по ID
+            // Используем try-catch, чтобы избежать IndexOutOfBoundsException
+            val soundEvent = try {
+                SoundEvent.values()[soundId]
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                SoundEvent.SOUND_UNKNOWN // Используем безопасное значение
+            }
+
             val packet = LevelSoundEventPacket().apply {
-                sound = SoundEvent.values()[soundId] // ИСПРАВЛЕНО: Используем values()
+                sound = soundEvent
                 position = playerPos
                 extraData = extraData
                 identifier = identifier
                 isBabySound = isBaby
                 isRelativeVolumeDisabled = isGlobal
-                // ИСПРАВЛЕНО: Закомментировал строку, так как она вызывает ошибку
-                // if (player.uniqueEntityId > 0) {
-                //     entityUniqueId = player.uniqueEntityId
-                // }
+                // ИСПРАВЛЕНО: Удалена строка с entityUniqueId, так как она вызывает ошибку
             }
 
             try {
